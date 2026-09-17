@@ -19,4 +19,4 @@ TERM = "xterm-256color"
 [general]
 #~/.config/alacritty/alacritty.toml
 
-import = ["~/.config/alacritty/themes/catppuccin-frappe.toml"]
+import = ["~/.config/alacritty/themes/catppuccin-latte.toml"]
