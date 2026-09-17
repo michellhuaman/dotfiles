@@ -1,4 +1,4 @@
-@import "theme.css";
+@import "./themes/mocha.css";
 
 * {
     border: none;
@@ -9,7 +9,7 @@
 }
 
 window#waybar {
-    background-color: @base;
+    background-color: @crust;
     color: @text;
     min-height: 0px;
 }
@@ -50,11 +50,11 @@ window#waybar {
 #clock,
 #tray {
     padding: 0 10px;
-    color: @base;
+    color: @crust;
     /*background-color: @crust;*/
     border-radius: 0;
     margin: 0;
-    border-left: 2px solid @base;
+    border-left: 2px solid @crust;
 }
 
 #scratchpad {
@@ -66,7 +66,7 @@ window#waybar {
 }
 
 #network {
-    background-color: @mauve;
+  background-color: @mauve;
 }
 
 #power-profiles-daemon.power-saver {
