@@ -1,0 +1,35 @@
+output "AU Optronics 0xE997 Unknown" {
+  mode 1920x1080@60.056 
+  position 0,0
+  scale 1
+  alias $INTERNAL
+}
+
+output "Samsung Electric Company SAMSUNG Unknown" {
+  mode 1366x768@59.790
+  position 1920,0
+  scale 1
+  alias $HOME-TV
+}
+
+output "HDMI-A-1" {
+  mode 1920x1080@120.000
+  position 1920,0
+  scale 1
+  alias $HOME-MONITOR
+}
+
+profile home-1 {
+  output $INTERNAL enable
+  output $HOME-MONITOR enable
+}
+
+profile home-1.5 {
+  output $INTERNAL disable
+  output $HOME-MONITOR enable
+}
+
+profile home-2 {
+  output $INTERNAL enable
+  output $HOME-TV enable
+}

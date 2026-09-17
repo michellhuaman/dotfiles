@@ -1,0 +1,8 @@
+{
+    "include": ["default-modules.json"],
+    "layer": "top",
+    "position": "bottom",
+    "modules-left": ["niri/workspaces"],
+    "modules-center": [],
+    "modules-right": ["pulseaudio", "network", "power-profiles-daemon", "cpu", "memory", "temperature", "backlight", "niri/language", "battery", "clock", "tray"]
+}

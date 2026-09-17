@@ -1,0 +1,16 @@
+[Unit]
+Description=Dynamic output configuration for Wayland
+Documentation=man:kanshi(1)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+ConditionEnvironment=|XDG_CURRENT_DESKTOP=sway
+ConditionEnvironment=|XDG_CURRENT_DESKTOP=niri
+
+[Service]
+ExecStart=/usr/bin/kanshi
+ExecReload=/usr/bin/kanshictl reload
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

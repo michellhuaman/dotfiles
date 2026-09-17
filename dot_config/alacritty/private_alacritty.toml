@@ -1,0 +1,22 @@
+
+[window]
+padding = { x = 6, y = 6 }
+opacity = 1
+dynamic_padding = true
+
+[font]
+normal = { family = "JetBrainsMono", style = "Regular" }
+bold = { family = "JetBrainsMono", style = "Bold" }
+size = 13
+
+[cursor.style]
+shape = "Beam"
+blinking = "Off"
+
+[env]
+TERM = "xterm-256color"
+
+[general]
+#~/.config/alacritty/alacritty.toml
+
+import = ["~/.config/alacritty/themes/catppuccin-frappe.toml"]

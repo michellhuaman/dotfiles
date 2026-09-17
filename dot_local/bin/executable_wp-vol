@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Get the volume level
+volume=$(wpctl get-volume @DEFAULT_AUDIO_SINK@)
+
+# Check for mute state
+case "$volume" in
+	*"[MUTED]") text="Muted" ;;
+	*) text="Volume:" ;;
+esac
+
+# Convert volume level to a percentage
+volume=$(echo "$volume" | awk '{print $2}')
+volume=$(echo "( $volume * 100 ) / 1" | bc)
+
+# Send notification
+notify-send -t 1000 -a 'wp-vol' -h string:x-canonical-private-synchronous:volume -h int:value:$volume "$text ${volume}%"

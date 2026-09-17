@@ -1,0 +1,8 @@
+{
+    "include": ["default-modules.json"],
+    "layer": "top",
+    "position": "bottom",
+    "modules-left": ["sway/workspaces", "sway/mode"],
+    "modules-center": [],
+    "modules-right": ["sway/scratchpad","pulseaudio", "network","power-profiles-daemon","cpu", "memory", "temperature" ,"backlight" , "sway/language","battery", "clock", "tray"]
+}

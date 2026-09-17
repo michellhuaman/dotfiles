@@ -1,0 +1,52 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+  . /etc/bashrc
+fi
+
+#######################################################
+# EXPORTS
+#######################################################
+
+# Expand the history size
+export HISTFILESIZE=10000
+export HISTSIZE=500
+export HISTTIMEFORMAT="%F %T" # add timestamp to history
+
+# Don't put duplicate lines in the history and do not add lines that start with a space
+export HISTCONTROL=erasedups:ignoredups:ignorespace
+
+# Check the window size after each command and, if necessary, update the values of LINES and COLUMNS
+shopt -s checkwinsize
+
+# Causes bash to append to history instead of overwriting it so if you start a new terminal, you have old session history
+shopt -s histappend
+
+# Disable systemctl's auto-paging feature
+export SYSTEMD_PAGER=
+
+#######################################################
+# ALIAS'S
+#######################################################
+# To temporarily bypass an alias, we precede the command with a \
+# EG: the ls command is aliased, but to use the normal ls command you would type \ls
+
+alias list='ls -lAh --color=always --group-directories-first'
+alias c='clear'
+
+# Update aliases
+alias update='sudo dnf upgrade --refresh && flatpak update'
+alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
+alias update-starship="curl -sS https://starship.rs/install.sh | sh"
+
+# Power aliases
+alias off='systemctl poweroff'
+alias rb='systemctl reboot'
+alias zz='systemctl suspend'
+
+# Alias to show the date
+alias da='date "+%Y-%m-%d %A %T %Z"'
+
+# Use Starship prompt
+eval "$(starship init bash)"
