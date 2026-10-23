@@ -1,0 +1,31 @@
+#!/bin/bash
+# Things that come from neither the distro nor Flathub:
+# pipx tools (waypaper) and the JetBrainsMono Nerd Font.
+# Reruns when packages.pipx or the font version changes.
+set -euo pipefail
+
+# --- pipx --------------------------------------------------------------
+# --system-site-packages lets waypaper use the distro's PyGObject.
+pipx_tools=(
+{{- range .packages.pipx }}
+  {{ . | quote }}
+{{- end }}
+)
+for tool in "${pipx_tools[@]}"; do
+  if pipx list --short 2>/dev/null | grep -q "^${tool} "; then
+    pipx upgrade "$tool" || true
+  else
+    pipx install --system-site-packages "$tool"
+  fi
+done
+
+# --- fonts -------------------------------------------------------------
+fontdir="$HOME/.local/share/fonts"
+
+echo "==> JetBrainsMono Nerd Font {{ .fonts.nerd_fonts }}"
+rm -rf "$fontdir/JetBrainsMonoNerdFont"
+mkdir -p "$fontdir/JetBrainsMonoNerdFont"
+curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ .fonts.nerd_fonts }}/JetBrainsMono.tar.xz" \
+  | tar -xJ -C "$fontdir/JetBrainsMonoNerdFont"
+
+fc-cache -f "$fontdir"

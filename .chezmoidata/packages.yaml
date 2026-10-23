@@ -1,0 +1,151 @@
+# Everything the sway setup needs, split by how it gets installed.
+# Native packages are only for the system layer (compositor, session
+# plumbing, hardware tools, fonts). Apps go through Flathub.
+#
+# Editing any list here makes the matching run_onchange_ script rerun
+# on the next `chezmoi apply`.
+
+packages:
+  fedora:
+    # Fedora's official repos don't ship cliphist.
+    copr:
+      - alternateved/cliphist
+    dnf:
+      # core session
+      - sway
+      - swayidle
+      - swaylock
+      - waybar
+      - kanshi
+      - xdg-desktop-portal-wlr
+      - xdg-desktop-portal-gtk
+      # terminal, launcher, file manager
+      - alacritty
+      - fuzzel
+      - Thunar
+      # autostart
+      - swaybg
+      - wl-clipboard
+      - cliphist                  # from the COPR above
+      - NetworkManager
+      - NetworkManager-tui        # nmtui is split out on Fedora
+      - network-manager-applet
+      - blueman
+      # media and hardware keys
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - bc
+      - playerctl
+      - brightnessctl
+      - tuned-ppd                 # Fedora's power-profiles-daemon replacement (same D-Bus API)
+      # helper scripts
+      - gawk
+      - grep
+      - procps-ng
+      - grimshot
+      - grim
+      - slurp
+      - jq
+      - ddcutil
+      - glib2                     # gsettings
+      - yaru-gtk3-theme
+      - yaru-icon-theme
+      # notifications
+      - libnotify
+      - mako
+      # fonts
+      - jetbrains-mono-fonts-all
+      - fontconfig
+      # used by the bootstrap scripts
+      - flatpak
+      - pipx
+      - python3-gobject           # waypaper needs PyGObject
+      - gtk3
+      - curl
+      - xz
+
+  ubuntu:
+    apt:
+      # core session
+      - sway
+      - swayidle
+      - swaylock
+      - waybar
+      - kanshi
+      - xdg-desktop-portal-wlr
+      - xdg-desktop-portal-gtk
+      # terminal, launcher, file manager
+      - alacritty
+      - fuzzel
+      - thunar
+      # autostart
+      - swaybg
+      - wl-clipboard
+      - cliphist
+      - network-manager           # includes nmtui
+      - network-manager-gnome     # nm-applet
+      - blueman
+      # media and hardware keys
+      - pipewire
+      - pipewire-pulse
+      - wireplumber
+      - bc
+      - playerctl
+      - brightnessctl
+      - power-profiles-daemon
+      # helper scripts
+      - gawk                      # Ubuntu's default awk is mawk
+      - grep
+      - procps
+      - grimshot
+      - grim
+      - slurp
+      - jq
+      - ddcutil
+      - libglib2.0-bin            # gsettings
+      - yaru-theme-gtk
+      - yaru-theme-icon
+      # notifications
+      - libnotify-bin             # notify-send
+      - mako-notifier
+      # fonts
+      - fonts-jetbrains-mono
+      - fontconfig
+      # used by the bootstrap scripts
+      - flatpak
+      - pipx
+      - python3-gi                # waypaper needs PyGObject
+      - gir1.2-gtk-3.0
+      - curl
+      - xz-utils
+
+  # Installed per user from Flathub (no root, no polkit prompt).
+  flatpak:
+    - com.brave.Browser           # turn on Origin mode in Settings > System
+    - org.pulseaudio.pavucontrol
+    - com.bitwarden.desktop
+    - io.github.celluloid_player.Celluloid
+    - org.libreoffice.LibreOffice
+    - org.localsend.localsend_app
+    # Apps your window rules already know about:
+    # - io.bassi.Amberol
+    # - org.gnome.Decibels
+    # - org.mozilla.firefox
+
+  # Not in Fedora or Ubuntu repos, not on Flathub.
+  pipx:
+    - waypaper
+
+fonts:
+  # Bump a version to make the font script download it again.
+  nerd_fonts: v3.4.0              # JetBrainsMono Nerd Font
+
+services:
+  # User units from dot_config/systemd/user, enabled after files are applied.
+  user:
+    - kanshi.service
+    - waybar-sway.service
+    - swayidle-sway.service
+  system:
+    - bluetooth.service
