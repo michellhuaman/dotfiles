@@ -56,6 +56,8 @@ packages:
       - mako
       # night light
       - gammastep
+      # password prompts for privileged actions
+      - mate-polkit
       # fonts
       - jetbrains-mono-fonts-all
       - fontconfig
@@ -114,6 +116,8 @@ packages:
       - mako-notifier
       # night light
       - gammastep
+      # password prompts for privileged actions
+      - mate-polkit
       # fonts
       - fonts-jetbrains-mono
       - fontconfig
@@ -154,5 +158,6 @@ services:
     - swayidle-sway.service
     - mako.service              # overrides the distro's unit of the same name
     - gammastep.service
+    - polkit-mate.service
   system:
     - bluetooth.service

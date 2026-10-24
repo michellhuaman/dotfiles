@@ -1,0 +1,18 @@
+[Unit]
+Description=MATE polkit authentication agent
+Documentation=https://github.com/mate-desktop/mate-polkit
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+# GNOME runs its own agent; only start under sway or niri.
+ConditionEnvironment=|XDG_CURRENT_DESKTOP=sway
+ConditionEnvironment=|XDG_CURRENT_DESKTOP=niri
+
+[Service]
+# Same path on Fedora and Ubuntu (package: mate-polkit).
+ExecStart=/usr/libexec/polkit-mate-authentication-agent-1
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
