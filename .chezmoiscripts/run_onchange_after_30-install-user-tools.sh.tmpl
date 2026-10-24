@@ -1,8 +1,12 @@
 #!/bin/bash
 # Things that come from neither the distro nor Flathub:
-# pipx tools (waypaper) and the JetBrainsMono Nerd Font.
+# pipx tools (waypaper), starship and the JetBrainsMono Nerd Font.
 # Reruns when packages.pipx or the font version changes.
 set -euo pipefail
+
+bin_dir="$HOME/.local/bin"
+mkdir -p "$bin_dir"
+export PATH="$bin_dir:$PATH"
 
 # --- pipx --------------------------------------------------------------
 # --system-site-packages lets waypaper use the distro's PyGObject.
@@ -18,6 +22,17 @@ for tool in "${pipx_tools[@]}"; do
     pipx install --system-site-packages "$tool"
   fi
 done
+
+# --- starship ------------------------------------------------------------
+# Latest release, installed once. Not in Fedora's repos, so use upstream's
+# installer on both distros. To update later, rerun the installer by hand:
+#   curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin
+if command -v starship >/dev/null; then
+  echo "==> $(starship --version | head -1) already installed"
+else
+  echo "==> starship (latest)"
+  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$bin_dir"
+fi
 
 # --- fonts -------------------------------------------------------------
 fontdir="$HOME/.local/share/fonts"
