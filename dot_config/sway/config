@@ -2,7 +2,7 @@
 
 include /etc/sway/config.d/*
 include /etc/sway/config-vars.d/*
-include ~/.config/sway/themes/catppuccin-frappe
+include ~/.config/sway/themes/catppuccin-mocha
 
 ###############################################################################
 # VARIABLES

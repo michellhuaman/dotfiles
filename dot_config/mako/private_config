@@ -1,4 +1,4 @@
-include=~/.config/mako/themes/catppuccin-frappe/catppuccin-frappe-blue
+include=~/.config/mako/themes/catppuccin-mocha/catppuccin-mocha-blue
 
 sort=-time
 layer=overlay
