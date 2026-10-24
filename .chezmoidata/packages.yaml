@@ -54,6 +54,8 @@ packages:
       # notifications
       - libnotify
       - mako
+      # night light
+      - gammastep
       # fonts
       - jetbrains-mono-fonts-all
       - fontconfig
@@ -110,6 +112,8 @@ packages:
       # notifications
       - libnotify-bin             # notify-send
       - mako-notifier
+      # night light
+      - gammastep
       # fonts
       - fonts-jetbrains-mono
       - fontconfig
@@ -148,5 +152,7 @@ services:
     - kanshi.service
     - waybar-sway.service
     - swayidle-sway.service
+    - mako.service              # overrides the distro's unit of the same name
+    - gammastep.service
   system:
     - bluetooth.service
