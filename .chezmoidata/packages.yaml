@@ -7,9 +7,8 @@
 
 packages:
   fedora:
-    # Fedora's official repos don't ship cliphist.
-    copr:
-      - alternateved/cliphist
+    # COPR repos to enable before installing, as "owner/project".
+    copr: []
     dnf:
       # core session
       - sway
@@ -26,9 +25,10 @@ packages:
       # autostart
       - swaybg
       - wl-clipboard
-      - cliphist                  # from the COPR above
+      - cliphist                  # official repos since Fedora 44
       - NetworkManager
       - NetworkManager-tui        # nmtui is split out on Fedora
+      - NetworkManager-wifi       # Wi-Fi plugin, not always in a minimal install
       - network-manager-applet
       - blueman
       # media and hardware keys

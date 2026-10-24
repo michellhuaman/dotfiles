@@ -19,10 +19,12 @@ packages=(
 )
 
 echo "==> Fedora: installing ${#packages[@]} packages"
-sudo dnf install -y 'dnf-command(copr)'
-for repo in "${copr_repos[@]}"; do
-  sudo dnf copr enable -y "$repo"
-done
+if (( ${#copr_repos[@]} )); then
+  sudo dnf install -y 'dnf-command(copr)'
+  for repo in "${copr_repos[@]}"; do
+    sudo dnf copr enable -y "$repo"
+  done
+fi
 sudo dnf install -y "${packages[@]}"
 
 {{ else if or (eq $id "ubuntu") (contains "ubuntu" $like) -}}
