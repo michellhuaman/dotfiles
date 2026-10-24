@@ -63,6 +63,7 @@ packages:
       - python3-gobject           # waypaper needs PyGObject
       - gtk3
       - curl
+      - tar                       # not in a minimal install; the font script needs it
       - xz
 
   ubuntu:
