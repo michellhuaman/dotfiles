@@ -15,6 +15,7 @@ packages:
       - glib2                     # gsettings, used by both theme scripts
       - dconf                     # stores gsettings; a minimal install may lack it
       - libnotify
+      - ddcutil                   # ddc-brightness.sh, external monitor brightness
       # GTK and icon themes set by both theme scripts
       - yaru-gtk3-theme
       - yaru-icon-theme
@@ -33,6 +34,7 @@ packages:
       - alacritty
       - libglib2.0-bin            # gsettings
       - libnotify-bin             # notify-send
+      - ddcutil                   # ddc-brightness.sh, external monitor brightness
       # GTK and icon themes set by both theme scripts
       - yaru-theme-gtk
       - yaru-theme-icon
@@ -85,7 +87,6 @@ packages:
       - grim
       - slurp
       - jq
-      - ddcutil
       # notifications, night light, polkit agent
       - mako
       - gammastep
@@ -129,7 +130,6 @@ packages:
       - grim
       - slurp
       - jq
-      - ddcutil
       # notifications, night light, polkit agent
       - mako-notifier
       - gammastep
@@ -142,8 +142,10 @@ packages:
   gnome:
     fedora:
       - gnome-tweaks              # no flatpak
+      - zenity                    # ddc-brightness.sh's menu on GNOME
     ubuntu:
       - gnome-tweaks              # no flatpak
+      - zenity                    # ddc-brightness.sh's menu on GNOME
 
   # Fedora only, every session: COPR repos to enable first, as "owner/project".
   copr: []

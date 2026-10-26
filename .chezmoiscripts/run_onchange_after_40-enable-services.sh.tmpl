@@ -1,7 +1,7 @@
 #!/bin/bash
 # Enables this session's user units from dot_config/systemd/user, the system
-# services every machine needs, and (on sway) the i2c access ddc-brightness.sh
-# needs. Reruns when the service lists in .chezmoidata/packages.yaml change.
+# services every machine needs, and the i2c access ddc-brightness.sh needs.
+# Reruns when the service lists in .chezmoidata/packages.yaml change.
 set -euo pipefail
 
 user_units=(
@@ -29,11 +29,9 @@ for unit in "${system_units[@]}"; do
   sudo systemctl enable --now "$unit" || echo "!! Could not enable $unit" >&2
 done
 
-{{ if eq .session "sway" -}}
-# ddcutil talks to external monitors through /dev/i2c-*.
+# ddcutil talks to external monitors through /dev/i2c-* (both sessions).
 echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null
 sudo modprobe i2c-dev || true
 if getent group i2c >/dev/null; then
   sudo usermod -aG i2c "$USER"
 fi
-{{ end -}}
