@@ -1,0 +1,10 @@
+{{- /*
+  Asked once per machine on `chezmoi init`, then saved in
+  ~/.config/chezmoi/chezmoi.toml. setup.sh answers it with --session.
+    sway:  desktops (sway on Ubuntu or Fedora minimal)
+    gnome: laptops  (GNOME on Ubuntu or Fedora Workstation)
+*/ -}}
+{{- $session := promptChoiceOnce . "session" "Session for this machine" (list "sway" "gnome") -}}
+
+[data]
+  session = {{ $session | quote }}

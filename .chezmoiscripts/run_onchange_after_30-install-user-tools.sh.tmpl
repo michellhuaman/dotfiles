@@ -1,7 +1,7 @@
 #!/bin/bash
 # Things that come from neither the distro nor Flathub:
-# pipx tools (waypaper), starship and the JetBrainsMono Nerd Font.
-# Reruns when packages.pipx or the font version changes.
+# pipx tools (waypaper on sway), starship and the JetBrainsMono Nerd Font.
+# Reruns when the pipx lists or the font version change.
 set -euo pipefail
 
 bin_dir="$HOME/.local/bin"
@@ -11,7 +11,10 @@ export PATH="$bin_dir:$PATH"
 # --- pipx --------------------------------------------------------------
 # --system-site-packages lets waypaper use the distro's PyGObject.
 pipx_tools=(
-{{- range .packages.pipx }}
+{{- range .packages.pipx.common }}
+  {{ . | quote }}
+{{- end }}
+{{- range (index .packages.pipx .session) }}
   {{ . | quote }}
 {{- end }}
 )
@@ -32,6 +35,21 @@ if command -v starship >/dev/null; then
 else
   echo "==> starship (latest)"
   curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$bin_dir"
+fi
+
+{{ if or (eq .chezmoi.osRelease.id "ubuntu") (contains "ubuntu" (get .chezmoi.osRelease "idLike" | default "")) -}}
+# --- bat ---------------------------------------------------------------
+# Ubuntu names the command batcat; link it as bat, like on Fedora.
+if command -v batcat >/dev/null && [[ ! -e "$bin_dir/bat" ]]; then
+  ln -s "$(command -v batcat)" "$bin_dir/bat"
+fi
+
+{{ end -}}
+# --- bat theme cache -------------------------------------------------------
+# Makes the Catppuccin themes in ~/.config/bat/themes known to bat, so the
+# --theme in ~/.config/bat/config works from the first run.
+if command -v bat >/dev/null; then
+  bat cache --build >/dev/null
 fi
 
 # --- fonts -------------------------------------------------------------

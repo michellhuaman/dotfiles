@@ -1,0 +1,42 @@
+{{- /*
+  Target paths (as they end up in $HOME) that chezmoi should NOT install on
+  this machine. .session comes from .chezmoi.toml.tmpl.
+  Anything not listed here goes to every machine.
+*/ -}}
+
+{{ if ne .session "sway" }}
+# --- sway-only: GNOME machines skip these ---
+.config/sway
+.config/sway/**
+.config/swayidle
+.config/swayidle/**
+.config/swaylock
+.config/swaylock/**
+.config/kanshi
+.config/kanshi/**
+.config/waybar
+.config/waybar/**
+.config/mako
+.config/mako/**
+.config/fuzzel
+.config/fuzzel/**
+.config/gammastep
+.config/gammastep/**
+.config/systemd/user/kanshi.service
+.config/systemd/user/waybar-*.service
+.config/systemd/user/swayidle-*.service
+.config/systemd/user/mako.service
+.config/systemd/user/gammastep.service
+.config/systemd/user/polkit-mate.service
+.local/bin/cliphist-fuzzel-img.sh
+.local/bin/screenshot-menu.sh
+.local/bin/ddc-brightness.sh
+.local/bin/powermenu.sh
+.local/bin/theme-switch.sh
+.local/bin/wp-vol
+{{ end }}
+
+{{ if ne .session "gnome" }}
+# --- GNOME-only: sway machines skip these ---
+.local/bin/theme-toggle.sh
+{{ end }}

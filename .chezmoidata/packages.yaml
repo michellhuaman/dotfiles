@@ -1,15 +1,54 @@
-# Everything the sway setup needs, split by how it gets installed.
-# Native packages are only for the system layer (compositor, session
-# plumbing, hardware tools, fonts). Apps go through Flathub.
+# Everything each machine needs, split by session and by how it gets installed.
+#   common: every machine
+#   sway:   desktops running sway (Ubuntu, Fedora minimal)
+#   gnome:  laptops running GNOME (Ubuntu, Fedora Workstation)
+# The session comes from `chezmoi init` (see .chezmoi.toml.tmpl).
 #
+# Native packages are only for the system layer. Apps go through Flathub.
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
 
 packages:
-  fedora:
-    # COPR repos to enable before installing, as "owner/project".
-    copr: []
-    dnf:
+  common:
+    fedora:
+      - alacritty
+      - glib2                     # gsettings, used by both theme scripts
+      - dconf                     # stores gsettings; a minimal install may lack it
+      - libnotify
+      # GTK and icon themes set by both theme scripts
+      - yaru-gtk3-theme
+      - yaru-icon-theme
+      # fonts
+      - jetbrains-mono-fonts-all
+      - fontconfig
+      # CLI tools themed by the theme scripts
+      - bat
+      - btop
+      # used by the bootstrap scripts
+      - flatpak
+      - curl
+      - tar                       # not in a minimal install; the font script needs it
+      - xz
+    ubuntu:
+      - alacritty
+      - libglib2.0-bin            # gsettings
+      - libnotify-bin             # notify-send
+      # GTK and icon themes set by both theme scripts
+      - yaru-theme-gtk
+      - yaru-theme-icon
+      # fonts
+      - fonts-jetbrains-mono
+      - fontconfig
+      # CLI tools themed by the theme scripts
+      - bat                       # installs the command as batcat, see script 30
+      - btop
+      # used by the bootstrap scripts
+      - flatpak
+      - curl
+      - xz-utils
+
+  sway:
+    fedora:
       # core session
       - sway
       - swayidle
@@ -18,8 +57,7 @@ packages:
       - kanshi
       - xdg-desktop-portal-wlr
       - xdg-desktop-portal-gtk
-      # terminal, launcher, file manager
-      - alacritty
+      # launcher, file manager
       - fuzzel
       - Thunar
       # autostart
@@ -48,30 +86,15 @@ packages:
       - slurp
       - jq
       - ddcutil
-      - glib2                     # gsettings
-      - yaru-gtk3-theme
-      - yaru-icon-theme
-      # notifications
-      - libnotify
+      # notifications, night light, polkit agent
       - mako
-      # night light
       - gammastep
-      # password prompts for privileged actions
       - mate-polkit
-      # fonts
-      - jetbrains-mono-fonts-all
-      - fontconfig
-      # used by the bootstrap scripts
-      - flatpak
+      # waypaper (installed with pipx)
       - pipx
-      - python3-gobject           # waypaper needs PyGObject
+      - python3-gobject
       - gtk3
-      - curl
-      - tar                       # not in a minimal install; the font script needs it
-      - xz
-
-  ubuntu:
-    apt:
+    ubuntu:
       # core session
       - sway
       - swayidle
@@ -80,8 +103,7 @@ packages:
       - kanshi
       - xdg-desktop-portal-wlr
       - xdg-desktop-portal-gtk
-      # terminal, launcher, file manager
-      - alacritty
+      # launcher, file manager
       - fuzzel
       - thunar
       # autostart
@@ -108,43 +130,47 @@ packages:
       - slurp
       - jq
       - ddcutil
-      - libglib2.0-bin            # gsettings
-      - yaru-theme-gtk
-      - yaru-theme-icon
-      # notifications
-      - libnotify-bin             # notify-send
+      # notifications, night light, polkit agent
       - mako-notifier
-      # night light
       - gammastep
-      # password prompts for privileged actions
       - mate-polkit
-      # fonts
-      - fonts-jetbrains-mono
-      - fontconfig
-      # used by the bootstrap scripts
-      - flatpak
+      # waypaper (installed with pipx)
       - pipx
-      - python3-gi                # waypaper needs PyGObject
+      - python3-gi
       - gir1.2-gtk-3.0
-      - curl
-      - xz-utils
+
+  gnome:
+    fedora:
+      - gnome-tweaks              # no flatpak
+    ubuntu:
+      - gnome-tweaks              # no flatpak
+
+  # Fedora only, every session: COPR repos to enable first, as "owner/project".
+  copr: []
 
   # Installed per user from Flathub (no root, no polkit prompt).
   flatpak:
-    - com.brave.Browser           # turn on Origin mode in Settings > System
-    - org.pulseaudio.pavucontrol
-    - com.bitwarden.desktop
-    - io.github.celluloid_player.Celluloid
-    - org.libreoffice.LibreOffice
-    - org.localsend.localsend_app
-    # Apps your window rules already know about:
-    # - io.bassi.Amberol
-    # - org.gnome.Decibels
-    # - org.mozilla.firefox
+    common:
+      - com.brave.Browser         # turn on Origin mode in Settings > System
+      - com.bitwarden.desktop
+      - io.github.celluloid_player.Celluloid
+      - org.libreoffice.LibreOffice
+      - org.localsend.localsend_app
+    sway:
+      - org.pulseaudio.pavucontrol
+      # Apps your window rules already know about:
+      # - io.bassi.Amberol
+      # - org.gnome.Decibels
+      # - org.mozilla.firefox
+    gnome:
+      - org.gnome.Extensions
 
   # Not in Fedora or Ubuntu repos, not on Flathub.
   pipx:
-    - waypaper
+    common: []
+    sway:
+      - waypaper
+    gnome: []
 
 fonts:
   # Bump a version to make the font script download it again.
@@ -153,11 +179,14 @@ fonts:
 services:
   # User units from dot_config/systemd/user, enabled after files are applied.
   user:
-    - kanshi.service
-    - waybar-sway.service
-    - swayidle-sway.service
-    - mako.service              # overrides the distro's unit of the same name
-    - gammastep.service
-    - polkit-mate.service
+    sway:
+      - kanshi.service
+      - waybar-sway.service
+      - swayidle-sway.service
+      - mako.service              # overrides the distro's unit of the same name
+      - gammastep.service
+      - polkit-mate.service
+    gnome: []
+  # System units, every session.
   system:
     - bluetooth.service
