@@ -30,8 +30,6 @@
 .config/systemd/user/polkit-mate.service
 .local/bin/cliphist-fuzzel-img.sh
 .local/bin/screenshot-menu.sh
-.local/bin/ddc-brightness.sh
-.local/bin/powermenu.sh
 .local/bin/theme-switch.sh
 .local/bin/wp-vol
 {{ end }}
