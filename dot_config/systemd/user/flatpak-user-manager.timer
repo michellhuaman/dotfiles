@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Flatpak Manager (user) daily
+
+[Timer]
+Unit=flatpak-user-manager.service
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
