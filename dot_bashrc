@@ -36,7 +36,6 @@ alias list='ls -lAh --color=always --group-directories-first'
 alias c='clear'
 
 # Update aliases
-alias update='sudo dnf upgrade --refresh && flatpak update'
 alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
 alias update-starship="curl -sS https://starship.rs/install.sh | sh"
 
@@ -48,5 +47,36 @@ alias zz='systemctl suspend'
 # Alias to show the date
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
+#######################################################
+# FUNCTIONS
+#######################################################
+
+# System update that works on Fedora (dnf) and Ubuntu/Debian (apt)
+# Remove any old 'update' alias first so re-sourcing this file doesn't break the function
+unalias update 2>/dev/null
+update() {
+  if command -v dnf >/dev/null 2>&1; then
+    sudo dnf upgrade --refresh || return 1
+  elif command -v apt >/dev/null 2>&1; then
+    sudo apt update && sudo apt upgrade && sudo apt autoremove || return 1
+  else
+    echo "update: no supported package manager found (dnf or apt)" >&2
+    return 1
+  fi
+
+  # Update Flatpak apps if Flatpak is installed
+  if command -v flatpak >/dev/null 2>&1; then
+    flatpak update
+  fi
+
+  # Update Snap packages if Snap is installed (common on Ubuntu)
+  if command -v snap >/dev/null 2>&1; then
+    sudo snap refresh
+  fi
+}
+
 # Use Starship prompt
 eval "$(starship init bash)"
+
+# Use Bitwarden SSH Agent
+export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
