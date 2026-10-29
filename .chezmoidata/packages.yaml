@@ -177,7 +177,7 @@ packages:
 
 fonts:
   # Bump a version to make the font script download it again.
-  nerd_fonts: v3.4.0              # JetBrainsMono Nerd Font
+  nerd_fonts: v3.5.1              # JetBrainsMono Nerd Font
 
 services:
   # User units from dot_config/systemd/user, enabled after files are applied.
