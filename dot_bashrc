@@ -26,6 +26,9 @@ shopt -s histappend
 # Disable systemctl's auto-paging feature
 export SYSTEMD_PAGER=
 
+# Use Bitwarden SSH Agent
+export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
+
 #######################################################
 # ALIAS'S
 #######################################################
@@ -78,5 +81,3 @@ update() {
 # Use Starship prompt
 eval "$(starship init bash)"
 
-# Use Bitwarden SSH Agent
-export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
