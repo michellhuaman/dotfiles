@@ -1,30 +1,12 @@
 #!/bin/bash
 # Things that come from neither the distro nor Flathub:
-# pipx tools (waypaper on sway), starship and the JetBrainsMono Nerd Font.
-# Reruns when the pipx lists or the font version change.
+# starship and the JetBrainsMono Nerd Font.
+# Reruns when the font version changes.
 set -euo pipefail
 
 bin_dir="$HOME/.local/bin"
 mkdir -p "$bin_dir"
 export PATH="$bin_dir:$PATH"
-
-# --- pipx --------------------------------------------------------------
-# --system-site-packages lets waypaper use the distro's PyGObject.
-pipx_tools=(
-{{- range .packages.pipx.common }}
-  {{ . | quote }}
-{{- end }}
-{{- range (index .packages.pipx .session) }}
-  {{ . | quote }}
-{{- end }}
-)
-for tool in "${pipx_tools[@]}"; do
-  if pipx list --short 2>/dev/null | grep -q "^${tool} "; then
-    pipx upgrade "$tool" || true
-  else
-    pipx install --system-site-packages "$tool"
-  fi
-done
 
 # --- starship ------------------------------------------------------------
 # Latest release, installed once. Not in Fedora's repos, so use upstream's
@@ -42,6 +24,12 @@ fi
 # Ubuntu names the command batcat; link it as bat, like on Fedora.
 if command -v batcat >/dev/null && [[ ! -e "$bin_dir/bat" ]]; then
   ln -s "$(command -v batcat)" "$bin_dir/bat"
+fi
+
+# --- fd ----------------------------------------------------------------
+# Same for fd, which Ubuntu names fdfind.
+if command -v fdfind >/dev/null && [[ ! -e "$bin_dir/fd" ]]; then
+  ln -s "$(command -v fdfind)" "$bin_dir/fd"
 fi
 
 {{ end -}}

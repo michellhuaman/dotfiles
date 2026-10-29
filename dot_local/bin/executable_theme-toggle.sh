@@ -4,8 +4,9 @@
 # Toggles GNOME/GTK color-scheme, GTK theme, and icon theme between
 # light and dark.
 #
-# Bind this to a key in your sway config, e.g.:
-#   bindsym $mod+shift+t exec ~/.local/bin/theme-toggle.sh
+# Bind it via Settings > Keyboard > View and Customize Shortcuts > Custom
+# Shortcuts, pointing the command at the full path, e.g.:
+#   /home/youruser/.local/bin/theme-toggle.sh
 
 set -uo pipefail
 

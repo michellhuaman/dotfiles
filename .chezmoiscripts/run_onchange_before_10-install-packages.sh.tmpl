@@ -1,12 +1,10 @@
 #!/bin/bash
-# Native packages: the common list plus the list for this machine's session
-# (Fedora or Ubuntu, and their derivatives).
+# Native packages for Fedora or Ubuntu (and their derivatives).
 # Reruns whenever those lists in .chezmoidata/packages.yaml change.
 set -euo pipefail
 
 {{ $id := .chezmoi.osRelease.id -}}
 {{ $like := get .chezmoi.osRelease "idLike" | default "" -}}
-{{ $session := .session -}}
 
 {{ if or (eq $id "fedora") (contains "fedora" $like) -}}
 copr_repos=(
@@ -15,15 +13,12 @@ copr_repos=(
 {{- end }}
 )
 packages=(
-{{- range .packages.common.fedora }}
-  {{ . | quote }}
-{{- end }}
-{{- range (index .packages $session "fedora") }}
+{{- range .packages.fedora }}
   {{ . | quote }}
 {{- end }}
 )
 
-echo "==> Fedora ({{ $session }}): installing ${#packages[@]} packages"
+echo "==> Fedora: installing ${#packages[@]} packages"
 if (( ${#copr_repos[@]} )); then
   sudo dnf install -y 'dnf-command(copr)'
   for repo in "${copr_repos[@]}"; do
@@ -34,16 +29,13 @@ sudo dnf install -y "${packages[@]}"
 
 {{ else if or (eq $id "ubuntu") (contains "ubuntu" $like) -}}
 packages=(
-{{- range .packages.common.ubuntu }}
-  {{ . | quote }}
-{{- end }}
-{{- range (index .packages $session "ubuntu") }}
+{{- range .packages.ubuntu }}
   {{ . | quote }}
 {{- end }}
 )
 
-echo "==> Ubuntu ({{ $session }}): installing ${#packages[@]} packages"
-# Most of the sway tooling lives in universe; minimal installs may not have it.
+echo "==> Ubuntu: installing ${#packages[@]} packages"
+# gnome-tweaks lives in universe; minimal installs may not have it.
 if ! apt-cache policy | grep -q '/universe'; then
   sudo apt-get update
   sudo apt-get install -y software-properties-common

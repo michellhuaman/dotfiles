@@ -1,14 +1,11 @@
 #!/bin/bash
-# Flatpak apps (common + this session's), installed per user so no root or
+# Flatpak apps, installed per user so no root or
 # polkit agent is needed.
 # Reruns whenever those lists in .chezmoidata/packages.yaml change.
 set -euo pipefail
 
 apps=(
-{{- range .packages.flatpak.common }}
-  {{ . | quote }}
-{{- end }}
-{{- range (index .packages.flatpak .session) }}
+{{- range .packages.flatpak }}
   {{ . | quote }}
 {{- end }}
 )

@@ -1,195 +1,95 @@
-# Everything each machine needs, split by session and by how it gets installed.
-#   common: every machine
-#   sway:   desktops running sway (Ubuntu, Fedora minimal)
-#   gnome:  laptops running GNOME (Ubuntu, Fedora Workstation)
-# The session comes from `chezmoi init` (see .chezmoi.toml.tmpl).
+# Everything each machine needs (GNOME on Ubuntu or Fedora Workstation),
+# split by how it gets installed.
 #
-# Native packages are only for the system layer. Apps go through Flathub.
+# Native packages are only for the system layer. Apps go through Flathub,
+# or the Snap Store on Ubuntu for the few that work better as snaps.
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
 
 packages:
-  common:
-    fedora:
-      - alacritty
-      - glib2                     # gsettings, used by both theme scripts
-      - dconf                     # stores gsettings; a minimal install may lack it
-      - libnotify
-      - ddcutil                   # ddc-brightness.sh, external monitor brightness
-      # GTK and icon themes set by both theme scripts
-      - yaru-gtk3-theme
-      - yaru-icon-theme
-      # fonts
-      - jetbrains-mono-fonts-all
-      - fontconfig
-      # CLI tools themed by the theme scripts
-      - bat
-      - btop
-      # used by the bootstrap scripts
-      - flatpak
-      - curl
-      - tar                       # not in a minimal install; the font script needs it
-      - xz
-    ubuntu:
-      - alacritty
-      - libglib2.0-bin            # gsettings
-      - libnotify-bin             # notify-send
-      - ddcutil                   # ddc-brightness.sh, external monitor brightness
-      # GTK and icon themes set by both theme scripts
-      - yaru-theme-gtk
-      - yaru-theme-icon
-      # fonts
-      - fonts-jetbrains-mono
-      - fontconfig
-      # CLI tools themed by the theme scripts
-      - bat                       # installs the command as batcat, see script 30
-      - btop
-      # used by the bootstrap scripts
-      - flatpak
-      - curl
-      - xz-utils
+  fedora:
+    - alacritty
+    - glib2                     # gsettings, used by the theme scripts
+    - dconf                     # stores gsettings; a minimal install may lack it
+    - libnotify
+    - ddcutil                   # ddc-brightness.sh, external monitor brightness
+    - zenity                    # menus for ddc-brightness.sh and powermenu.sh
+    - gnome-tweaks              # no flatpak
+    # GTK and icon themes set by the theme scripts
+    - yaru-gtk3-theme
+    - yaru-icon-theme
+    # fonts
+    - jetbrains-mono-fonts-all
+    - fontconfig
+    # CLI tools themed by the theme scripts
+    - bat
+    - btop
+    # editor (a snap on Ubuntu, see snap below)
+    - neovim
+    # CLI tools
+    - ripgrep
+    - fd-find                   # installs the command as fd
+    - lazygit                   # from the dejan/lazygit COPR below
+    # used by the bootstrap scripts
+    - flatpak
+    - curl
+    - tar                       # not in a minimal install; the font script needs it
+    - xz
+  ubuntu:
+    - alacritty
+    - libglib2.0-bin            # gsettings
+    - libnotify-bin             # notify-send
+    - ddcutil                   # ddc-brightness.sh, external monitor brightness
+    - zenity                    # menus for ddc-brightness.sh and powermenu.sh
+    - gnome-tweaks              # no flatpak
+    # GTK and icon themes set by the theme scripts
+    - yaru-theme-gtk
+    - yaru-theme-icon
+    # fonts
+    - fonts-jetbrains-mono
+    - fontconfig
+    # CLI tools themed by the theme scripts
+    - bat                       # installs the command as batcat, see script 30
+    - btop
+    # CLI tools
+    - ripgrep
+    - fd-find                   # installs the command as fdfind, see script 30
+    - lazygit
+    # used by the bootstrap scripts
+    - flatpak
+    - snapd                     # for the snaps below; preinstalled on Ubuntu desktop
+    - curl
+    - xz-utils
 
-  sway:
-    fedora:
-      # core session
-      - sway
-      - swayidle
-      - swaylock
-      - waybar
-      - kanshi
-      - xdg-desktop-portal-wlr
-      - xdg-desktop-portal-gtk
-      # launcher, file manager
-      - fuzzel
-      - Thunar
-      # autostart
-      - swaybg
-      - wl-clipboard
-      - cliphist                  # official repos since Fedora 44
-      - NetworkManager
-      - NetworkManager-tui        # nmtui is split out on Fedora
-      - NetworkManager-wifi       # Wi-Fi plugin, not always in a minimal install
-      - network-manager-applet
-      - blueman
-      # media and hardware keys
-      - pipewire
-      - pipewire-pulseaudio
-      - wireplumber
-      - bc
-      - playerctl
-      - brightnessctl
-      - tuned-ppd                 # Fedora's power-profiles-daemon replacement (same D-Bus API)
-      # helper scripts
-      - gawk
-      - grep
-      - procps-ng
-      - grimshot
-      - grim
-      - slurp
-      - jq
-      # notifications, night light, polkit agent
-      - mako
-      - gammastep
-      - mate-polkit
-      # waypaper (installed with pipx)
-      - pipx
-      - python3-gobject
-      - gtk3
-    ubuntu:
-      # core session
-      - sway
-      - swayidle
-      - swaylock
-      - waybar
-      - kanshi
-      - xdg-desktop-portal-wlr
-      - xdg-desktop-portal-gtk
-      # launcher, file manager
-      - fuzzel
-      - thunar
-      # autostart
-      - swaybg
-      - wl-clipboard
-      - cliphist
-      - network-manager           # includes nmtui
-      - network-manager-gnome     # nm-applet
-      - blueman
-      # media and hardware keys
-      - pipewire
-      - pipewire-pulse
-      - wireplumber
-      - bc
-      - playerctl
-      - brightnessctl
-      - power-profiles-daemon
-      # helper scripts
-      - gawk                      # Ubuntu's default awk is mawk
-      - grep
-      - procps
-      - grimshot
-      - grim
-      - slurp
-      - jq
-      # notifications, night light, polkit agent
-      - mako-notifier
-      - gammastep
-      - mate-polkit
-      # waypaper (installed with pipx)
-      - pipx
-      - python3-gi
-      - gir1.2-gtk-3.0
-
-  gnome:
-    fedora:
-      - gnome-tweaks              # no flatpak
-      - zenity                    # ddc-brightness.sh's menu on GNOME
-    ubuntu:
-      - gnome-tweaks              # no flatpak
-      - zenity                    # ddc-brightness.sh's menu on GNOME
-
-  # Fedora only, every session: COPR repos to enable first, as "owner/project".
-  copr: []
+  # Fedora only: COPR repos to enable first, as "owner/project".
+  copr:
+    - dejan/lazygit             # not in Fedora's repos; the one lazygit's README names
 
   # Installed per user from Flathub (no root, no polkit prompt).
   flatpak:
-    common:
-      - com.brave.Browser         # turn on Origin mode in Settings > System
-      - com.bitwarden.desktop
-      - io.github.celluloid_player.Celluloid
-      - org.libreoffice.LibreOffice
-      - org.localsend.localsend_app
-      - net.ankiweb.Anki
-    sway:
-      - org.pulseaudio.pavucontrol
-      # Apps your window rules already know about:
-      # - io.bassi.Amberol
-      # - org.gnome.Decibels
-      # - org.mozilla.firefox
-    gnome:
-      - org.gnome.Extensions
+    - com.brave.Browser         # turn on Origin mode in Settings > System
+    - com.bitwarden.desktop
+    - io.github.celluloid_player.Celluloid
+    - org.libreoffice.LibreOffice
+    - org.localsend.localsend_app
+    - net.ankiweb.Anki
+    - org.gnome.Extensions
 
-  # Not in Fedora or Ubuntu repos, not on Flathub.
-  pipx:
-    common: []
-    sway:
-      - waypaper
-    gnome: []
+  # Ubuntu only: installed from the Snap Store. classic: true for snaps that
+  # need full system access (installed with --classic). Fedora gets Neovim
+  # from its own repos instead (see fedora above).
+  snap:
+    - name: nvim                # Neovim
+      classic: true
+    - name: code                # VS Code
+      classic: true
 
 fonts:
   # Bump a version to make the font script download it again.
   nerd_fonts: v3.5.1              # JetBrainsMono Nerd Font
 
 services:
-  # User units from dot_config/systemd/user, enabled after files are applied.
+  # User units from dot_config/systemd/user, enabled and started after files
+  # are applied.
   user:
-    sway:
-      - kanshi.service
-      - waybar-sway.service
-      - swayidle-sway.service
-      - mako.service              # overrides the distro's unit of the same name
-      - gammastep.service
-      - polkit-mate.service
-    gnome: []
-  # System units, every session.
-  system:
-    - bluetooth.service
+    - flatpak-user-manager.timer  # daily flatpak update, on AC power only

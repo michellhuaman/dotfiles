@@ -1,21 +1,14 @@
 #!/bin/bash
 # Starts a new machine on the same theme the repo's configs use
 # (Catppuccin mocha, accent blue), instead of GNOME's default light theme.
-# The GTK and icon theme names match what the theme scripts set:
-#   sway:  theme-switch.sh with mocha + blue -> Yaru-blue-dark
-#   gnome: theme-toggle.sh in dark mode      -> Yaru-dark
+# The GTK and icon theme names match what theme-toggle.sh sets in dark mode.
 #
 # run_once_: runs on the first apply only (and again only if this file
 # changes), so it never undoes a theme you picked later with the scripts.
 set -euo pipefail
 
-{{ if eq .session "sway" -}}
-gtk_theme="Yaru-blue-dark"
-icon_theme="Yaru-blue-dark"
-{{- else -}}
 gtk_theme="Yaru-dark"
 icon_theme="Yaru-dark"
-{{- end }}
 
 if ! command -v gsettings >/dev/null; then
   echo "!! gsettings not found, skipping the default theme" >&2
@@ -27,12 +20,12 @@ schema=org.gnome.desktop.interface
 if ! gsettings set "$schema" color-scheme 'prefer-dark' \
    || ! gsettings set "$schema" gtk-theme "$gtk_theme" \
    || ! gsettings set "$schema" icon-theme "$icon_theme"; then
-  echo "!! Couldn't change the GTK settings; run your theme script once after logging in" >&2
+  echo "!! Couldn't change the GTK settings; run theme-toggle.sh once after logging in" >&2
   exit 0
 fi
 
 # Each gsettings call is a separate process, so if the value doesn't read back,
 # it went to the in-memory backend and won't survive (dconf missing).
 if [[ "$(gsettings get "$schema" gtk-theme)" != "'$gtk_theme'" ]]; then
-  echo "!! The theme didn't persist (is dconf installed?); run your theme script once after logging in" >&2
+  echo "!! The theme didn't persist (is dconf installed?); run theme-toggle.sh once after logging in" >&2
 fi
