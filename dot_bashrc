@@ -40,7 +40,7 @@ alias c='clear'
 
 # Update aliases
 alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
-alias update-starship="curl -sS https://starship.rs/install.sh | sh"
+alias update-starship="curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin"
 
 # Power aliases
 alias off='systemctl poweroff'
@@ -80,4 +80,3 @@ update() {
 
 # Use Starship prompt
 eval "$(starship init bash)"
-
