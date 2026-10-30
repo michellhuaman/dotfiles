@@ -1,6 +1,7 @@
 #!/bin/bash
 # Enables the user units from dot_config/systemd/user listed in
-# .chezmoidata/packages.yaml, and sets up the i2c access ddc-brightness.sh needs.
+# .chezmoidata/packages.yaml. (The i2c access ddc-brightness.sh needs is
+# system setup, done by workstation-bootstrap's setup.sh.)
 # Reruns when the service list in .chezmoidata/packages.yaml changes.
 set -euo pipefail
 
@@ -17,11 +18,4 @@ if (( ${#user_units[@]} )); then
     echo "!! No systemd user manager reachable; run this later:" >&2
     echo "   systemctl --user enable --now ${user_units[*]}" >&2
   fi
-fi
-
-# ddcutil talks to external monitors through /dev/i2c-*.
-echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null
-sudo modprobe i2c-dev || true
-if getent group i2c >/dev/null; then
-  sudo usermod -aG i2c "$USER"
 fi

@@ -1,88 +1,20 @@
-# Everything each machine needs (GNOME on Ubuntu or Fedora Workstation),
-# split by how it gets installed.
+# What chezmoi installs in your home folder, without sudo.
 #
-# Native packages are only for the system layer. Apps go through Flathub,
-# or the Snap Store on Ubuntu for the few that work better as snaps.
+# System packages (dnf/apt, COPR, snaps) live in the workstation-bootstrap
+# repo instead, which also installs Bitwarden and chezmoi itself.
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
 
 packages:
-  fedora:
-    - alacritty
-    - glib2                     # gsettings, used by the theme scripts
-    - dconf                     # stores gsettings; a minimal install may lack it
-    - libnotify
-    - ddcutil                   # ddc-brightness.sh, external monitor brightness
-    - zenity                    # menus for ddc-brightness.sh and powermenu.sh
-    - gnome-tweaks              # no flatpak
-    # GTK and icon themes set by the theme scripts
-    - yaru-gtk3-theme
-    - yaru-icon-theme
-    # fonts
-    - jetbrains-mono-fonts-all
-    - fontconfig
-    # CLI tools themed by the theme scripts
-    - bat
-    - btop
-    # editor (a snap on Ubuntu, see snap below)
-    - neovim
-    # CLI tools
-    - ripgrep
-    - fd-find                   # installs the command as fd
-    - lazygit                   # from the dejan/lazygit COPR below
-    # used by the bootstrap scripts
-    - flatpak
-    - curl
-    - tar                       # not in a minimal install; the font script needs it
-    - xz
-  ubuntu:
-    - alacritty
-    - libglib2.0-bin            # gsettings
-    - libnotify-bin             # notify-send
-    - ddcutil                   # ddc-brightness.sh, external monitor brightness
-    - zenity                    # menus for ddc-brightness.sh and powermenu.sh
-    - gnome-tweaks              # no flatpak
-    # GTK and icon themes set by the theme scripts
-    - yaru-theme-gtk
-    - yaru-theme-icon
-    # fonts
-    - fonts-jetbrains-mono
-    - fontconfig
-    # CLI tools themed by the theme scripts
-    - bat                       # installs the command as batcat, see script 30
-    - btop
-    # CLI tools
-    - ripgrep
-    - fd-find                   # installs the command as fdfind, see script 30
-    - lazygit
-    # used by the bootstrap scripts
-    - flatpak
-    - snapd                     # for the snaps below; preinstalled on Ubuntu desktop
-    - curl
-    - xz-utils
-
-  # Fedora only: COPR repos to enable first, as "owner/project".
-  copr:
-    - dejan/lazygit             # not in Fedora's repos; the one lazygit's README names
-
   # Installed per user from Flathub (no root, no polkit prompt).
   flatpak:
     - com.brave.Browser         # turn on Origin mode in Settings > System
-    - com.bitwarden.desktop
+    - com.bitwarden.desktop     # also installed by setup.sh, as the SSH agent
     - io.github.celluloid_player.Celluloid
     - org.libreoffice.LibreOffice
     - org.localsend.localsend_app
     - net.ankiweb.Anki
     - org.gnome.Extensions
-
-  # Ubuntu only: installed from the Snap Store. classic: true for snaps that
-  # need full system access (installed with --classic). Fedora gets Neovim
-  # from its own repos instead (see fedora above).
-  snap:
-    - name: nvim                # Neovim
-      classic: true
-    - name: code                # VS Code
-      classic: true
 
 fonts:
   # Bump a version to make the font script download it again.
