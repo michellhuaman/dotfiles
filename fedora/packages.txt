@@ -1,0 +1,37 @@
+# Native packages for Fedora Workstation, installed with dnf by setup.sh.
+# One package per line; anything after # is a comment.
+# This is the system layer only: apps come from Flathub through chezmoi.
+
+# needed by setup.sh and chezmoi's scripts
+git
+openssh-clients           # ssh, for the GitHub check and chezmoi's clone
+curl
+tar                       # chezmoi's installer and the font script
+gzip
+xz
+flatpak
+
+# GNOME plumbing used by the theme scripts
+glib2                     # gsettings
+dconf                     # stores gsettings; a minimal install may lack it
+libnotify                 # notify-send
+gnome-tweaks              # no flatpak
+yaru-gtk3-theme
+yaru-icon-theme
+
+# fonts
+jetbrains-mono-fonts-all
+fontconfig
+
+# ddc-brightness.sh and powermenu.sh
+ddcutil                   # external monitor brightness
+zenity                    # menus
+
+# terminal and CLI tools
+alacritty
+neovim
+bat
+btop
+ripgrep
+fd-find                   # installs the command as fd
+lazygit                   # from the dejan/lazygit COPR, see copr.txt

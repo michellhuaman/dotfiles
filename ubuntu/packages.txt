@@ -1,0 +1,37 @@
+# Native packages for Ubuntu desktop, installed with apt by setup.sh.
+# One package per line; anything after # is a comment.
+# This is the system layer only: apps come from Flathub through chezmoi.
+# Some of these are in universe, which setup.sh enables first.
+
+# needed by setup.sh and chezmoi's scripts
+git
+openssh-client            # ssh, for the GitHub check and chezmoi's clone
+curl
+tar
+gzip
+xz-utils
+flatpak
+snapd                     # for snaps.txt; preinstalled on Ubuntu desktop
+
+# GNOME plumbing used by the theme scripts
+libglib2.0-bin            # gsettings
+libnotify-bin             # notify-send
+gnome-tweaks              # no flatpak
+yaru-theme-gtk
+yaru-theme-icon
+
+# fonts
+fonts-jetbrains-mono
+fontconfig
+
+# ddc-brightness.sh and powermenu.sh
+ddcutil                   # external monitor brightness
+zenity                    # menus
+
+# terminal and CLI tools (Neovim is a snap, see snaps.txt)
+alacritty
+bat                       # installs the command as batcat; chezmoi links it as bat
+btop
+ripgrep
+fd-find                   # installs the command as fdfind; chezmoi links it as fd
+lazygit

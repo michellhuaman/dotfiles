@@ -1,0 +1,3 @@
+# COPR repositories enabled before packages.txt is installed, as owner/project.
+
+dejan/lazygit             # not in Fedora's repos; the one lazygit's README names
