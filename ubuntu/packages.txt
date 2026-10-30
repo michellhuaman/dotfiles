@@ -17,6 +17,7 @@ snapd                     # for snaps.txt; preinstalled on Ubuntu desktop
 libglib2.0-bin            # gsettings
 libnotify-bin             # notify-send
 gnome-tweaks              # no flatpak
+xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xdg-terminals.list
 yaru-theme-gtk
 yaru-theme-icon
 
