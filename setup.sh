@@ -207,7 +207,7 @@ if ! agent_ready; then
 
 Bitwarden is opening. In it:
   1. Log in (master password and two-step login).
-  2. Settings > SSH agent: turn on "Enable SSH agent".
+  2. File > Settings > App settings (all accounts): turn on "Enable SSH agent".
 Leave Bitwarden open and unlocked, then come back here.
 EOF
   until agent_ready; do

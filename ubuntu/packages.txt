@@ -32,6 +32,7 @@ zenity                    # menus
 alacritty
 bat                       # installs the command as batcat; chezmoi links it as bat
 btop
+htop
 ripgrep
 fd-find                   # installs the command as fdfind; chezmoi links it as fd
 lazygit

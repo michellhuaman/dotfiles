@@ -33,28 +33,28 @@ user tools) goes in the dotfiles repo, and `chezmoi apply` installs it.
 Refresh the copy on the drive:
 
 ```bash
-git -C /run/media/ms/<drive>/workstation-bootstrap pull
+git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
 ```
 
 ## Setting up a new machine
 
 1. **Install the distro.**
-   - Fedora: the Fedora Workstation image. Under **User Creation**, create `ms`
-     and tick **Make this user administrator**, or you won't have sudo.
+   - Fedora: the Fedora Workstation image. Under **User Creation**, create your
+     user and tick **Make this user administrator**, or you won't have sudo.
    - Ubuntu: the regular desktop image. The first user always has sudo.
    - Connect to Wi-Fi or Ethernet in the installer.
 2. **Log into GNOME, plug in the drive, open a terminal and run:**
 
    ```bash
-   bash /run/media/ms/<drive>/workstation-bootstrap/setup.sh
+   bash "/run/media/$USER/<drive>/workstation-bootstrap/setup.sh"
    ```
 
-   GNOME mounts the drive under `/run/media/ms/` on both Fedora and Ubuntu.
+   GNOME mounts the drive under `/run/media/$USER/` on both Fedora and Ubuntu.
 
    It asks for:
    - your **sudo password**, once, for the system packages;
-   - to **log into Bitwarden** and turn on **Settings > SSH agent**, then press
-     Enter;
+   - to **log into Bitwarden** and turn on **File > Settings > App settings
+     (all accounts) > Enable SSH agent**, then press Enter;
    - to **approve the key** in Bitwarden when it checks GitHub and clones the
      dotfiles;
    - your **Git name and email**, the first time chezmoi runs.
@@ -71,9 +71,9 @@ git -C /run/media/ms/<drive>/workstation-bootstrap pull
   SSH agent switch is off, or the vault has no SSH key items.
 - **"GitHub didn't accept a key"**: the key in Bitwarden isn't added to your
   GitHub account, or you denied the request in Bitwarden.
-- **`ms is not in the sudoers file`** (Fedora): the administrator box wasn't
-  ticked. Reinstall and tick it, or, if you set a root password, log in as root
-  and run `usermod -aG wheel ms`.
+- **`<your-user> is not in the sudoers file`** (Fedora): the administrator box
+  wasn't ticked. Reinstall and tick it, or, if you set a root password, log in
+  as root and run `usermod -aG wheel <your-user>`.
 - **Ubuntu waits on "Could not get lock"**: it's installing updates in the
   background right after installation. `setup.sh` waits up to 15 minutes.
 
