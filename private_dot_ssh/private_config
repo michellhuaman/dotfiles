@@ -2,3 +2,27 @@
 # the keys even where SSH_AUTH_SOCK isn't set by ~/.bashrc (VS Code, GNOME apps).
 Host *
     IdentityAgent ~/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock
+
+Host ubuntu
+    HostName 127.0.0.1
+    Port 2222
+    User mshf
+
+Host debian
+    HostName 127.0.0.1
+    Port 2223
+    User mshf
+
+Host centos
+    HostName 127.0.0.1
+    Port 2224
+    User mshf
+
+Host ubuntu debian centos
+    IdentityFile ~/.ssh/id_vms
+    IdentitiesOnly yes
+
+Host *
+    ServerAliveInterval 30
+    ForwardX11 no
+
