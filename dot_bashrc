@@ -78,6 +78,33 @@ update() {
   fi
 }
 
+# Safely eject a USB drive: usbeject sdb (or sdb1, or /dev/sdb)
+usbeject() {
+  if [ -z "$1" ]; then
+    echo "Usage: usbeject <device>   e.g. usbeject sdb"
+    return 1
+  fi
+
+  local dev="/dev/${1#/dev/}"
+  if [ ! -b "$dev" ]; then
+    echo "Error: $dev is not a valid device. Check with lsblk."
+    return 1
+  fi
+
+  # If a partition was given (sdb1), switch to the whole drive (sdb)
+  local parent
+  parent=$(lsblk -no PKNAME "$dev" | head -n1)
+  [ -n "$parent" ] && dev="/dev/$parent"
+
+  # Unmount every mounted partition on the drive
+  local part
+  for part in $(lsblk -lnpo NAME,MOUNTPOINT "$dev" | awk '$2 != "" {print $1}'); do
+    udisksctl unmount -b "$part" || return 1
+  done
+
+  udisksctl power-off -b "$dev" && echo "$dev is safe to remove."
+}
+
 # Use Starship prompt
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
