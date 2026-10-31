@@ -1,0 +1,6 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Renders .chezmoitemplates/starship.toml with the Catppuccin flavor that
+       theme-toggle.sh last set in this file (mocha on a new machine), so a
+       theme toggle never shows up as a difference. Edit that file, not this. */ -}}
+{{- $flavor := regexFind "(latte|frappe|macchiato|mocha)" (lower (regexFind `(?m)^palette = "catppuccin_[a-z]+"` .chezmoi.stdin)) | default "mocha" -}}
+{{- includeTemplate "starship.toml" (dict "flavor" $flavor) -}}

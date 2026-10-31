@@ -2,7 +2,7 @@
 
 # Active Catppuccin flavor.
 # Must stay defined before the [palettes.*] tables below.
-palette = "catppuccin_mocha"
+palette = "catppuccin_{{ .flavor }}"
 
 format = """
 $username\
