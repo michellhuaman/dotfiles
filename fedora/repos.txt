@@ -1,0 +1,4 @@
+# Vendor repositories added before packages.txt is installed: the URL of each
+# vendor's .repo file, saved to /etc/yum.repos.d/ under its own name.
+
+https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo   # Brave (https://brave.com/linux/)

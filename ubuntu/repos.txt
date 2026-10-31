@@ -1,0 +1,6 @@
+# Vendor repositories added before packages.txt is installed, one per line:
+#   <URL of the vendor's .sources file> <URL of its signing keyring>
+# The keyring is saved to /usr/share/keyrings/ under its own name, which must
+# match the Signed-By path inside the .sources file.
+
+https://brave-browser-apt-release.s3.brave.com/brave-browser.sources https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg   # Brave (https://brave.com/linux/)

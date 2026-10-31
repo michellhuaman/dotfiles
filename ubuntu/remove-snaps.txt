@@ -1,3 +1,3 @@
 # Preinstalled snaps setup.sh removes (with --purge), before installing snaps.txt.
 
-firefox                   # Brave comes from Flathub
+firefox                   # Brave is installed from its own repo

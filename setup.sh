@@ -100,6 +100,14 @@ fedora_system() {
       sudo dnf copr enable -y "$c"
     done
   fi
+
+  # Vendor repos (fedora/repos.txt): each line is the URL of a .repo file.
+  # dnf imports the signing key the .repo file names on the first install.
+  local url
+  while read -r url; do
+    echo "Adding repo $(basename "$url")"
+    sudo curl -fsSLo "/etc/yum.repos.d/$(basename "$url")" "$url"
+  done < <(read_list "$script_dir/fedora/repos.txt")
   echo "Installing ${#pkgs[@]} packages"
   sudo dnf install -y "${pkgs[@]}"
 }
@@ -154,6 +162,23 @@ ubuntu_system() {
     "${apt[@]}" install -y software-properties-common
     sudo add-apt-repository -y universe
   fi
+
+  # Vendor repos (ubuntu/repos.txt): each line is "<.sources URL> <keyring URL>".
+  # The keyring goes to /usr/share/keyrings under its own file name, which is
+  # the path vendors put in their .sources file's Signed-By line.
+  local src key line
+  mapfile -t repos < <(read_list "$script_dir/ubuntu/repos.txt")
+  if (( ${#repos[@]} )) && ! command -v curl >/dev/null; then
+    "${apt[@]}" update
+    "${apt[@]}" install -y curl     # not on a fresh Ubuntu desktop
+  fi
+  for line in "${repos[@]}"; do
+    read -r src key <<<"$line"
+    echo "Adding repo $(basename "$src")"
+    sudo curl -fsSLo "/usr/share/keyrings/$(basename "$key")" "$key"
+    sudo curl -fsSLo "/etc/apt/sources.list.d/$(basename "$src")" "$src"
+  done
+
   "${apt[@]}" update
   echo "Installing ${#pkgs[@]} packages"
   "${apt[@]}" install -y "${pkgs[@]}"

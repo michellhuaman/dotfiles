@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | removes unwanted preinstalled apps; native packages, COPR/universe, snaps, i2c access; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | removes unwanted preinstalled apps; native packages, COPR/universe, vendor repos, snaps, i2c access; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, starship, fonts, theme, user services | no |
 
@@ -21,8 +21,10 @@ setup.sh                   the one script to run
 fedora/remove.txt          preinstalled packages to remove (globs work)
 fedora/packages.txt        dnf packages
 fedora/copr.txt            COPR repos enabled first
+fedora/repos.txt           vendor .repo files (Brave), added first
 ubuntu/remove.txt          preinstalled apt packages to purge
 ubuntu/remove-snaps.txt    preinstalled snaps to remove
+ubuntu/repos.txt           vendor .sources files and their keys (Brave), added first
 ubuntu/packages.txt        apt packages (universe is enabled if missing)
 ubuntu/snaps.txt           snaps, with their flags
 ```

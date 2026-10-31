@@ -35,3 +35,6 @@ htop
 ripgrep
 fd-find                   # installs the command as fd
 lazygit                   # from the dejan/lazygit COPR, see copr.txt
+
+# apps from vendor repos, see repos.txt
+brave-browser             # turn on Origin mode in Settings > System

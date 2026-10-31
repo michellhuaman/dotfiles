@@ -6,7 +6,7 @@ gnome-boxes               # Boxes
 snapshot                  # Camera
 gnome-connections         # Connections
 gnome-contacts            # Contacts
-firefox                   # Brave comes from Flathub
+firefox                   # Brave is installed from its own repo
 gnome-maps                # Maps
 malcontent-control        # Parental Controls (the app only; its libraries stay)
 gnome-tour                # Tour
