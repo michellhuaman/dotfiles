@@ -18,10 +18,7 @@ startup_mode = "Maximized"
 normal = { family = "JetBrainsMono Nerd Font", style = "Regular" }
 bold = { family = "JetBrainsMono Nerd Font", style = "Bold" }
 size = 13
-
-[font.offset]
-x = 0
-y = 1
+offset = { x = 0, y = 1 }
 
 [cursor.style]
 shape = "Beam"
@@ -29,7 +26,7 @@ blinking = "Off"
 
 # Shift+Enter: new line without submitting (Claude Code, chat TUIs)
 [[keyboard.bindings]]
-key = "Return"
+key = "Enter"
 mods = "Shift"
 chars = "\u001B\r"
 
