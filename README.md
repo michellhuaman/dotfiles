@@ -21,10 +21,12 @@ setup.sh                   the one script to run
 fedora/remove.txt          preinstalled packages to remove (globs work)
 fedora/packages.txt        dnf packages
 fedora/copr.txt            COPR repos enabled first
-fedora/repos.txt           vendor .repo files (Brave), added first
+fedora/repos/              vendor repo files (Brave, VS Code), copied to /etc/yum.repos.d/
 ubuntu/remove.txt          preinstalled apt packages to purge
 ubuntu/remove-snaps.txt    preinstalled snaps to remove
-ubuntu/repos.txt           vendor .sources files and their keys (Brave), added first
+ubuntu/repos/              vendor repo files (Brave, VS Code), copied to /etc/apt/sources.list.d/
+ubuntu/keys.txt            their signing keys, saved to /usr/share/keyrings/
+ubuntu/debconf.txt         answers for packages that ask questions while installing
 ubuntu/packages.txt        apt packages (universe is enabled if missing)
 ubuntu/snaps.txt           snaps, with their flags
 ```
@@ -32,6 +34,11 @@ ubuntu/snaps.txt           snaps, with their flags
 Removals run before installs, and only touch what is actually installed.
 On Ubuntu, a package is left alone (with a warning) if purging it would also
 remove something else, such as the desktop metapackage.
+
+To add an app from a vendor's own repository: put the vendor's repo file in
+`fedora/repos/` and `ubuntu/repos/` (on Ubuntu, also its key in
+`ubuntu/keys.txt`, under the name its `Signed-By` line expects), then add the
+package to both `packages.txt` files.
 
 To add a system package later: add it to the list for your distro, push, then
 re-run `setup.sh` (or install it by hand). Everything else (configs, flatpaks,

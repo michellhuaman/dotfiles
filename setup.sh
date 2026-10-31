@@ -101,13 +101,15 @@ fedora_system() {
     done
   fi
 
-  # Vendor repos (fedora/repos.txt): each line is the URL of a .repo file.
-  # dnf imports the signing key the .repo file names on the first install.
-  local url
-  while read -r url; do
-    echo "Adding repo $(basename "$url")"
-    sudo curl -fsSLo "/etc/yum.repos.d/$(basename "$url")" "$url"
-  done < <(read_list "$script_dir/fedora/repos.txt")
+  # Vendor repos: every file in fedora/repos/ is copied to /etc/yum.repos.d/.
+  # dnf imports the signing key named in each file (gpgkey=) on first install.
+  local repo
+  for repo in "$script_dir"/fedora/repos/*.repo; do
+    [[ -e "$repo" ]] || continue
+    echo "Adding repo $(basename "$repo")"
+    sudo install -m 644 "$repo" /etc/yum.repos.d/
+  done
+
   echo "Installing ${#pkgs[@]} packages"
   sudo dnf install -y "${pkgs[@]}"
 }
@@ -163,21 +165,36 @@ ubuntu_system() {
     sudo add-apt-repository -y universe
   fi
 
-  # Vendor repos (ubuntu/repos.txt): each line is "<.sources URL> <keyring URL>".
-  # The keyring goes to /usr/share/keyrings under its own file name, which is
-  # the path vendors put in their .sources file's Signed-By line.
-  local src key line
-  mapfile -t repos < <(read_list "$script_dir/ubuntu/repos.txt")
-  if (( ${#repos[@]} )) && ! command -v curl >/dev/null; then
+  # Vendor repos: the signing keys in ubuntu/keys.txt go to /usr/share/keyrings/
+  # (converted to binary if the vendor publishes them as text), then every file
+  # in ubuntu/repos/ is copied to /etc/apt/sources.list.d/. Each .sources file's
+  # Signed-By line names its key there.
+  local url name tmp line vendor_keys
+  mapfile -t vendor_keys < <(read_list "$script_dir/ubuntu/keys.txt")
+  if (( ${#vendor_keys[@]} )) && ! { command -v curl && command -v gpg; } >/dev/null; then
     "${apt[@]}" update
-    "${apt[@]}" install -y curl     # not on a fresh Ubuntu desktop
+    "${apt[@]}" install -y curl gpg     # curl isn't on a fresh Ubuntu desktop
   fi
-  for line in "${repos[@]}"; do
-    read -r src key <<<"$line"
-    echo "Adding repo $(basename "$src")"
-    sudo curl -fsSLo "/usr/share/keyrings/$(basename "$key")" "$key"
-    sudo curl -fsSLo "/etc/apt/sources.list.d/$(basename "$src")" "$src"
+  for line in "${vendor_keys[@]}"; do
+    read -r url name <<<"$line"
+    echo "Adding key $name"
+    tmp="$(mktemp)"
+    curl -fsSL "$url" -o "$tmp"
+    if grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
+      gpg --dearmor <"$tmp" >"$tmp.gpg" && mv "$tmp.gpg" "$tmp"
+    fi
+    sudo install -m 644 "$tmp" "/usr/share/keyrings/$name"
+    rm -f "$tmp"
   done
+  local repo
+  for repo in "$script_dir"/ubuntu/repos/*.sources; do
+    [[ -e "$repo" ]] || continue
+    echo "Adding repo $(basename "$repo")"
+    sudo install -m 644 "$repo" /etc/apt/sources.list.d/
+  done
+
+  # Answers for packages that would otherwise ask a question while installing.
+  read_list "$script_dir/ubuntu/debconf.txt" | sudo debconf-set-selections
 
   "${apt[@]}" update
   echo "Installing ${#pkgs[@]} packages"

@@ -1,3 +1,4 @@
 # Preinstalled snaps setup.sh removes (with --purge), before installing snaps.txt.
 
 firefox                   # Brave is installed from its own repo
+code                      # VS Code is installed from its own repo

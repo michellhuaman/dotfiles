@@ -2,4 +2,3 @@
 # --classic is for snaps that need full system access.
 
 nvim --classic            # Neovim; apt's is too old for LazyVim
-code --classic            # VS Code

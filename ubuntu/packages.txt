@@ -38,5 +38,6 @@ ripgrep
 fd-find                   # installs the command as fdfind; chezmoi links it as fd
 lazygit
 
-# apps from vendor repos, see repos.txt
+# apps from vendor repos, see repos/
 brave-browser             # turn on Origin mode in Settings > System
+code                      # VS Code

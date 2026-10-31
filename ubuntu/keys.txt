@@ -1,0 +1,7 @@
+# Signing keys for the repos in ubuntu/repos/, one per line:
+#   <key URL> <file name in /usr/share/keyrings/>
+# The file name must match the Signed-By line in the .sources file. Keys
+# published as text (.asc) are converted to binary first, as the docs do.
+
+https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg brave-browser-archive-keyring.gpg
+https://packages.microsoft.com/keys/microsoft.asc microsoft.gpg      # VS Code

@@ -1,0 +1,4 @@
+# Answers to questions packages would otherwise ask while installing,
+# in debconf-set-selections format.
+
+code code/add-microsoft-repo boolean true    # VS Code: keep its repo (the docs' recommended answer)
