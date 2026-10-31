@@ -16,6 +16,7 @@ glib2                     # gsettings
 dconf                     # stores gsettings; a minimal install may lack it
 libnotify                 # notify-send
 gnome-tweaks              # no flatpak
+xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xdg-terminals.list
 yaru-gtk3-theme
 yaru-icon-theme
 
