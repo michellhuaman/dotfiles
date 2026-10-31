@@ -7,16 +7,37 @@
 # Bind it via Settings > Keyboard > View and Customize Shortcuts > Custom
 # Shortcuts, pointing the command at the full path, e.g.:
 #   /home/youruser/.local/bin/theme-toggle.sh
+#
+# Note on bat: this script only switches which theme bat's config points to,
+# which does NOT require rebuilding bat's cache. Run `bat cache --build`
+# (or `batcat cache --build` on Ubuntu/Debian) manually only when you add,
+# remove, or update theme files in "$(bat --config-dir)/themes", e.g. after
+# first installing the Catppuccin themes.
 
 set -uo pipefail
 
 CONFIG_DIR="$HOME/.config"
 
-GTK_THEME_LIGHT="Yaru"
-GTK_THEME_DARK="Yaru-dark"
+# Pick GTK and icon themes based on the running distro.
+# Ubuntu ships Yaru; everything else (Fedora included) gets GNOME's
+# upstream default, Adwaita. Adwaita has no separate dark icon theme,
+# so the icons stay "Adwaita" in both modes.
+distro_id="$(. /etc/os-release 2>/dev/null && echo "${ID:-}")"
 
-ICON_THEME_LIGHT="Yaru"
-ICON_THEME_DARK="Yaru-dark"
+case "$distro_id" in
+ubuntu)
+  GTK_THEME_LIGHT="Yaru"
+  GTK_THEME_DARK="Yaru-dark"
+  ICON_THEME_LIGHT="Yaru"
+  ICON_THEME_DARK="Yaru-dark"
+  ;;
+*)
+  GTK_THEME_LIGHT="Adwaita"
+  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps
+  ICON_THEME_LIGHT="Adwaita"
+  ICON_THEME_DARK="Adwaita"
+  ;;
+esac
 
 # Apply a sed substitution to a config file only if that file exists,
 # so a missing app config never aborts the rest of the toggle.
@@ -30,50 +51,37 @@ apply_sed() {
 
 current="$(gsettings get org.gnome.desktop.interface color-scheme)"
 
+# Decide the target mode, then apply it once below.
 if [[ "$current" == "'prefer-dark'" ]]; then
-  # Switch to light
-  gsettings set org.gnome.desktop.interface color-scheme 'default'
-  gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME_LIGHT"
-  gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME_LIGHT"
-
-  apply_sed "s#themes/catppuccin-[a-z]*\.toml#themes/catppuccin-latte.toml#" \
-    "$CONFIG_DIR/alacritty/alacritty.toml"
-
-  apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_latte\"#" \
-    "$CONFIG_DIR/starship.toml"
-
-  apply_sed "s#themes/catppuccin_[a-z]*\.theme#themes/catppuccin_latte.theme#" \
-    "$CONFIG_DIR/btop/btop.conf"
-
-  apply_sed "s#--theme[= ].*#--theme=\"Catppuccin Latte\"#" \
-    "$CONFIG_DIR/bat/config"
-
-  notify-send "Theme" "Switched to light" 2>/dev/null || true
+  mode="light"
+  scheme="default"
+  gtk_theme="$GTK_THEME_LIGHT"
+  icon_theme="$ICON_THEME_LIGHT"
+  flavor="latte" # lowercase, used in file names
+  label="Latte"  # capitalized, used in bat's theme name
 else
-  # Switch to dark
-  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-  gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME_DARK"
-  gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME_DARK"
-
-  apply_sed "s#themes/catppuccin-[a-z]*\.toml#themes/catppuccin-mocha.toml#" \
-    "$CONFIG_DIR/alacritty/alacritty.toml"
-
-  apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_mocha\"#" \
-    "$CONFIG_DIR/starship.toml"
-
-  apply_sed "s#themes/catppuccin_[a-z]*\.theme#themes/catppuccin_mocha.theme#" \
-    "$CONFIG_DIR/btop/btop.conf"
-
-  apply_sed "s#--theme[= ].*#--theme=\"Catppuccin Mocha\"#" \
-    "$CONFIG_DIR/bat/config"
-
-  notify-send "Theme" "Switched to dark" 2>/dev/null || true
+  mode="dark"
+  scheme="prefer-dark"
+  gtk_theme="$GTK_THEME_DARK"
+  icon_theme="$ICON_THEME_DARK"
+  flavor="mocha"
+  label="Mocha"
 fi
 
-# Rebuild bat's syntax/theme cache once, regardless of which branch ran,
-# and only if bat/batcat is actually installed.
-if command -v batcat >/dev/null 2>&1; then
-  batcat cache --build
-elif command -v bat >/dev/null 2>&1; then
-  bat cache --build
-fi
+gsettings set org.gnome.desktop.interface color-scheme "$scheme"
+gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
+gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
+
+apply_sed "s#themes/catppuccin-[a-z]*\.toml#themes/catppuccin-${flavor}.toml#" \
+  "$CONFIG_DIR/alacritty/alacritty.toml"
+
+apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_${flavor}\"#" \
+  "$CONFIG_DIR/starship.toml"
+
+apply_sed "s#themes/catppuccin_[a-z]*\.theme#themes/catppuccin_${flavor}.theme#" \
+  "$CONFIG_DIR/btop/btop.conf"
+
+apply_sed "s#--theme[= ].*#--theme=\"Catppuccin ${label}\"#" \
+  "$CONFIG_DIR/bat/config"
+
+notify-send "Theme" "Switched to ${mode}" 2>/dev/null || true
