@@ -8,7 +8,6 @@
 packages:
   # Installed per user from Flathub (no root, no polkit prompt).
   flatpak:
-    - com.brave.Browser         # turn on Origin mode in Settings > System
     - com.bitwarden.desktop     # also installed by setup.sh, as the SSH agent
     - io.github.celluloid_player.Celluloid
     - org.libreoffice.LibreOffice
