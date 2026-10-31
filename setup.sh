@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Set up a fresh Fedora Workstation or Ubuntu desktop install.
 #
-#   1. System:    native packages, COPR or universe, snaps, i2c access (sudo)
+#   1. System:    removes unwanted preinstalled apps, then native packages,
+#                 COPR or universe, snaps, i2c access (sudo)
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -73,9 +74,25 @@ command -v curl >/dev/null && { curl -fsSI --max-time 10 https://github.com >/de
   || die "can't reach github.com; connect to the network and run this again"; }
 
 # ---- 1. system ------------------------------------------------------------------
+fedora_remove() {
+  local patterns installed
+  mapfile -t patterns < <(read_list "$script_dir/fedora/remove.txt")
+  (( ${#patterns[@]} )) || return 0
+  # Entries may be globs (libreoffice*); keep only what is installed.
+  mapfile -t installed < <(rpm -qa --qf '%{NAME}\n' "${patterns[@]}" 2>/dev/null | sort -u || true)
+  if (( ${#installed[@]} )); then
+    echo "Removing ${#installed[@]} packages: ${installed[*]}"
+    sudo dnf remove -y "${installed[@]}"
+  else
+    echo "Nothing from fedora/remove.txt is installed"
+  fi
+}
+
 fedora_system() {
   mapfile -t coprs < <(read_list "$script_dir/fedora/copr.txt")
   mapfile -t pkgs  < <(read_list "$script_dir/fedora/packages.txt")
+
+  fedora_remove
 
   if (( ${#coprs[@]} )); then
     dnf copr --help >/dev/null 2>&1 || sudo dnf install -y 'dnf-command(copr)'
@@ -87,12 +104,49 @@ fedora_system() {
   sudo dnf install -y "${pkgs[@]}"
 }
 
+ubuntu_remove() {
+  local p wanted=() installed=() extra=()
+  mapfile -t wanted < <(read_list "$script_dir/ubuntu/remove.txt")
+  for p in "${wanted[@]}"; do
+    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed' \
+      && installed+=("$p")
+  done
+  if (( ! ${#installed[@]} )); then
+    echo "Nothing from ubuntu/remove.txt is installed"
+    return 0
+  fi
+  # Removing a package can also remove anything that depends on it, such as
+  # Ubuntu's desktop metapackage. Only go ahead if apt would remove exactly
+  # what was asked for.
+  mapfile -t extra < <("${apt[@]}" -s purge "${installed[@]}" \
+    | awk '/^Purg /{print $2}' | grep -vxF -f <(printf '%s\n' "${installed[@]}") || true)
+  if (( ${#extra[@]} )); then
+    warn "Not removing ${installed[*]}: apt would also remove ${extra[*]}"
+    return 0
+  fi
+  echo "Removing ${#installed[@]} packages: ${installed[*]}"
+  "${apt[@]}" purge -y "${installed[@]}"
+}
+
+ubuntu_remove_snaps() {
+  local name names=()
+  mapfile -t names < <(read_list "$script_dir/ubuntu/remove-snaps.txt")
+  for name in "${names[@]}"; do
+    if snap list "$name" >/dev/null 2>&1; then
+      echo "Removing snap $name"
+      sudo snap remove --purge "$name"
+    fi
+  done
+}
+
 ubuntu_system() {
   mapfile -t pkgs  < <(read_list "$script_dir/ubuntu/packages.txt")
   mapfile -t snaps < <(read_list "$script_dir/ubuntu/snaps.txt")
   # Right after installation Ubuntu updates itself in the background; wait for
   # its lock instead of failing.
-  local apt=(sudo apt-get -o DPkg::Lock::Timeout=900)
+  apt=(sudo apt-get -o DPkg::Lock::Timeout=900)
+
+  ubuntu_remove
 
   if ! apt-cache policy | grep -q '/universe'; then
     echo "Enabling universe"
@@ -104,9 +158,10 @@ ubuntu_system() {
   echo "Installing ${#pkgs[@]} packages"
   "${apt[@]}" install -y "${pkgs[@]}"
 
-  if (( ${#snaps[@]} )); then
+  if command -v snap >/dev/null; then
     # The first snap command on a fresh install fails until snapd is seeded.
     sudo snap wait system seed.loaded
+    ubuntu_remove_snaps
     local line name
     for line in "${snaps[@]}"; do
       read -ra args <<<"$line"

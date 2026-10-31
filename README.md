@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | native packages, COPR/universe, snaps, i2c access; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | removes unwanted preinstalled apps; native packages, COPR/universe, snaps, i2c access; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, starship, fonts, theme, user services | no |
 
@@ -17,12 +17,19 @@ Ventoy, ...) and losing it costs nothing.
 ## Layout
 
 ```
-setup.sh              the one script to run
-fedora/packages.txt   dnf packages
-fedora/copr.txt       COPR repos enabled first
-ubuntu/packages.txt   apt packages (universe is enabled if missing)
-ubuntu/snaps.txt      snaps, with their flags
+setup.sh                   the one script to run
+fedora/remove.txt          preinstalled packages to remove (globs work)
+fedora/packages.txt        dnf packages
+fedora/copr.txt            COPR repos enabled first
+ubuntu/remove.txt          preinstalled apt packages to purge
+ubuntu/remove-snaps.txt    preinstalled snaps to remove
+ubuntu/packages.txt        apt packages (universe is enabled if missing)
+ubuntu/snaps.txt           snaps, with their flags
 ```
+
+Removals run before installs, and only touch what is actually installed.
+On Ubuntu, a package is left alone (with a warning) if purging it would also
+remove something else, such as the desktop metapackage.
 
 To add a system package later: add it to the list for your distro, push, then
 re-run `setup.sh` (or install it by hand). Everything else (configs, flatpaks,

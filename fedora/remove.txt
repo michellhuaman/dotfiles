@@ -1,0 +1,13 @@
+# Preinstalled packages setup.sh removes with dnf, before installing anything.
+# One package per line; globs work. Entries that aren't installed are skipped.
+# dnf also removes dependencies that nothing else needs any more.
+
+gnome-boxes               # Boxes
+snapshot                  # Camera
+gnome-connections         # Connections
+gnome-contacts            # Contacts
+firefox                   # Brave comes from Flathub
+gnome-maps                # Maps
+malcontent-control        # Parental Controls (the app only; its libraries stay)
+gnome-tour                # Tour
+libreoffice*              # LibreOffice comes from Flathub; this also clears the core and langpacks
