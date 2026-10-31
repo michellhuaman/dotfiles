@@ -24,11 +24,12 @@ fedora/copr.txt            COPR repos enabled first
 fedora/repos/              vendor repo files (Brave, VS Code), copied to /etc/yum.repos.d/
 ubuntu/remove.txt          preinstalled apt packages to purge
 ubuntu/remove-snaps.txt    preinstalled snaps to remove
-ubuntu/repos/              vendor repo files (Brave, VS Code), copied to /etc/apt/sources.list.d/
-ubuntu/keys.txt            their signing keys, saved to /usr/share/keyrings/
+ubuntu/repos/              vendor repo files (Brave, VS Code, Claude Desktop), copied to /etc/apt/sources.list.d/
+ubuntu/keys.txt            their signing keys, saved to /usr/share/keyrings/ (optionally fingerprint-checked)
 ubuntu/debconf.txt         answers for packages that ask questions while installing
 ubuntu/packages.txt        apt packages (universe is enabled if missing)
 ubuntu/snaps.txt           snaps, with their flags
+ubuntu/groups.txt          groups your user joins (kvm, for Claude Desktop's Cowork)
 ```
 
 Removals run before installs, and only touch what is actually installed.

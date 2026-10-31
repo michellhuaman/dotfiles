@@ -41,3 +41,4 @@ lazygit
 # apps from vendor repos, see repos/
 brave-browser             # turn on Origin mode in Settings > System
 code                      # VS Code
+claude-desktop            # Ubuntu/Debian only; also pulls in QEMU for Cowork

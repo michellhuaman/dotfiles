@@ -165,29 +165,34 @@ ubuntu_system() {
     sudo add-apt-repository -y universe
   fi
 
-  # Vendor repos: the signing keys in ubuntu/keys.txt go to /usr/share/keyrings/
-  # (converted to binary if the vendor publishes them as text), then every file
-  # in ubuntu/repos/ is copied to /etc/apt/sources.list.d/. Each .sources file's
-  # Signed-By line names its key there.
-  local url name tmp line vendor_keys
+  # Vendor repos: the signing keys in ubuntu/keys.txt go to /usr/share/keyrings/,
+  # then every .sources or .list file in ubuntu/repos/ is copied to
+  # /etc/apt/sources.list.d/. Each repo file names its key there.
+  # apt reads a key by its extension: .gpg must be binary, .asc must be text.
+  # So a key published as text is converted only when its name ends in .gpg.
+  local url name fpr got tmp line vendor_keys
   mapfile -t vendor_keys < <(read_list "$script_dir/ubuntu/keys.txt")
   if (( ${#vendor_keys[@]} )) && ! { command -v curl && command -v gpg; } >/dev/null; then
     "${apt[@]}" update
     "${apt[@]}" install -y curl gpg     # curl isn't on a fresh Ubuntu desktop
   fi
   for line in "${vendor_keys[@]}"; do
-    read -r url name <<<"$line"
+    read -r url name fpr <<<"$line"
     echo "Adding key $name"
     tmp="$(mktemp)"
     curl -fsSL "$url" -o "$tmp"
-    if grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
+    if [[ -n "$fpr" ]]; then
+      got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
+      [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
+    fi
+    if [[ "$name" == *.gpg ]] && grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
       gpg --dearmor <"$tmp" >"$tmp.gpg" && mv "$tmp.gpg" "$tmp"
     fi
     sudo install -m 644 "$tmp" "/usr/share/keyrings/$name"
     rm -f "$tmp"
   done
   local repo
-  for repo in "$script_dir"/ubuntu/repos/*.sources; do
+  for repo in "$script_dir"/ubuntu/repos/*.sources "$script_dir"/ubuntu/repos/*.list; do
     [[ -e "$repo" ]] || continue
     echo "Adding repo $(basename "$repo")"
     sudo install -m 644 "$repo" /etc/apt/sources.list.d/
@@ -226,6 +231,19 @@ i2c_access() {
   fi
 }
 
+join_groups() {
+  # Groups from <distro>/groups.txt, for apps that need device access. Groups
+  # that don't exist are skipped. Takes effect at the next login.
+  local g
+  while read -r g; do
+    if getent group "$g" >/dev/null; then
+      sudo usermod -aG "$g" "$USER"
+    else
+      warn "group $g doesn't exist, skipping"
+    fi
+  done < <(read_list "$script_dir/$distro/groups.txt")
+}
+
 if $do_system; then
   info "Step 1/3: system packages (sudo)"
   sudo -v || die "your user needs sudo rights"
@@ -237,6 +255,7 @@ if $do_system; then
 
   "${distro}_system"
   i2c_access
+  join_groups
 
   kill "$sudo_keepalive" 2>/dev/null || true
   trap - EXIT

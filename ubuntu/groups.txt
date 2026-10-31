@@ -1,0 +1,3 @@
+# Groups your user is added to (effective at the next login).
+
+kvm                       # Claude Desktop's Cowork runs tasks in a VM (/dev/kvm, /dev/vhost-vsock)
