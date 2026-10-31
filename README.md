@@ -36,50 +36,78 @@ means only you can read it, `executable_` makes it executable, `.tmpl` means
 it's a template, and `modify_` means a template that edits the existing file
 (see "Themes").
 
-## Making changes
+## Editing dotfiles
 
-The source of truth is this repo, at `~/.local/share/chezmoi`. Files in
-`~/.config` and the rest of `~` are output: chezmoi overwrites them on apply.
+The source of truth is this repo, at `~/.local/share/chezmoi`. Files in `~`
+(`~/.bashrc`, `~/.config/...`) are output: chezmoi writes them from here and
+overwrites them on apply. So changes are made here, never directly in `~`.
 
-**Usual workflow:** edit here, apply, commit, push.
+### The workflow
 
-```bash
-chezmoi edit --apply ~/.bashrc          # opens the source file for ~/.bashrc
-# or work in the repo directly:
-chezmoi cd
-vim dot_config/tmux/tmux.conf
-chezmoi diff                            # what apply would change
-chezmoi apply
-git add -A && git commit -m "..." && git push
-exit
-```
-
-On the other machines: `chezmoi update` (pull and apply).
-
-**When a change started in `~` instead**, for example a setting changed from
-inside an app:
+**1. Edit and apply**, using the file's real path in your home folder:
 
 ```bash
-chezmoi status        # files that differ from the source
-chezmoi diff          # how they differ
-chezmoi re-add        # copy changed plain files back into the source
-chezmoi add ~/.config/newapp/config     # start tracking a new file
+edot ~/.config/alacritty/alacritty.toml
 ```
 
-`re-add` skips templates and `modify_` files; edit those in the source.
+`edot` (a function in `.bashrc`) opens the right source file in `$EDITOR` and
+applies the change when you quit:
 
-**What goes where:**
+- for most files it runs `chezmoi edit --apply`;
+- for the four themed configs (Alacritty, starship, btop, bat) it opens their
+  template in `.chezmoitemplates/` instead, which is where those configs live
+  (see "Themes"). Plain `chezmoi edit` would open the wrong file for these.
 
-| Change | Where |
-| --- | --- |
-| a config file | its file under `dot_config/`, or `.chezmoitemplates/` for the four themed ones |
-| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` |
-| a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` |
-| a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` |
-| a dnf/apt package, COPR, snap | not here: workstation-bootstrap's package lists |
+**2. Commit and push:**
 
-Editing a list in `packages.yaml` makes the matching `run_onchange_` script run
-again on the next `chezmoi apply`.
+```bash
+chezmoi git -- diff                     # optional: review what you're committing
+chezmoi git -- add -A && chezmoi git -- commit -m "What changed" && chezmoi git -- push
+```
+
+**3. Pull on the other machines:**
+
+```bash
+chezmoi update                          # git pull + apply
+```
+
+You can commit at any time: theme toggles never count as changes (see
+"Themes"), so there's no need to switch to dark first.
+
+### Other situations
+
+**A change that started in `~`**, for example a tweak tested directly in
+`~/.config` or a setting saved from inside an app:
+
+```bash
+chezmoi diff          # see what differs from the repo
+chezmoi re-add        # copy the changed files into the repo
+```
+
+then continue from step 2. `re-add` skips templates and the four themed
+configs; for those, copy the change into the template with `edot` instead.
+To throw a change away, run `chezmoi apply`, which puts the repo's version
+back.
+
+**A new file to track:**
+
+```bash
+chezmoi add ~/.config/newapp/config
+```
+
+then step 2.
+
+**Something that isn't a single config file:**
+
+| Change | Where | Then |
+| --- | --- | --- |
+| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` | `chezmoi apply` installs it |
+| a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
+| a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
+| a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
+| a dnf/apt package, COPR or snap | not here: workstation-bootstrap's package lists | re-run its `setup.sh` |
+
+Each of these then goes through step 2 like any other change.
 
 ## Themes
 
@@ -110,16 +138,19 @@ toggle never shows up in `chezmoi diff`, `apply` never undoes it, and a real
 edit (say, a new font size) still goes through. A new machine starts on Mocha,
 matching the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
-To change one of these configs:
+To change one of these configs, use `edot` with its real path. It opens the
+template and applies when you quit:
 
 ```bash
-vim ~/.local/share/chezmoi/.chezmoitemplates/alacritty.toml
-chezmoi apply
+edot ~/.config/alacritty/alacritty.toml     # opens .chezmoitemplates/alacritty.toml
 ```
+
+(`chezmoi edit` on these paths would open the `modify_` file instead, which is
+not where the config is.)
 
 Only the theme line is protected. Anything else changed in `~/.config` (btop,
 for example, rewrites `btop.conf` with all its settings when it quits) shows up
-in `chezmoi diff`. To keep it, copy the line into the template.
+in `chezmoi diff`. To keep it, copy the line into the template with `edot`.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
 Yaru on Ubuntu, Adwaita everywhere else.
