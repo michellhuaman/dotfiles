@@ -42,6 +42,11 @@ fi
 alias list='ls -lAh --color=always --group-directories-first'
 alias c='clear'
 
+# Open Neovim when typing vim, if it's installed
+if command -v nvim >/dev/null 2>&1; then
+  alias vim='nvim'
+fi
+
 # Update aliases
 alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
 alias update-starship="curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin"
