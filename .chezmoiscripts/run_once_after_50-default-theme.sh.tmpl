@@ -7,8 +7,13 @@
 # changes), so it never undoes a theme you picked later with the scripts.
 set -euo pipefail
 
+{{ if eq .chezmoi.osRelease.id "ubuntu" -}}
 gtk_theme="Yaru-dark"
 icon_theme="Yaru-dark"
+{{- else -}}
+gtk_theme="Adwaita-dark"    # only affects GTK3 apps
+icon_theme="Adwaita"        # Adwaita has no separate dark icon theme
+{{- end }}
 
 if ! command -v gsettings >/dev/null; then
   echo "!! gsettings not found, skipping the default theme" >&2
