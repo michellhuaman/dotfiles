@@ -5,9 +5,10 @@
 #######################################################
 
 # User specific environment
-if ! [[ "$PATH" =~ "$HOME/.local/bin:" ]]; then
-  PATH="$HOME/.local/bin:$PATH"
-fi
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) PATH="$HOME/.local/bin:$PATH" ;;
+esac
 
 # Set up XDG folders
 export XDG_DATA_HOME="$HOME/.local/share"
@@ -26,6 +27,14 @@ else
   export EDITOR="vi"
   export VISUAL="vi"
 fi
+
+# Disable systemctl's auto-paging feature
+export SYSTEMD_PAGER=
+
+# Use Bitwarden SSH Agent. Set here, in the login shell GNOME starts the
+# session with, so it replaces the socket gcr-ssh-agent sets earlier and
+# reaches GUI apps too.
+export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
 
 # Get the aliases and functions. Sourced last, so .bashrc sees the PATH above
 # (starship lives in ~/.local/bin).

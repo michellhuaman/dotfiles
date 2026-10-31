@@ -158,7 +158,7 @@ Yaru on Ubuntu, Adwaita everywhere else.
 ## SSH and Git
 
 Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
-`~/.ssh/config` points every host at its socket, and `.bashrc` sets
+`~/.ssh/config` points every host at its socket, and `.bash_profile` sets
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
 `git push` and `ssh`. Git's name and email are asked once per machine by
 `chezmoi init`; to change them, run `chezmoi init` again.

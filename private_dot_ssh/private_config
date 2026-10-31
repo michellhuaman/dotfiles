@@ -1,5 +1,5 @@
 # Bitwarden desktop (Flatpak) is the SSH agent for every host, so ssh finds
-# the keys even where SSH_AUTH_SOCK isn't set by ~/.bashrc (VS Code, GNOME apps).
+# the keys even where SSH_AUTH_SOCK isn't set by ~/.bash_profile.
 Host *
     IdentityAgent ~/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock
 

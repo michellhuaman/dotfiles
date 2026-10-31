@@ -5,14 +5,18 @@ if [ -f /etc/bashrc ]; then
   . /etc/bashrc
 fi
 
+# Stop here if not running interactively. Environment variables belong in
+# .bash_profile, since GNOME's (non-interactive) login shell stops here too.
+[[ $- != *i* ]] && return
+
 #######################################################
 # EXPORTS
 #######################################################
 
 # Expand the history size
 export HISTFILESIZE=10000
-export HISTSIZE=500
-export HISTTIMEFORMAT="%F %T" # add timestamp to history
+export HISTSIZE=10000
+export HISTTIMEFORMAT="%F %T " # add timestamp to history
 
 # Don't put duplicate lines in the history and do not add lines that start with a space
 export HISTCONTROL=erasedups:ignoredups:ignorespace
@@ -23,11 +27,11 @@ shopt -s checkwinsize
 # Causes bash to append to history instead of overwriting it so if you start a new terminal, you have old session history
 shopt -s histappend
 
-# Disable systemctl's auto-paging feature
-export SYSTEMD_PAGER=
-
-# Use Bitwarden SSH Agent
-export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
+# Tab completion. Fedora loads it from /etc/bashrc; Ubuntu leaves it to ~/.bashrc
+if ! shopt -oq posix && [ -z "${BASH_COMPLETION_VERSINFO:-}" ] \
+  && [ -f /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+fi
 
 #######################################################
 # ALIAS'S
