@@ -105,6 +105,28 @@ usbeject() {
   udisksctl power-off -b "$dev" && echo "$dev is safe to remove."
 }
 
+# Edit a dotfile by its real path, then apply it: edot ~/.config/starship.toml
+# Themed configs (a modify_ file in chezmoi) open their template in
+# .chezmoitemplates instead, since that's where the config actually lives.
+edot() {
+  if [ -z "$1" ]; then
+    echo "Usage: edot <file>   e.g. edot ~/.config/alacritty/alacritty.toml"
+    return 1
+  fi
+
+  local src tpl
+  src="$(chezmoi source-path "$1")" || return 1
+  if [[ "$(basename "$src")" == modify_* ]]; then
+    tpl="$(grep -o 'includeTemplate "[^"]*"' "$src" | cut -d'"' -f2)"
+  fi
+
+  if [ -n "$tpl" ]; then
+    "${EDITOR:-vim}" "$(chezmoi source-path)/.chezmoitemplates/$tpl" && chezmoi apply "$1"
+  else
+    chezmoi edit --apply "$1"
+  fi
+}
+
 # Use Starship prompt
 if command -v starship >/dev/null 2>&1; then
   eval "$(starship init bash)"
