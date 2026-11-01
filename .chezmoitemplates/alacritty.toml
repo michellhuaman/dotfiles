@@ -11,7 +11,7 @@ padding = { x = 6, y = 6 }
 opacity = 1
 dynamic_padding = true
 decorations = "None"
-startup_mode = "Maximized"
+startup_mode = "Windowed"
 
 [font]
 # Check the exact name with: fc-list : family | grep -i <font>
