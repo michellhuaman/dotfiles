@@ -4,7 +4,8 @@ My GNOME setup for Fedora Workstation, Fedora Silverblue and Ubuntu, managed wit
 [chezmoi](https://www.chezmoi.io/).
 
 This repo is the user half of the setup. The system half (native packages,
-COPR/universe, snaps, i2c access, and installing Bitwarden and chezmoi) is in
+COPR/universe, snaps, Silverblue's layered packages, and installing Bitwarden
+and chezmoi) is in
 [workstation-bootstrap](https://github.com/michellhuaman/workstation-bootstrap),
 whose `setup.sh` clones and applies this repo on a new machine.
 
@@ -103,7 +104,7 @@ then step 2.
 
 | Change | Where | Then |
 | --- | --- | --- |
-| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` | `chezmoi apply` installs it |
+| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (`packages.flatpak_atomic` for apps that are native packages elsewhere, like Brave) | `chezmoi apply` installs it |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |

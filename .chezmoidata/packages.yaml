@@ -15,6 +15,11 @@ packages:
     - net.ankiweb.Anki
     - org.gnome.Extensions
 
+  # Only on image-based Fedora (Silverblue). Elsewhere workstation-bootstrap
+  # installs these natively from the vendor's repo.
+  flatpak_atomic:
+    - com.brave.Browser         # turn on Origin mode in Settings > System
+
 fonts:
   # Bump a version to make the font script download it again.
   nerd_fonts: v3.5.1              # JetBrainsMono Nerd Font

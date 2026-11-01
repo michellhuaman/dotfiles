@@ -8,6 +8,11 @@ apps=(
 {{- range .packages.flatpak }}
   {{ . | quote }}
 {{- end }}
+{{- if stat "/run/ostree-booted" }}
+{{- range .packages.flatpak_atomic }}
+  {{ . | quote }}
+{{- end }}
+{{- end }}
 )
 
 if ! command -v flatpak >/dev/null; then
