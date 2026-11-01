@@ -19,6 +19,15 @@ fonts:
   # Bump a version to make the font script download it again.
   nerd_fonts: v3.5.1              # JetBrainsMono Nerd Font
 
+mise:
+  # mise itself (the tools it installs are in dot_config/mise/config.toml).
+  # To update: new version from https://github.com/jdx/mise/releases, and its
+  # two linux lines from that release's SHASUMS256.txt.
+  version: v2026.10.25
+  sha256:
+    amd64: 5d362ecc578dc7c146679b841dda949d6472cbf86ff5635db7afdca1b6b3fd87   # mise-*-linux-x64
+    arm64: bb09e88b13164ca90691a5cc042726d079f0ba26ab55527344cb173c2e83c998   # mise-*-linux-arm64
+
 services:
   # User units from dot_config/systemd/user, enabled and started after files
   # are applied.

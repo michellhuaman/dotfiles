@@ -10,6 +10,15 @@ case ":$PATH:" in
   *) PATH="$HOME/.local/bin:$PATH" ;;
 esac
 
+# CLI tools from mise (~/.config/mise/config.toml), through its shims. Set
+# here rather than with `mise activate` in .bashrc, so GUI launches (the app
+# grid, keybindings) find them too. First on PATH, so they win over any
+# distro copy.
+case ":$PATH:" in
+  *":$HOME/.local/share/mise/shims:"*) ;;
+  *) PATH="$HOME/.local/share/mise/shims:$PATH" ;;
+esac
+
 # Set up XDG folders
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="$HOME/.config"

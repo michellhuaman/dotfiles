@@ -1,0 +1,11 @@
+{{- /* Files chezmoi downloads instead of keeping in the repo.
+       Versions and checksums live in .chezmoidata/packages.yaml. */ -}}
+{{- $arch := get (dict "amd64" "x64" "arm64" "arm64") .chezmoi.arch }}
+
+# mise, which installs the CLI tools in ~/.config/mise/config.toml.
+# Pinned and checksum-verified: a mismatch stops `chezmoi apply`.
+[".local/bin/mise"]
+    type = "file"
+    url = "https://github.com/jdx/mise/releases/download/{{ .mise.version }}/mise-{{ .mise.version }}-linux-{{ $arch }}"
+    executable = true
+    checksum.sha256 = "{{ index .mise.sha256 .chezmoi.arch }}"

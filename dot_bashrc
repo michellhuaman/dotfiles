@@ -68,7 +68,6 @@ fi
 
 # Update aliases
 alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
-alias update-starship="curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin"
 
 # Power aliases
 alias off='systemctl poweroff'
@@ -82,15 +81,22 @@ alias da='date "+%Y-%m-%d %A %T %Z"'
 # FUNCTIONS
 #######################################################
 
-# System update for Fedora (dnf) and Ubuntu/Debian (apt), then Flatpak and Snap apps
+# System update for Fedora Silverblue (rpm-ostree), Fedora (dnf) and
+# Ubuntu/Debian (apt), then Flatpak and Snap apps
 # Remove any old 'update' alias first so re-sourcing this file doesn't break the function
 unalias update 2>/dev/null
 update() {
   local ids status=0
   # Read the distro in a subshell so os-release's variables don't leak into this shell
   ids="$(. /etc/os-release && echo " ${ID:-} ${ID_LIKE:-} ")"
+  # Image-based Fedora (Silverblue) has no dnf on the host
+  [ -e /run/ostree-booted ] && ids=" ostree "
 
   case "$ids" in
+    *" ostree "*)
+      # Stages the new image; it takes effect at the next reboot
+      rpm-ostree upgrade || return 1
+      ;;
     *" fedora "*)
       sudo dnf upgrade --refresh || return 1
       ;;
@@ -113,9 +119,19 @@ update() {
     sudo snap refresh || status=1
   fi
 
+  # CLI tools are pinned in ~/.config/mise/config.toml, so only report what's newer
+  if command -v mise >/dev/null 2>&1; then
+    echo "update: newer CLI tool releases (bump them in ~/.config/mise/config.toml with edot):"
+    (cd "$HOME" && mise outdated --bump) || echo "update: couldn't check (offline or rate-limited?)"
+  fi
+
   # Ubuntu/Debian create this file when an update needs a reboot (kernel, libc...)
   if [ -f /var/run/reboot-required ]; then
     echo "update: a reboot is required to finish the update"
+  fi
+  # rpm-ostree stages the new image for the next boot
+  if [ -e /run/ostree-booted ] && rpm-ostree status 2>/dev/null | grep -q 'Staged: yes'; then
+    echo "update: reboot to switch to the new image"
   fi
 
   return "$status"

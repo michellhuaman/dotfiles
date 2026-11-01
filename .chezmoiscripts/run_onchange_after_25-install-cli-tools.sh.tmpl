@@ -1,0 +1,20 @@
+#!/bin/bash
+# CLI tools from ~/.config/mise/config.toml, at the versions pinned there.
+# Reruns whenever that file changes (hash: {{ include "dot_config/mise/config.toml" | sha256sum }}).
+#
+# Installs what's listed, then prunes versions no longer listed, so the
+# config is the whole set. Exits with an error (instead of skipping) when
+# something fails, so chezmoi tries again on the next apply.
+#
+# Many tools at once can hit GitHub's rate limit for anonymous downloads;
+# if that happens, set GITHUB_TOKEN and run `chezmoi apply` again.
+set -euo pipefail
+
+mise="$HOME/.local/bin/mise"     # installed by .chezmoiexternal.toml.tmpl
+[[ -x "$mise" ]] || { echo "!! $mise is missing; run chezmoi apply again" >&2; exit 1; }
+
+cd "$HOME"   # the global config, not some project's mise.toml
+echo "==> CLI tools (mise)"
+"$mise" install --yes
+"$mise" prune --yes
+"$mise" reshim

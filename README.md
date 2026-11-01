@@ -1,6 +1,6 @@
 # dotfiles
 
-My GNOME setup for Fedora Workstation and Ubuntu, managed with
+My GNOME setup for Fedora Workstation, Fedora Silverblue and Ubuntu, managed with
 [chezmoi](https://www.chezmoi.io/).
 
 This repo is the user half of the setup. The system half (native packages,
@@ -17,17 +17,19 @@ so `chezmoi apply` never asks for a password.
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
 .chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
-  packages.yaml         flatpaks, Nerd Font version, systemd user units
+  packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
+.chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
-  run_onchange_after_30-install-user-tools.sh.tmpl  starship, Nerd Font, bat/fd names, bat cache
+  run_onchange_after_25-install-cli-tools.sh.tmpl   mise install + prune; reruns when the mise config changes
+  run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
 .chezmoitemplates/      the four themed configs (see "Themes" below)
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
-dot_config/             ~/.config (Alacritty, bat, btop, Neovim, starship, tmux, systemd, ...)
+dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 ```
 
@@ -102,10 +104,12 @@ then step 2.
 | Change | Where | Then |
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` | `chezmoi apply` installs it |
+| a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
+| a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
-| a dnf/apt package, COPR or snap | not here: workstation-bootstrap's package lists | re-run its `setup.sh` |
+| a dnf/apt package, COPR, snap or (Silverblue) layered RPM | not here: workstation-bootstrap's package lists | re-run its `setup.sh` |
 
 Each of these then goes through step 2 like any other change.
 
@@ -162,6 +166,17 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
 `git push` and `ssh`. Git's name and email are asked once per machine by
 `chezmoi init`; to change them, run `chezmoi init` again.
+
+## CLI tools
+
+Command-line tools (Neovim, lazygit, ripgrep, fd, bat, btop, starship,
+tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
+machine gets the same versions whatever the distro. They're pinned in
+`~/.config/mise/config.toml`, and that file is the whole set: on each change
+chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`
+through its shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead
+of any distro copy. `update` lists newer releases; to take one, bump the
+version with `edot` and commit.
 
 ## Terminal
 

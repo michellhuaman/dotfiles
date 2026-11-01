@@ -1,0 +1,25 @@
+#!/bin/bash
+# The JetBrainsMono Nerd Font, and bat's theme cache.
+# Reruns when the font version changes. (CLI tools come from mise, see
+# run_onchange_after_25-install-cli-tools.sh.tmpl.)
+set -euo pipefail
+
+# --- bat theme cache -------------------------------------------------------
+# Makes the Catppuccin themes in ~/.config/bat/themes known to bat, so the
+# --theme in ~/.config/bat/config works from the first run. bat comes from
+# mise, whose shims aren't on PATH until the next login.
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+if command -v bat >/dev/null; then
+  bat cache --build >/dev/null
+fi
+
+# --- fonts -------------------------------------------------------------
+fontdir="$HOME/.local/share/fonts"
+
+echo "==> JetBrainsMono Nerd Font {{ .fonts.nerd_fonts }}"
+rm -rf "$fontdir/JetBrainsMonoNerdFont"
+mkdir -p "$fontdir/JetBrainsMonoNerdFont"
+curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ .fonts.nerd_fonts }}/JetBrainsMono.tar.xz" \
+  | tar -xJ -C "$fontdir/JetBrainsMonoNerdFont"
+
+fc-cache -f "$fontdir"
