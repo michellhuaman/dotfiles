@@ -1,0 +1,10 @@
+# VS Code, from https://code.visualstudio.com/docs/setup/linux
+# gpgkey is a local file (see keys.txt): rpm-ostree doesn't fetch https keys.
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+autorefresh=1
+type=rpm-md
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/microsoft.asc

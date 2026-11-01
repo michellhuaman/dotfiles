@@ -1,0 +1,8 @@
+# Signing keys for the repos in silverblue/repos/, one per line:
+#   <key URL> <file name in /etc/pki/rpm-gpg/> [fingerprint]
+# rpm-ostree doesn't download gpgkey=https:// URLs the way dnf does, so the
+# keys are saved locally and each repo file points at them with file://.
+# With a fingerprint, setup.sh stops if the downloaded key doesn't match it.
+
+https://packages.microsoft.com/keys/microsoft.asc microsoft.asc BC528686B50D79E339D3721CEB3E94ADBE1229CF   # VS Code
+https://brave-browser-rpm-release.s3.brave.com/brave-core.asc brave-core.asc   # Brave: holds two keys, neither matches the one on brave.com/linux; not pinned

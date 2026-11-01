@@ -1,7 +1,7 @@
 # workstation-bootstrap
 
-Takes a fresh **Fedora Workstation** or **Ubuntu desktop** install to a working
-GNOME desktop with my dotfiles.
+Takes a fresh **Fedora Workstation**, **Fedora Silverblue** or **Ubuntu desktop**
+install to a working GNOME desktop with my dotfiles.
 
 Who does what:
 
@@ -30,6 +30,11 @@ ubuntu/debconf.txt         answers for packages that ask questions while install
 ubuntu/packages.txt        apt packages (universe is enabled if missing)
 ubuntu/snaps.txt           snaps, with their flags
 ubuntu/groups.txt          groups your user joins (kvm, for Claude Desktop's Cowork)
+silverblue/layered.txt     RPMs layered with rpm-ostree (the whole set: unlisted ones are uninstalled)
+silverblue/override-remove.txt  base-image RPMs to remove (the whole set: unlisted removals are undone)
+silverblue/flatpak-remove.txt   preinstalled system Flatpaks to uninstall
+silverblue/repos/          vendor repo files, copied to /etc/yum.repos.d/
+silverblue/keys.txt        their signing keys, saved to /etc/pki/rpm-gpg/ (rpm-ostree can't fetch https keys)
 ```
 
 Removals run before installs, and only touch what is actually installed.
@@ -45,6 +50,30 @@ To add a system package later: add it to the list for your distro, push, then
 re-run `setup.sh` (or install it by hand). Everything else (configs, flatpaks,
 user tools) goes in the dotfiles repo, and `chezmoi apply` installs it.
 
+## Silverblue
+
+Silverblue boots from a read-only image, so there is no `dnf` on the host.
+`setup.sh` detects it (`/run/ostree-booted`) and, instead of installing
+packages:
+
+- makes the **layered packages** match `silverblue/layered.txt`: missing ones
+  are layered, layered ones no longer listed are uninstalled;
+- makes the **base-image removals** match `silverblue/override-remove.txt`,
+  undoing removals you've taken off the list;
+- uninstalls the preinstalled system Flatpaks in `flatpak-remove.txt`;
+- turns on automatic updates (`AutomaticUpdatePolicy=stage`), which download
+  new images in the background and apply them at the next reboot.
+
+So the lists are the full layered state: don't `rpm-ostree install` by hand,
+or the next run removes it. Try things in a toolbox first. CLI tools come
+from mise and apps from Flathub (both in the dotfiles), which keeps the
+layered list short. Layering changes take effect after a reboot, and a bad
+update is undone by picking the previous entry in the boot menu
+(or `rpm-ostree rollback`).
+
+If `rpm-ostree` says a transaction is already in progress, GNOME Software or
+the automatic updater is busy; wait a minute and run `setup.sh` again.
+
 ## Before leaving the old machine
 
 Refresh the copy on the drive:
@@ -56,7 +85,7 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
 ## Setting up a new machine
 
 1. **Install the distro.**
-   - Fedora: the Fedora Workstation image. Under **User Creation**, create your
+   - Fedora (Workstation or Silverblue): the matching image. Under **User Creation**, create your
      user and tick **Make this user administrator**, or you won't have sudo.
    - Ubuntu: the regular desktop image. The first user always has sudo.
    - Connect to Wi-Fi or Ethernet in the installer.

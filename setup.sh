@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora Workstation or Ubuntu desktop install.
+# Set up a fresh Fedora Workstation, Fedora Silverblue or Ubuntu desktop install.
 #
 #   1. System:    removes unwanted preinstalled apps, then native packages,
-#                 COPR or universe, snaps, i2c access (sudo)
+#                 COPR or universe, snaps, i2c access (sudo). On Silverblue:
+#                 makes the layered packages and base-image removals match
+#                 the lists in silverblue/, and turns on automatic updates
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -67,13 +69,41 @@ case " ${ID:-} ${ID_LIKE:-} " in
   *" ubuntu "*) distro=ubuntu ;;
   *) die "unsupported distro '${ID:-unknown}'; this repo has lists for Fedora and Ubuntu" ;;
 esac
-[[ -f "$script_dir/$distro/packages.txt" ]] || die "$distro/packages.txt not found next to setup.sh"
+# Fedora Atomic (Silverblue) boots from an image and has no dnf on the host.
+[[ $distro == fedora && -e /run/ostree-booted ]] && distro=silverblue
+main_list="packages.txt"
+[[ $distro == silverblue ]] && main_list="layered.txt"
+[[ -f "$script_dir/$distro/$main_list" ]] || die "$distro/$main_list not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
 command -v curl >/dev/null && { curl -fsSI --max-time 10 https://github.com >/dev/null \
   || die "can't reach github.com; connect to the network and run this again"; }
 
 # ---- 1. system ------------------------------------------------------------------
+
+# Downloads the signing keys listed in $1 (<url> <file name> [fingerprint])
+# into the directory $2. With a fingerprint, stops if the key doesn't match.
+# apt reads a key by its extension: .gpg must be binary, .asc must be text.
+# So a key published as text is converted only when its name ends in .gpg.
+install_keys() {
+  local list="$1" dest="$2" line url name fpr got tmp
+  while read -r line; do
+    read -r url name fpr <<<"$line"
+    echo "Adding key $name"
+    tmp="$(mktemp)"
+    curl -fsSL "$url" -o "$tmp"
+    if [[ -n "$fpr" ]]; then
+      got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
+      [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
+    fi
+    if [[ "$name" == *.gpg ]] && grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
+      gpg --dearmor <"$tmp" >"$tmp.gpg" && mv "$tmp.gpg" "$tmp"
+    fi
+    sudo install -m 644 "$tmp" "$dest/$name"
+    rm -f "$tmp"
+  done < <(read_list "$list")
+}
+
 fedora_remove() {
   local patterns installed
   mapfile -t patterns < <(read_list "$script_dir/fedora/remove.txt")
@@ -168,29 +198,12 @@ ubuntu_system() {
   # Vendor repos: the signing keys in ubuntu/keys.txt go to /usr/share/keyrings/,
   # then every .sources or .list file in ubuntu/repos/ is copied to
   # /etc/apt/sources.list.d/. Each repo file names its key there.
-  # apt reads a key by its extension: .gpg must be binary, .asc must be text.
-  # So a key published as text is converted only when its name ends in .gpg.
-  local url name fpr got tmp line vendor_keys
-  mapfile -t vendor_keys < <(read_list "$script_dir/ubuntu/keys.txt")
-  if (( ${#vendor_keys[@]} )) && ! { command -v curl && command -v gpg; } >/dev/null; then
+  if [[ -n "$(read_list "$script_dir/ubuntu/keys.txt")" ]] \
+     && ! { command -v curl && command -v gpg; } >/dev/null; then
     "${apt[@]}" update
     "${apt[@]}" install -y curl gpg     # curl isn't on a fresh Ubuntu desktop
   fi
-  for line in "${vendor_keys[@]}"; do
-    read -r url name fpr <<<"$line"
-    echo "Adding key $name"
-    tmp="$(mktemp)"
-    curl -fsSL "$url" -o "$tmp"
-    if [[ -n "$fpr" ]]; then
-      got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
-      [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
-    fi
-    if [[ "$name" == *.gpg ]] && grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
-      gpg --dearmor <"$tmp" >"$tmp.gpg" && mv "$tmp.gpg" "$tmp"
-    fi
-    sudo install -m 644 "$tmp" "/usr/share/keyrings/$name"
-    rm -f "$tmp"
-  done
+  install_keys "$script_dir/ubuntu/keys.txt" /usr/share/keyrings
   local repo
   for repo in "$script_dir"/ubuntu/repos/*.sources "$script_dir"/ubuntu/repos/*.list; do
     [[ -e "$repo" ]] || continue
@@ -222,13 +235,110 @@ ubuntu_system() {
   fi
 }
 
+# Prints one list field (e.g. requested-packages) of the newest deployment,
+# one entry per line. The newest is the staged one if an update is waiting
+# for a reboot, so changes made earlier in this run are counted.
+ostree_list() {
+  rpm-ostree status --json | python3 -c '
+import json, sys
+deps = json.load(sys.stdin).get("deployments", [])
+print("\n".join(deps[0].get(sys.argv[1], [])) if deps else "")' "$1" | sed '/^$/d'
+}
+
+# Prints the lines of $1 that aren't lines of $2 (both newline-separated).
+missing_from() {
+  grep -vxF -f <(printf '%s\n' "$2") <<<"$1" | sed '/^$/d' || true
+}
+
+silverblue_system() {
+  local repo want have add drop app
+
+  # Vendor repos: rpm-ostree doesn't download gpgkey=https:// URLs, so the
+  # keys go to /etc/pki/rpm-gpg/ and the repo files point there with file://.
+  install_keys "$script_dir/silverblue/keys.txt" /etc/pki/rpm-gpg
+  for repo in "$script_dir"/silverblue/repos/*.repo; do
+    [[ -e "$repo" ]] || continue
+    echo "Adding repo $(basename "$repo")"
+    sudo install -m 644 "$repo" /etc/yum.repos.d/
+  done
+
+  # Base-image removals: the list is the whole set, so removals that are no
+  # longer listed are undone. Entries that aren't in the image are skipped.
+  want="$(read_list "$script_dir/silverblue/override-remove.txt")"
+  have="$(ostree_list requested-base-removals)"
+  add=() drop=()
+  while read -r app; do
+    [[ -n "$app" ]] || continue
+    if rpm -q "$app" >/dev/null 2>&1; then add+=("$app"); else echo "$app isn't in the base image, skipping"; fi
+  done <<<"$(missing_from "$want" "$have")"
+  mapfile -t drop < <(missing_from "$have" "$want")
+  if (( ${#add[@]} )); then
+    echo "Removing from the base image: ${add[*]}"
+    sudo rpm-ostree override remove "${add[@]}"
+  fi
+  if (( ${#drop[@]} )); then
+    echo "Restoring to the base image (no longer in override-remove.txt): ${drop[*]}"
+    sudo rpm-ostree override reset "${drop[@]}"
+  fi
+
+  # Layered packages: the list is the whole set. --allow-inactive accepts a
+  # package the base image already has, so the requested set always matches
+  # the list.
+  want="$(read_list "$script_dir/silverblue/layered.txt")"
+  have="$(ostree_list requested-packages)"
+  mapfile -t add  < <(missing_from "$want" "$have")
+  mapfile -t drop < <(missing_from "$have" "$want")
+  if (( ${#add[@]} )); then
+    echo "Layering ${#add[@]} packages: ${add[*]}"
+    sudo rpm-ostree install --idempotent --allow-inactive "${add[@]}"
+  else
+    echo "All packages in layered.txt are already layered"
+  fi
+  if (( ${#drop[@]} )); then
+    echo "Uninstalling layered packages no longer in layered.txt: ${drop[*]}"
+    sudo rpm-ostree uninstall "${drop[@]}"
+  fi
+
+  # Preinstalled system Flatpaks (Fedora's remote).
+  while read -r app; do
+    if flatpak info --system "$app" >/dev/null 2>&1; then
+      echo "Removing flatpak $app"
+      sudo flatpak uninstall --system -y --noninteractive "$app"
+    fi
+  done < <(read_list "$script_dir/silverblue/flatpak-remove.txt")
+
+  # Automatic updates: download and stage new images in the background; they
+  # take effect at the next reboot.
+  local conf=/etc/rpm-ostreed.conf
+  if ! grep -q '^AutomaticUpdatePolicy=stage' "$conf" 2>/dev/null; then
+    echo "Turning on automatic (staged) OS updates"
+    if grep -q '^#\{0,1\}AutomaticUpdatePolicy=' "$conf" 2>/dev/null; then
+      sudo sed -i 's/^#\{0,1\}AutomaticUpdatePolicy=.*/AutomaticUpdatePolicy=stage/' "$conf"
+    else
+      printf '[Daemon]\nAutomaticUpdatePolicy=stage\n' | sudo tee -a "$conf" >/dev/null
+    fi
+    sudo rpm-ostree reload
+  fi
+  sudo systemctl enable --now rpm-ostreed-automatic.timer
+}
+
+# Adds you to group $1 if it exists (effective at the next login).
+add_to_group() {
+  local g="$1"
+  getent group "$g" >/dev/null || return 1
+  # On Silverblue, system groups can live in /usr/lib/group, which usermod
+  # doesn't edit; copy the group into /etc/group first.
+  if ! grep -q "^$g:" /etc/group && [[ -f /usr/lib/group ]] && grep -q "^$g:" /usr/lib/group; then
+    grep "^$g:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
+  fi
+  sudo usermod -aG "$g" "$USER"
+}
+
 i2c_access() {
   # ddcutil talks to external monitors through /dev/i2c-*.
   echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null
   sudo modprobe i2c-dev || true
-  if getent group i2c >/dev/null; then
-    sudo usermod -aG i2c "$USER"
-  fi
+  add_to_group i2c || true
 }
 
 join_groups() {
@@ -236,11 +346,7 @@ join_groups() {
   # that don't exist are skipped. Takes effect at the next login.
   local g
   while read -r g; do
-    if getent group "$g" >/dev/null; then
-      sudo usermod -aG "$g" "$USER"
-    else
-      warn "group $g doesn't exist, skipping"
-    fi
+    add_to_group "$g" || warn "group $g doesn't exist, skipping"
   done < <(read_list "$script_dir/$distro/groups.txt")
 }
 
@@ -363,6 +469,14 @@ Next: reboot, then log into GNOME as usual.
   also loads the i2c module and group that ddc-brightness.sh needs.
 
     systemctl reboot
+EOF
+if [[ $distro == silverblue ]] && [[ "$(rpm-ostree status --json | python3 -c '
+import json, sys
+deps = json.load(sys.stdin).get("deployments", [])
+print(bool(deps and deps[0].get("staged")))')" == True ]]; then
+  echo "  A new deployment is staged: layered packages and removals apply after the reboot."
+fi
+cat <<EOF
 
 If anything failed, fix it in the matching repo, push, and run this again:
   bash $script_dir/setup.sh          (add --no-system if only the dotfiles failed)

@@ -1,0 +1,11 @@
+# RPMs in the Silverblue base image that setup.sh removes with
+# `rpm-ostree override remove`. One package per line.
+#
+# This list is the whole set: entries not in the base image are skipped, and
+# removals no longer listed are undone with `rpm-ostree override reset`.
+# Packages that depend on each other must be listed together.
+
+firefox                   # Brave is layered from its own repo
+firefox-langpacks
+gnome-tour                # Tour
+malcontent-control        # Parental Controls (the app only)
