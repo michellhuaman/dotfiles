@@ -3,18 +3,10 @@
 #
 # This list is the whole layered set: setup.sh installs what's missing and
 # uninstalls layered packages that are no longer listed. Keep it short:
-# GUI apps come from Flathub and CLI tools from mise (both through chezmoi).
-# Changes take effect after a reboot.
+# GUI apps come from Flathub and CLI tools from mise (both through chezmoi),
+# and anything else goes in a toolbox. Changes take effect after a reboot.
 
 alacritty                 # no official flatpak
-ddcutil                   # ddc-brightness.sh; needs host access to /dev/i2c-*
-gnome-tweaks              # no flatpak
+ddcutil                   # ddc-brightness.sh; needs the host's /dev/i2c-*
 xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xdg-terminals.list
-htop                      # no upstream binaries for mise
 gcc                       # C compiler for Neovim's treesitter parsers
-
-# apps from vendor repos, see repos/ and keys.txt
-code                      # VS Code
-brave-browser             # installs into /opt, which layering has historically
-                          # failed on; if it does, remove it here and add
-                          # com.brave.Browser to the flatpak list in the dotfiles

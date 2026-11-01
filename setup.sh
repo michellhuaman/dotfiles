@@ -2,7 +2,7 @@
 # Set up a fresh Fedora Workstation, Fedora Silverblue or Ubuntu desktop install.
 #
 #   1. System:    removes unwanted preinstalled apps, then native packages,
-#                 COPR or universe, snaps, i2c access (sudo). On Silverblue:
+#                 COPR or universe, snaps, groups (sudo). On Silverblue:
 #                 makes the layered packages and base-image removals match
 #                 the lists in silverblue/, and turns on automatic updates
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
@@ -334,13 +334,6 @@ add_to_group() {
   sudo usermod -aG "$g" "$USER"
 }
 
-i2c_access() {
-  # ddcutil talks to external monitors through /dev/i2c-*.
-  echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf >/dev/null
-  sudo modprobe i2c-dev || true
-  add_to_group i2c || true
-}
-
 join_groups() {
   # Groups from <distro>/groups.txt, for apps that need device access. Groups
   # that don't exist are skipped. Takes effect at the next login.
@@ -360,7 +353,6 @@ if $do_system; then
   trap 'kill "$sudo_keepalive" 2>/dev/null || true' EXIT
 
   "${distro}_system"
-  i2c_access
   join_groups
 
   kill "$sudo_keepalive" 2>/dev/null || true
@@ -465,8 +457,8 @@ fi
 info "Done."
 cat <<EOF
 Next: reboot, then log into GNOME as usual.
-  Flatpak apps only show up in the app grid after a fresh login, and the reboot
-  also loads the i2c module and group that ddc-brightness.sh needs.
+  Flatpak apps only show up in the app grid after a fresh login, and group
+  changes (groups.txt) take effect then too.
 
     systemctl reboot
 EOF

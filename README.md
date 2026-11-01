@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | removes unwanted preinstalled apps; native packages, COPR/universe, vendor repos, snaps, i2c access; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | removes unwanted preinstalled apps; native packages, COPR/universe, vendor repos, snaps, groups; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, starship, fonts, theme, user services | no |
 
@@ -33,7 +33,7 @@ ubuntu/groups.txt          groups your user joins (kvm, for Claude Desktop's Cow
 silverblue/layered.txt     RPMs layered with rpm-ostree (the whole set: unlisted ones are uninstalled)
 silverblue/override-remove.txt  base-image RPMs to remove (the whole set: unlisted removals are undone)
 silverblue/flatpak-remove.txt   preinstalled system Flatpaks to uninstall
-silverblue/repos/          vendor repo files, copied to /etc/yum.repos.d/
+silverblue/repos/          vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
 silverblue/keys.txt        their signing keys, saved to /etc/pki/rpm-gpg/ (rpm-ostree can't fetch https keys)
 ```
 
@@ -65,9 +65,9 @@ packages:
   new images in the background and apply them at the next reboot.
 
 So the lists are the full layered state: don't `rpm-ostree install` by hand,
-or the next run removes it. Try things in a toolbox first. CLI tools come
-from mise and apps from Flathub (both in the dotfiles), which keeps the
-layered list short. Layering changes take effect after a reboot, and a bad
+or the next run removes it. CLI tools come from mise and apps from Flathub
+(both in the dotfiles), and everything else (VS Code, htop, dev tools) goes
+in a toolbox, which keeps the layered list short. Layering changes take effect after a reboot, and a bad
 update is undone by picking the previous entry in the boot menu
 (or `rpm-ostree rollback`).
 
@@ -105,7 +105,7 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
      dotfiles;
    - your **Git name and email**, the first time chezmoi runs.
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps appear in the app
-   grid, and `ddc-brightness.sh` gets its i2c access.
+   grid (and on Silverblue, the layered packages are there).
 
 ## If something goes wrong
 
