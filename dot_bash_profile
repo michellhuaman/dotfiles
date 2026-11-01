@@ -28,13 +28,12 @@ else
   export VISUAL="vi"
 fi
 
-# Disable systemctl's auto-paging feature
-export SYSTEMD_PAGER=
-
 # Use Bitwarden SSH Agent. Set here, in the login shell GNOME starts the
 # session with, so it replaces the socket gcr-ssh-agent sets earlier and
-# reaches GUI apps too.
-export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
+# reaches GUI apps too. Skipped on SSH logins, to keep a forwarded agent (ssh -A).
+if [ -z "${SSH_CONNECTION:-}" ]; then
+  export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
+fi
 
 # Get the aliases and functions. Sourced last, so .bashrc sees the PATH above
 # (starship lives in ~/.local/bin).
