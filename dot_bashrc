@@ -14,12 +14,12 @@ fi
 #######################################################
 
 # Expand the history size
-export HISTFILESIZE=10000
-export HISTSIZE=10000
-export HISTTIMEFORMAT="%F %T " # add timestamp to history
+HISTFILESIZE=100000
+HISTSIZE=100000
+HISTTIMEFORMAT="%F %T " # add timestamp to history
 
 # Don't put duplicate lines in the history and do not add lines that start with a space
-export HISTCONTROL=erasedups:ignoredups:ignorespace
+HISTCONTROL=ignoreboth:erasedups
 
 # Check the window size after each command and, if necessary, update the values of LINES and COLUMNS
 shopt -s checkwinsize
@@ -27,20 +27,39 @@ shopt -s checkwinsize
 # Causes bash to append to history instead of overwriting it so if you start a new terminal, you have old session history
 shopt -s histappend
 
+# Save each command to the history file right away, not only when the shell exits.
+# Must come before Starship's init, which moves it to STARSHIP_PROMPT_COMMAND and
+# runs it after reading the command's exit status. Skipped when re-sourcing this file.
+if [[ "${PROMPT_COMMAND[*]:-} ${STARSHIP_PROMPT_COMMAND:-}" != *"history -a"* ]]; then
+  PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
+
 # Tab completion. Fedora loads it from /etc/bashrc; Ubuntu leaves it to ~/.bashrc
 if ! shopt -oq posix && [ -z "${BASH_COMPLETION_VERSINFO:-}" ] \
   && [ -f /usr/share/bash-completion/bash_completion ]; then
   . /usr/share/bash-completion/bash_completion
 fi
 
+# Let less open archives and .deb files. Fedora sets LESSOPEN in /etc/profile.d
+if [ -z "${LESSOPEN:-}" ] && command -v lesspipe >/dev/null 2>&1; then
+  eval "$(SHELL=/bin/sh lesspipe)"
+fi
+
+# Colors for ls and grep. Fedora sets these in /etc/bashrc; Ubuntu leaves them to ~/.bashrc
+if [ -z "${LS_COLORS:-}" ] && command -v dircolors >/dev/null 2>&1; then
+  eval "$(dircolors -b)"
+fi
+
 #######################################################
-# ALIAS'S
+# ALIASES
 #######################################################
 # To temporarily bypass an alias, we precede the command with a \
 # EG: the ls command is aliased, but to use the normal ls command you would type \ls
 
 alias list='ls -lAh --color=always --group-directories-first'
 alias c='clear'
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
 
 # Open Neovim when typing vim, if it's installed
 if command -v nvim >/dev/null 2>&1; then
@@ -49,7 +68,7 @@ fi
 
 # Update aliases
 alias update-fw='sudo fwupdmgr refresh && sudo fwupdmgr update'
-alias update-starship="curl -sS https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin"
+alias update-starship="curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir ~/.local/bin"
 
 # Power aliases
 alias off='systemctl poweroff'
@@ -105,20 +124,26 @@ update() {
 # Safely eject a USB drive: usbeject sdb (or sdb1, or /dev/sdb)
 usbeject() {
   if [ -z "$1" ]; then
-    echo "Usage: usbeject <device>   e.g. usbeject sdb"
+    echo "Usage: usbeject <device>   e.g. usbeject sdb" >&2
     return 1
   fi
 
   local dev="/dev/${1#/dev/}"
   if [ ! -b "$dev" ]; then
-    echo "Error: $dev is not a valid device. Check with lsblk."
+    echo "Error: $dev is not a valid device. Check with lsblk." >&2
     return 1
   fi
 
   # If a partition was given (sdb1), switch to the whole drive (sdb)
   local parent
-  parent=$(lsblk -no PKNAME "$dev" | head -n1)
+  parent=$(lsblk -dno PKNAME "$dev")
   [ -n "$parent" ] && dev="/dev/$parent"
+
+  # Refuse internal disks, so a typo can't power off an NVMe or SATA drive
+  if [ "$(lsblk -dno TRAN "$dev")" != "usb" ]; then
+    echo "Error: $dev is not a USB drive." >&2
+    return 1
+  fi
 
   # Unmount every mounted partition on the drive
   local part
