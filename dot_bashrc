@@ -63,28 +63,43 @@ alias da='date "+%Y-%m-%d %A %T %Z"'
 # FUNCTIONS
 #######################################################
 
-# System update that works on Fedora (dnf) and Ubuntu/Debian (apt)
+# System update for Fedora (dnf) and Ubuntu/Debian (apt), then Flatpak and Snap apps
 # Remove any old 'update' alias first so re-sourcing this file doesn't break the function
 unalias update 2>/dev/null
 update() {
-  if command -v dnf >/dev/null 2>&1; then
-    sudo dnf upgrade --refresh || return 1
-  elif command -v apt >/dev/null 2>&1; then
-    sudo apt update && sudo apt upgrade && sudo apt autoremove || return 1
-  else
-    echo "update: no supported package manager found (dnf or apt)" >&2
-    return 1
-  fi
+  local ids status=0
+  # Read the distro in a subshell so os-release's variables don't leak into this shell
+  ids="$(. /etc/os-release && echo " ${ID:-} ${ID_LIKE:-} ")"
+
+  case "$ids" in
+    *" fedora "*)
+      sudo dnf upgrade --refresh || return 1
+      ;;
+    *" ubuntu "* | *" debian "*)
+      sudo apt update && sudo apt upgrade && sudo apt autoremove || return 1
+      ;;
+    *)
+      echo "update: unsupported distro:$ids" >&2
+      return 1
+      ;;
+  esac
 
   # Update Flatpak apps if Flatpak is installed
   if command -v flatpak >/dev/null 2>&1; then
-    flatpak update
+    flatpak update || status=1
   fi
 
   # Update Snap packages if Snap is installed (common on Ubuntu)
   if command -v snap >/dev/null 2>&1; then
-    sudo snap refresh
+    sudo snap refresh || status=1
   fi
+
+  # Ubuntu/Debian create this file when an update needs a reboot (kernel, libc...)
+  if [ -f /var/run/reboot-required ]; then
+    echo "update: a reboot is required to finish the update"
+  fi
+
+  return "$status"
 }
 
 # Safely eject a USB drive: usbeject sdb (or sdb1, or /dev/sdb)
