@@ -170,7 +170,7 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 
 ## CLI tools
 
-Command-line tools (Neovim, lazygit, ripgrep, fd, bat, btop, starship,
+Command-line tools (Neovim, lazygit, ripgrep, fd, bat, starship,
 tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
 machine gets the same versions whatever the distro. They're pinned in
 `~/.config/mise/config.toml`, and that file is the whole set: on each change

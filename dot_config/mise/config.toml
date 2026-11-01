@@ -15,4 +15,3 @@ fd = "10.5.0"
 bat = "0.26.1"
 starship = "1.27.0"
 tree-sitter = "0.27.1"            # nvim-treesitter (main branch) builds parsers with it
-"github:aristocratos/btop" = "1.4.8"   # mise's aqua entry lags btop's release assets
