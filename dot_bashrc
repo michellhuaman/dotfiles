@@ -1,6 +1,6 @@
 # .bashrc
 
-# Source global definitions
+# Source global definitions (Fedora; Ubuntu's bash reads /etc/bash.bashrc by itself)
 if [ -f /etc/bashrc ]; then
   . /etc/bashrc
 fi
