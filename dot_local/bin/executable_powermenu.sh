@@ -85,8 +85,6 @@ do_lock() {
 do_logout() {
   if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]]; then
     gnome-session-quit --logout --no-prompt
-  elif [[ "${XDG_CURRENT_DESKTOP:-}" == *niri* ]]; then
-    niri msg action quit --skip-confirmation
   else
     swaymsg exit
   fi

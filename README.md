@@ -1,17 +1,7 @@
 # dotfiles
 
-My Fedora atomic desktop setup, themed with Catppuccin and managed with
-[chezmoi](https://www.chezmoi.io/). One branch serves:
-
-- **Fedora Sway Atomic** (Fedora's preconfigured sway): my main setup;
-- **Fedora Silverblue**: GNOME, optionally with niri and DankMaterialShell
-  next to it.
-
-Everything is applied everywhere; a config for a program that isn't
-installed (sway's on Silverblue, niri's without niri) just sits unused. Only
-things that would *do* something are limited to where they belong: the
-GNOME custom shortcuts and GNOME-only Flatpaks need `gnome-shell`, and the
-theme script and helper scripts check what's running.
+My Fedora Sway Atomic setup (Fedora's preconfigured sway, themed with
+Catppuccin), managed with [chezmoi](https://www.chezmoi.io/).
 
 This repo is the user half of the setup. The system half (layered packages,
 COPRs, third-party repos, and installing Bitwarden and chezmoi) is in
@@ -25,9 +15,9 @@ so `chezmoi apply` never asks for a password.
 
 ```
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
-.chezmoiignore          what chezmoi leaves alone: this README, and DMS's generated niri files (~/.config/niri/dms)
+.chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
-  packages.yaml         flatpaks (+ GNOME-only ones), Nerd Font version, mise version and checksums, systemd user units
+  packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
 .chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
@@ -37,12 +27,11 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
-  run_onchange_after_60-gnome-shortcuts.sh.tmpl     GNOME custom shortcuts (the whole set); only where GNOME is installed
 .chezmoitemplates/      the four themed configs (see "Themes" below)
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
-dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, starship, tmux, systemd, ...)
+dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
   sway/config.d/        drop-ins on top of Fedora's sway config: keyboard layouts, workspaces per
                         monitor, thin borders, wallpaper, night light, floating blueman and Bitwarden, keybindings, Catppuccin colors
   autostart/            apps started at login: Bitwarden (the SSH agent) and Brave
@@ -127,8 +116,6 @@ then step 2.
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
 | a sway keybinding | `dot_config/sway/config.d/70-bindings.conf` (replaces Fedora's binding for the same keys) | `chezmoi apply`, then `$mod+Shift+c` (reload) |
-| a GNOME custom shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-shortcuts.sh.tmpl` (shortcuts made in Settings are replaced by this list) | `chezmoi apply` sets them |
-| a niri keybinding | `dot_config/niri/config.kdl` | `chezmoi apply`; niri reloads it on its own |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
@@ -141,11 +128,10 @@ Each of these then goes through step 2 like any other change.
 
 ## Themes
 
-`theme-toggle.sh` (`Super+Shift+T` in sway, niri and GNOME) switches between
-light and dark: it sets the desktop's color scheme (which GTK4/libadwaita apps
-and Brave follow) and GTK theme, the sway desktop's theme links (see "The sway
-desktop"), DankMaterialShell's mode (see "niri and DankMaterialShell"), and
-the Catppuccin flavor (Latte for light, Mocha for dark) inside four configs:
+`theme-toggle.sh` (`Super+Shift+T`) switches between light and dark: it sets
+the desktop's color scheme (which GTK4/libadwaita apps and Brave follow) and
+GTK theme, the sway desktop's theme links (see "The sway desktop"), and the
+Catppuccin flavor (Latte for light, Mocha for dark) inside four configs:
 
 | Config | Line it changes |
 | --- | --- |
@@ -212,16 +198,6 @@ and a toggle never shows up as a difference. On a new machine,
 `run_onchange_after_55-theme-links.sh.tmpl` creates the links (`theme-toggle.sh
 links`) for the current mode.
 
-### niri and DankMaterialShell
-
-On Silverblue with niri, DankMaterialShell (DMS) is the bar, launcher,
-notifications and wallpaper. niri starts it (`spawn-sh-at-startup "dms run"`
-in `config.kdl`), and DMS writes its own files into `~/.config/niri/dms/`
-(colors, monitor settings), which `config.kdl` includes and chezmoi ignores.
-DMS's settings (`~/.config/DankMaterialShell`) aren't tracked: set them in its
-Settings app. `theme-toggle.sh` switches DMS to light or dark
-(`dms ipc call theme light|dark`), which also regenerates niri's border colors.
-
 ## SSH and Git
 
 Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
@@ -231,9 +207,9 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 
 - It starts at login from `~/.config/autostart/com.bitwarden.desktop.desktop`
   (Brave from the file next to it). That file is exactly what the desktop
-  portal writes when Bitwarden asks to start at login: on GNOME it does, and
-  replaces ours; Fedora's sway portal can't. Keep it identical, with no
-  comments, or chezmoi reports a conflict after every GNOME login.
+  portal writes when Bitwarden asks to start at login (on desktops whose
+  portal can, such as GNOME; Fedora's sway portal can't), so it has no
+  comments: if a portal ever rewrites it, nothing changes.
 - `~/.local/share/flatpak/overrides/com.bitwarden.desktop` lets it show its
   tray icon: the Flatpak may talk to the tray but not claim the D-Bus name the
   icon needs (always `org.freedesktop.StatusNotifierItem-2-1` inside the
@@ -265,7 +241,7 @@ rebuilds it from scratch with `distrobox assemble` whenever that file
 changes. Anything installed in it by hand is lost on the next rebuild;
 your home folder is never touched.
 
-Its apps are exported: they're in rofi and the app grid (as "... (on dev)"),
+Its apps are exported: they're in rofi (as "... (on dev)"),
 and `code`, `htop` and `btop` work from the host's terminal. For a shell
 inside it: `distrobox enter dev`. distrobox itself is layered by
 workstation-bootstrap, and podman, which runs the containers, is part of
@@ -274,17 +250,15 @@ first `chezmoi apply` after the reboot that follows `setup.sh`.
 
 ## Terminal
 
-Alacritty is the terminal everywhere (layered by workstation-bootstrap). Each
-launcher finds it its own way:
+Alacritty is the terminal (layered by workstation-bootstrap, instead of
+Fedora's foot). Each launcher finds it its own way:
 
 | From | How |
 | --- | --- |
-| `Super+Return` | sway: `$term` in `70-bindings.conf`; niri: `config.kdl`; GNOME: the custom shortcuts script |
+| `Super+Return` | `$term` in `70-bindings.conf` |
 | rofi (sway), for terminal apps such as Neovim | rofi's `-terminal alacritty` (`$menu` in `70-bindings.conf`) |
-| GTK apps: GNOME's app grid, "Open With" in Files or Thunar | `xdg-terminal-exec` (layered) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
+| GTK apps, e.g. Thunar's "Open With" | `xdg-terminal-exec` (layered) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
 | Thunar's "Open Terminal Here" | Xfce's preferred terminal: `~/.config/xfce4/helpers.rc` and the helper in `~/.local/share/xfce4/helpers/` (Sway Atomic ships none) |
-| Nautilus's "Open in Terminal" | ignores all of these and always opens Ptyxis |
 
 Neovim comes from mise, which installs no app entry, so
-`~/.local/share/applications/nvim.desktop` adds one (rofi, app grid, "Open
-With").
+`~/.local/share/applications/nvim.desktop` adds one (rofi, "Open With").

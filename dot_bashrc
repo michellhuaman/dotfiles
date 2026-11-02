@@ -81,7 +81,7 @@ alias da='date "+%Y-%m-%d %A %T %Z"'
 # FUNCTIONS
 #######################################################
 
-# System update for Fedora Silverblue (rpm-ostree), Fedora (dnf) and
+# System update for image-based Fedora such as Sway Atomic (rpm-ostree), Fedora (dnf) and
 # Ubuntu/Debian (apt), then Flatpak and Snap apps
 # Remove any old 'update' alias first so re-sourcing this file doesn't break the function
 unalias update 2>/dev/null
@@ -89,7 +89,7 @@ update() {
   local ids status=0
   # Read the distro in a subshell so os-release's variables don't leak into this shell
   ids="$(. /etc/os-release && echo " ${ID:-} ${ID_LIKE:-} ")"
-  # Image-based Fedora (Silverblue) has no dnf on the host
+  # Image-based Fedora (Sway Atomic) has no dnf on the host
   [ -e /run/ostree-booted ] && ids=" ostree "
 
   case "$ids" in

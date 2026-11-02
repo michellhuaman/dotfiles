@@ -128,12 +128,6 @@ gsettings set org.gnome.desktop.interface color-scheme "$scheme"
 gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
 gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
 
-# DankMaterialShell: switches the shell to Mocha/Latte and regenerates
-# niri's border/focus-ring colors (dms/colors.kdl). Skipped outside DMS.
-if command -v dms >/dev/null 2>&1 && dms ipc call theme getMode >/dev/null 2>&1; then
-  dms ipc call theme "$mode" >/dev/null
-fi
-
 apply_sed "s#themes/catppuccin-[a-z]*\.toml#themes/catppuccin-${flavor}.toml#" \
   "$CONFIG_DIR/alacritty/alacritty.toml"
 

@@ -17,9 +17,6 @@ packages:
     - net.ankiweb.Anki
     - com.brave.Browser         # turn on Origin mode in Settings > System
     - org.gnome.Boxes           # VMs (KVM), e.g. to test workstation-bootstrap branches
-  # Added to the list above where GNOME is installed (Silverblue).
-  flatpak_gnome:
-    - org.gnome.Extensions
 
 fonts:
   # Bump a version to make the font script download it again.
