@@ -63,20 +63,16 @@ button:hover {
 #battery,
 #cpu,
 #memory,
-#disk,
 #temperature,
 #backlight,
 #network,
 #pulseaudio,
-#wireplumber,
-#custom-media,
 #tray,
 #mode,
 #idle_inhibitor,
 #scratchpad,
 #power-profiles-daemon,
-#language,
-#mpd {
+#language {
     padding: 0 10px;
     background-color: @surface0;
     color: @text;
@@ -100,22 +96,18 @@ button:hover {
 #clock { color: @lavender; }
 #cpu { color: @green; }
 #memory { color: @mauve; }
-#disk { color: @flamingo; }
 #temperature { color: @peach; }
 #temperature.critical { background-color: @red; color: @base; }
 #backlight { color: @yellow; }
 #network { color: @sapphire; }
 #network.disconnected { background-color: @red; color: @base; }
-#pulseaudio, #wireplumber { color: @blue; }
-#pulseaudio.muted, #wireplumber.muted { color: @overlay1; }
+#pulseaudio { color: @blue; }
+#pulseaudio.muted { color: @overlay1; }
 #idle_inhibitor { color: @overlay1; }
 #idle_inhibitor.activated { background-color: @rosewater; color: @base; }
 #scratchpad.empty { background-color: transparent; }
 /* Wide enough for "us intl": without it waybar shrinks the label to "…". */
 #language { color: @teal; min-width: 56px; }
-#custom-media, #mpd { color: @teal; }
-#mpd.disconnected { background-color: @red; color: @base; }
-#mpd.stopped, #mpd.paused { color: @overlay1; }
 
 /* Module states change the text color only, on the usual @surface0
  * background; charging shows in the battery icon. Colored backgrounds are
@@ -156,8 +148,3 @@ label:focus {
     background-color: @crust;
 }
 
-#privacy { padding: 0; }
-#privacy-item { padding: 0 5px; color: @base; }
-#privacy-item.screenshare { background-color: @peach; }
-#privacy-item.audio-in { background-color: @green; }
-#privacy-item.audio-out { background-color: @blue; }

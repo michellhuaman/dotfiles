@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# powermenu.sh — a simple power menu built on fuzzel, rofi or zenity.
+# powermenu.sh — a simple power menu built on rofi or zenity.
 #
-# Works both under Wayland tiling window managers (e.g. Sway, via fuzzel or
-# rofi) and under GNOME (via zenity's --list dialog).
+# Works both under Wayland tiling window managers (e.g. Sway, via rofi) and
+# under GNOME (via zenity's --list dialog).
 #
 # Usage:
 #   ./powermenu.sh
@@ -18,8 +18,8 @@
 # UI backend selection:
 #   By default the script auto-detects: if GNOME is the current desktop
 #   ($XDG_CURRENT_DESKTOP contains "GNOME"), it uses zenity; otherwise it
-#   prefers fuzzel, then rofi (Fedora's sway ships rofi), falling back to zenity.
-#   Override auto-detection by setting UI_BACKEND=fuzzel, rofi or zenity.
+#   uses rofi (Fedora's sway ships it), falling back to zenity.
+#   Override auto-detection by setting UI_BACKEND=rofi or zenity.
 #
 set -euo pipefail
 
@@ -37,14 +37,12 @@ detect_backend() {
 
   if [[ "${XDG_CURRENT_DESKTOP:-}" == *GNOME* ]] && command -v zenity &>/dev/null; then
     UI_BACKEND="zenity"
-  elif command -v fuzzel &>/dev/null; then
-    UI_BACKEND="fuzzel"
   elif command -v rofi &>/dev/null; then
     UI_BACKEND="rofi"
   elif command -v zenity &>/dev/null; then
     UI_BACKEND="zenity"
   else
-    notify "None of fuzzel, rofi or zenity is installed."
+    notify "Neither rofi nor zenity is installed."
     exit 1
   fi
 }
@@ -56,9 +54,6 @@ entries="Suspend\nLogout\nLock\nReboot\nShutdown"
 # Echoes the chosen entry (possibly empty on cancel/escape).
 prompt_choice() {
   case "$UI_BACKEND" in
-  fuzzel)
-    printf "%b" "$entries" | fuzzel --dmenu --prompt="Power: "
-    ;;
   rofi)
     printf "%b" "$entries" | rofi -dmenu -i -p "Power"
     ;;

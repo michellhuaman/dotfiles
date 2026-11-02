@@ -152,7 +152,7 @@ instead of naming a flavor:
 | `~/.config/waybar/style.css` | `~/.config/waybar/themes/catppuccin-current.css` |
 | `~/.config/rofi/themes/catppuccin-default.rasi` | `~/.config/rofi/themes/catppuccin-current.rasi` |
 | `~/.config/alacritty/alacritty.toml` | `~/.config/alacritty/themes/catppuccin-current.toml` |
-| `~/.config/btop/btop.conf` | `~/.config/btop/themes/catppuccin_current.theme` |
+| `~/.config/btop/btop.conf` | `~/.config/btop/themes/catppuccin_current.theme`. That's its only line, and the file is read-only, so settings changed in btop's menu last only until it quits |
 | `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`); `~/.config/dunst/dunstrc` exists only so dunst reads `dunstrc.d/` |
 | `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
 | `~/.config/bat/config` | is the link itself (`config-mocha` / `config-latte`, the same apart from the theme: change both) |
