@@ -1,11 +1,10 @@
 # dotfiles
 
-My GNOME setup for Fedora Workstation, Fedora Silverblue and Ubuntu, managed with
-[chezmoi](https://www.chezmoi.io/).
+My Fedora Silverblue setup (niri with DankMaterialShell, and GNOME), managed
+with [chezmoi](https://www.chezmoi.io/).
 
-This repo is the user half of the setup. The system half (native packages,
-COPR/universe, snaps, Silverblue's layered packages, and installing Bitwarden
-and chezmoi) is in
+This repo is the user half of the setup. The system half (layered packages,
+COPRs, third-party repos, and installing Bitwarden and chezmoi) is in
 [workstation-bootstrap](https://github.com/michellhuaman/workstation-bootstrap),
 whose `setup.sh` clones and applies this repo on a new machine.
 
@@ -26,12 +25,12 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
+  run_onchange_after_60-gnome-shortcuts.sh.tmpl     GNOME custom shortcuts (the whole set)
 .chezmoitemplates/      the four themed configs (see "Themes" below)
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, starship, tmux, systemd, ...)
-                        niri's config.kdl is a template: Brave and Claude Desktop depend on what's installed
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 ```
 
@@ -105,13 +104,14 @@ then step 2.
 
 | Change | Where | Then |
 | --- | --- | --- |
-| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (`packages.flatpak_atomic` for apps that are native packages elsewhere, like Brave) | `chezmoi apply` installs it |
+| a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` | `chezmoi apply` installs it |
+| a GNOME custom shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-shortcuts.sh.tmpl` (shortcuts made in Settings are replaced by this list) | `chezmoi apply` sets them |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
-| a dnf/apt package, COPR, snap or (Silverblue) layered RPM | not here: workstation-bootstrap's package lists | re-run its `setup.sh` |
+| a layered RPM or COPR | not here: workstation-bootstrap's lists | re-run its `setup.sh`, then reboot |
 
 Each of these then goes through step 2 like any other change.
 
@@ -159,7 +159,7 @@ for example, rewrites `btop.conf` with all its settings when it quits) shows up
 in `chezmoi diff`. To keep it, copy the line into the template with `edot`.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
-Yaru on Ubuntu, Adwaita everywhere else.
+Yaru on Ubuntu, Adwaita everywhere else (Fedora included).
 
 ## SSH and Git
 
@@ -184,5 +184,5 @@ version with `edot` and commit.
 
 `dot_config/xdg-terminals.list` makes GNOME open terminal apps (htop, btop,
 Neovim from the app grid) in Alacritty. It's read by `xdg-terminal-exec`, which
-workstation-bootstrap installs on both distros. Nautilus's "Open in Terminal"
-ignores it on Fedora and always opens Ptyxis.
+workstation-bootstrap layers. Nautilus's "Open in Terminal" ignores it and
+always opens Ptyxis.

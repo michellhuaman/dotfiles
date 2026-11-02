@@ -90,9 +90,6 @@ layout {
 spawn-sh-at-startup "dms run"
 
 // Autostart apps
-{{ if lookPath "claude-desktop" -}}
-spawn-at-startup "claude-desktop"
-{{ end -}}
 spawn-at-startup "flatpak" "run" "com.bitwarden.desktop"
 
 hotkey-overlay {
@@ -145,9 +142,8 @@ binds {
     Mod+Shift+Slash hotkey-overlay-title="Show important bindings" { show-hotkey-overlay; }
 
     // Make sure alacritty and brave are installed, or these binds do nothing.
-    // Brave is the native package where there is one, else the Flatpak (Silverblue).
     Mod+Return hotkey-overlay-title="Open terminal: alacritty" { spawn "alacritty"; }
-    Mod+Shift+Return hotkey-overlay-title="Open browser: brave" { spawn {{ if lookPath "brave-browser" }}"brave-browser"{{ else }}"flatpak" "run" "com.brave.Browser"{{ end }}; }
+    Mod+Shift+Return hotkey-overlay-title="Open browser: brave" { spawn "flatpak" "run" "com.brave.Browser"; }
     Mod+D hotkey-overlay-title="App launcher" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
     Mod+E hotkey-overlay-title="Open file manager: nautilus" { spawn "nautilus" "--new-window"; }
     Mod+Shift+T hotkey-overlay-title="Toggle light/dark theme" { spawn-sh "~/.local/bin/theme-toggle.sh"; }

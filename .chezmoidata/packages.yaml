@@ -1,6 +1,6 @@
 # What chezmoi installs in your home folder, without sudo.
 #
-# System packages (dnf/apt, COPR, snaps) live in the workstation-bootstrap
+# System packages (layered RPMs, COPRs) live in the workstation-bootstrap
 # repo instead, which also installs Bitwarden and chezmoi itself.
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
@@ -14,10 +14,6 @@ packages:
     - org.localsend.localsend_app
     - net.ankiweb.Anki
     - org.gnome.Extensions
-
-  # Only on image-based Fedora (Silverblue). Elsewhere workstation-bootstrap
-  # installs these natively from the vendor's repo.
-  flatpak_atomic:
     - com.brave.Browser         # turn on Origin mode in Settings > System
 
 fonts:
