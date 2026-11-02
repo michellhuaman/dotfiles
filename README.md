@@ -33,6 +33,7 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
   run_onchange_after_25-install-cli-tools.sh.tmpl   mise install + prune; reruns when the mise config changes
   run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
+  run_onchange_after_35-distrobox.sh.tmpl           builds the distrobox containers; reruns when assemble.ini changes
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
@@ -45,6 +46,7 @@ dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, sta
   sway/config.d/        drop-ins on top of Fedora's sway config: keyboard layouts, workspaces per
                         monitor, thin borders, wallpaper, night light, floating blueman and Bitwarden, keybindings, Catppuccin colors
   autostart/            apps started at login: Bitwarden (the SSH agent) and Brave
+  distrobox/assemble.ini  the distrobox containers (see "Containers")
   waybar/config.jsonc  Fedora's waybar config plus a few module settings
   waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
@@ -132,6 +134,7 @@ then step 2.
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
+| an app or tool in the container | `edot ~/.config/distrobox/assemble.ini` (`additional_packages`, plus `exported_apps`/`exported_bins` to reach it from the host) | `chezmoi apply` rebuilds the container |
 | a layered RPM or COPR | not here: workstation-bootstrap's lists | re-run its `setup.sh`, then reboot |
 
 Each of these then goes through step 2 like any other change.
@@ -251,6 +254,23 @@ chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`
 through its shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead
 of any distro copy. `update` lists newer releases; to take one, bump the
 version with `edot` and commit.
+
+## Containers
+
+Apps and tools that don't belong on the host (VS Code, htop, btop) live in a
+[distrobox](https://distrobox.it) container named `dev`: a Fedora that shares
+your home folder, user and desktop session, so its apps open as normal
+windows. `~/.config/distrobox/assemble.ini` describes it completely, and chezmoi
+rebuilds it from scratch with `distrobox assemble` whenever that file
+changes. Anything installed in it by hand is lost on the next rebuild;
+your home folder is never touched.
+
+Its apps are exported: they're in rofi and the app grid (as "... (on dev)"),
+and `code`, `htop` and `btop` work from the host's terminal. For a shell
+inside it: `distrobox enter dev`. distrobox itself is layered by
+workstation-bootstrap, and podman, which runs the containers, is part of
+Fedora's atomic images. On a new machine the container is built on the
+first `chezmoi apply` after the reboot that follows `setup.sh`.
 
 ## Terminal
 

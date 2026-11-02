@@ -1,0 +1,18 @@
+#!/bin/bash
+# Builds the containers in ~/.config/distrobox/assemble.ini, from scratch,
+# whenever that file changes (hash: {{ include "dot_config/distrobox/assemble.ini" | sha256sum }}).
+# The first build downloads the image and packages, so it takes a few minutes.
+set -euo pipefail
+
+# distrobox is layered by workstation-bootstrap, so it's there only after
+# the reboot that follows its setup.sh. Until then this errors, and chezmoi
+# runs it again on the next apply.
+for cmd in distrobox podman; do
+  if ! command -v "$cmd" >/dev/null; then
+    echo "!! $cmd not found (reboot after workstation-bootstrap's setup.sh?); distrobox containers not built" >&2
+    exit 1
+  fi
+done
+
+echo "==> distrobox containers (assemble.ini)"
+distrobox assemble create --replace --file "$HOME/.config/distrobox/assemble.ini"
