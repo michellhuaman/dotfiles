@@ -175,7 +175,7 @@ link instead of naming a flavor:
 | `~/.config/sway/config.d/80-catppuccin.conf` | `~/.config/sway/themes/catppuccin-current` |
 | `~/.config/waybar/style.css` | `~/.config/waybar/themes/catppuccin-current.css` |
 | `~/.config/rofi/themes/catppuccin-default.rasi` | `~/.config/rofi/themes/catppuccin-current.rasi` |
-| `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`) |
+| `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`); `~/.config/dunst/dunstrc` exists only so dunst reads `dunstrc.d/` |
 | `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
 
 `theme-toggle.sh` points the links at the other flavor, reloads sway (which
