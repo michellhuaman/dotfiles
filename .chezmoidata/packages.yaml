@@ -15,7 +15,6 @@ packages:
     - org.libreoffice.LibreOffice
     - org.localsend.localsend_app
     - net.ankiweb.Anki
-    - org.gnome.Extensions
     - com.brave.Browser         # turn on Origin mode in Settings > System
 
 fonts:
