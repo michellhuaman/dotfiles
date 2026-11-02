@@ -12,6 +12,11 @@ apps=(
 {{- range .packages.flatpak }}
   {{ . | quote }}
 {{- end }}
+{{- if lookPath "gnome-shell" }}
+{{- range .packages.flatpak_gnome }}
+  {{ . | quote }}
+{{- end }}
+{{- end }}
 )
 
 # Errors (not skips), so chezmoi reruns this on the next apply.

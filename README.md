@@ -1,7 +1,17 @@
 # dotfiles
 
-My Fedora Sway Atomic setup (Fedora's preconfigured sway, themed with Catppuccin), managed
-with [chezmoi](https://www.chezmoi.io/).
+My Fedora atomic desktop setup, themed with Catppuccin and managed with
+[chezmoi](https://www.chezmoi.io/). One branch serves:
+
+- **Fedora Sway Atomic** (Fedora's preconfigured sway): my main setup;
+- **Fedora Silverblue**: GNOME, optionally with niri and DankMaterialShell
+  next to it.
+
+Everything is applied everywhere; a config for a program that isn't
+installed (sway's on Silverblue, niri's without niri) just sits unused. Only
+things that would *do* something are limited to where they belong: the
+GNOME custom shortcuts and GNOME-only Flatpaks need `gnome-shell`, and the
+theme script and helper scripts check what's running.
 
 This repo is the user half of the setup. The system half (layered packages,
 COPRs, third-party repos, and installing Bitwarden and chezmoi) is in
@@ -17,7 +27,7 @@ so `chezmoi apply` never asks for a password.
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
 .chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
-  packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
+  packages.yaml         flatpaks (+ GNOME-only ones), Nerd Font version, mise version and checksums, systemd user units
 .chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
@@ -26,6 +36,7 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
+  run_onchange_after_60-gnome-shortcuts.sh.tmpl     GNOME custom shortcuts (the whole set); only where GNOME is installed
 .chezmoitemplates/      the four themed configs (see "Themes" below)
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
@@ -114,6 +125,8 @@ then step 2.
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
 | a sway keybinding | `dot_config/sway/config.d/70-bindings.conf` (replaces Fedora's binding for the same keys) | `chezmoi apply`, then `$mod+Shift+c` (reload) |
+| a GNOME custom shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-shortcuts.sh.tmpl` (shortcuts made in Settings are replaced by this list) | `chezmoi apply` sets them |
+| a niri keybinding | `dot_config/niri/config.kdl` | `chezmoi apply`; niri reloads it on its own |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |

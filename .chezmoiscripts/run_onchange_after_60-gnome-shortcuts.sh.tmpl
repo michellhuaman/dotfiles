@@ -1,0 +1,51 @@
+{{- /* Only on GNOME (Silverblue); renders empty, and so never runs, elsewhere. */ -}}
+{{- if lookPath "gnome-shell" -}}
+#!/bin/bash
+# GNOME custom keyboard shortcuts (Settings > Keyboard > View and Customize
+# Shortcuts > Custom Shortcuts). Reruns whenever this file changes.
+#
+# This list is the whole set: custom shortcuts made in Settings are replaced
+# on the next change here. To keep one, add a [custom-keybindings/customN]
+# section below and its path to custom-keybindings (`dconf dump
+# /org/gnome/settings-daemon/plugins/media-keys/` shows its values).
+# GNOME's own shortcuts are left alone. niri has its own, in its config.
+set -euo pipefail
+
+if ! command -v dconf >/dev/null; then
+  echo "!! dconf not found; GNOME shortcuts not set" >&2
+  exit 1
+fi
+
+echo "==> GNOME custom shortcuts"
+base=/org/gnome/settings-daemon/plugins/media-keys
+dconf reset -f "$base/custom-keybindings/"
+dconf load "$base/" <<'EOF'
+[/]
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']
+
+[custom-keybindings/custom0]
+name='Launch File Manager'
+command='nautilus -w'
+binding='<Super>e'
+
+[custom-keybindings/custom1]
+name='Modify Monitor Brightness'
+command='{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
+binding='<Shift><Super>b'
+
+[custom-keybindings/custom2]
+name='Launch Alacritty'
+command='alacritty'
+binding='<Super>Return'
+
+[custom-keybindings/custom3]
+name='Change theme'
+command='bash {{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
+binding='<Shift><Super>t'
+
+[custom-keybindings/custom4]
+name='Launch power menu'
+command='bash {{ .chezmoi.homeDir }}/.local/bin/powermenu.sh'
+binding='<Shift><Super>e'
+EOF
+{{ end -}}
