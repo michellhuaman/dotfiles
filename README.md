@@ -191,7 +191,8 @@ links`) for the current mode.
 Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 `~/.ssh/config` points every host at its socket, and `.bash_profile` sets
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
-`git push` and `ssh`. Git's name and email are asked once per machine by
+`git push` and `ssh`. It starts at login from
+`~/.config/autostart/com.bitwarden.desktop.desktop`. Git's name and email are asked once per machine by
 `chezmoi init`; to change them, run `chezmoi init` again.
 
 ## CLI tools
