@@ -1,4 +1,0 @@
-# Snaps installed by setup.sh: the snap name, then any flags for `snap install`.
-# --classic is for snaps that need full system access.
-
-nvim --classic            # Neovim; apt's is too old for LazyVim

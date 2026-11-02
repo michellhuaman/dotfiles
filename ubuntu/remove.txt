@@ -1,5 +1,0 @@
-# Preinstalled apt packages setup.sh purges, before installing anything.
-# One package per line. Entries that aren't installed are skipped, and nothing
-# is removed if apt would also have to remove other packages that depend on it.
-
-firefox                   # only a stub that installs the snap; the snap is in remove-snaps.txt

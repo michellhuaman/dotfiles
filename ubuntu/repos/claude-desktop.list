@@ -1,3 +1,0 @@
-# Claude Desktop, from https://code.claude.com/docs/en/desktop-linux
-# Same file name and key path the claude-desktop package registers itself.
-deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main

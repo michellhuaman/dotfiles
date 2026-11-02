@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora Workstation, Fedora Silverblue or Ubuntu desktop install.
+# Set up a fresh Fedora Silverblue install.
 #
-#   1. System:    removes unwanted preinstalled apps, then native packages,
-#                 COPR or universe, snaps, groups (sudo). On Silverblue:
-#                 makes the layered packages and base-image removals match
-#                 the lists in silverblue/, and turns on automatic updates
+#   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
+#                 layered packages and base-image removals match the lists in
+#                 silverblue/; removes preinstalled Flatpaks; turns on
+#                 automatic updates (sudo)
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
-#                 scripts install the flatpaks, fonts and user services (no sudo)
+#                 scripts install the flatpaks, CLI tools, fonts and user
+#                 services (no sudo)
 #
-# Run it from a terminal inside GNOME, as your normal user:
+# Run it from a terminal in your desktop session, as your normal user:
 #   bash /path/to/workstation-bootstrap/setup.sh
 #
-# Safe to run again: installed packages are skipped, and if the dotfiles are
-# already cloned it runs `chezmoi update` (pull and apply) instead.
+# Safe to run again: the lists in silverblue/ are the whole state, so a rerun
+# only changes what differs from them, and if the dotfiles are already cloned
+# it runs `chezmoi update` (pull and apply) instead.
 #
 # Options:
 #   --branch NAME   dotfiles branch to clone on the first run, e.g. a test branch
@@ -44,7 +46,7 @@ while [[ $# -gt 0 ]]; do
     --user)      GITHUB_USER="${2:?--user needs a name}"; shift 2 ;;
     --repo)      repo="${2:?--repo needs a name}"; shift 2 ;;
     --no-system) do_system=false; shift ;;
-    -h|--help)   sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)   awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)           die "unknown option: $1 (try --help)" ;;
   esac
 done
@@ -60,20 +62,14 @@ read_list() {
 # ---- checks ---------------------------------------------------------------------
 [[ $EUID -ne 0 ]] || die "run this as your normal user; it uses sudo when needed"
 [[ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]] \
-  || die "run this from a terminal inside your GNOME session; Bitwarden needs a desktop"
+  || die "run this from a terminal inside your desktop session; Bitwarden needs a desktop"
 
 # shellcheck disable=SC1091
 . /etc/os-release
-case " ${ID:-} ${ID_LIKE:-} " in
-  *" fedora "*) distro=fedora ;;
-  *" ubuntu "*) distro=ubuntu ;;
-  *) die "unsupported distro '${ID:-unknown}'; this repo has lists for Fedora and Ubuntu" ;;
-esac
-# Fedora Atomic (Silverblue) boots from an image and has no dnf on the host.
-[[ $distro == fedora && -e /run/ostree-booted ]] && distro=silverblue
-main_list="packages.txt"
-[[ $distro == silverblue ]] && main_list="layered.txt"
-[[ -f "$script_dir/$distro/$main_list" ]] || die "$distro/$main_list not found next to setup.sh"
+# Fedora Silverblue boots from an image (ostree) and has no dnf on the host.
+[[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted ]] \
+  || die "this repo sets up Fedora Silverblue; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+[[ -f "$script_dir/silverblue/layered.txt" ]] || die "silverblue/layered.txt not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
 command -v curl >/dev/null && { curl -fsSI --max-time 10 https://github.com >/dev/null \
@@ -83,8 +79,6 @@ command -v curl >/dev/null && { curl -fsSI --max-time 10 https://github.com >/de
 
 # Downloads the signing keys listed in $1 (<url> <file name> [fingerprint])
 # into the directory $2. With a fingerprint, stops if the key doesn't match.
-# apt reads a key by its extension: .gpg must be binary, .asc must be text.
-# So a key published as text is converted only when its name ends in .gpg.
 install_keys() {
   local list="$1" dest="$2" line url name fpr got tmp
   while read -r line; do
@@ -96,143 +90,9 @@ install_keys() {
       got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
       [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
     fi
-    if [[ "$name" == *.gpg ]] && grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$tmp"; then
-      gpg --dearmor <"$tmp" >"$tmp.gpg" && mv "$tmp.gpg" "$tmp"
-    fi
     sudo install -m 644 "$tmp" "$dest/$name"
     rm -f "$tmp"
   done < <(read_list "$list")
-}
-
-fedora_remove() {
-  local patterns installed
-  mapfile -t patterns < <(read_list "$script_dir/fedora/remove.txt")
-  (( ${#patterns[@]} )) || return 0
-  # Entries may be globs (libreoffice*); keep only what is installed.
-  mapfile -t installed < <(rpm -qa --qf '%{NAME}\n' "${patterns[@]}" 2>/dev/null | sort -u || true)
-  if (( ${#installed[@]} )); then
-    echo "Removing ${#installed[@]} packages: ${installed[*]}"
-    sudo dnf remove -y "${installed[@]}"
-  else
-    echo "Nothing from fedora/remove.txt is installed"
-  fi
-}
-
-fedora_system() {
-  mapfile -t coprs < <(read_list "$script_dir/fedora/copr.txt")
-  mapfile -t pkgs  < <(read_list "$script_dir/fedora/packages.txt")
-
-  fedora_remove
-
-  if (( ${#coprs[@]} )); then
-    dnf copr --help >/dev/null 2>&1 || sudo dnf install -y 'dnf-command(copr)'
-    for c in "${coprs[@]}"; do
-      sudo dnf copr enable -y "$c"
-    done
-  fi
-
-  # Vendor repos: every file in fedora/repos/ is copied to /etc/yum.repos.d/.
-  # dnf imports the signing key named in each file (gpgkey=) on first install.
-  local repo
-  for repo in "$script_dir"/fedora/repos/*.repo; do
-    [[ -e "$repo" ]] || continue
-    echo "Adding repo $(basename "$repo")"
-    sudo install -m 644 "$repo" /etc/yum.repos.d/
-  done
-
-  echo "Installing ${#pkgs[@]} packages"
-  sudo dnf install -y "${pkgs[@]}"
-}
-
-ubuntu_remove() {
-  local p wanted=() installed=() extra=()
-  mapfile -t wanted < <(read_list "$script_dir/ubuntu/remove.txt")
-  for p in "${wanted[@]}"; do
-    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed' \
-      && installed+=("$p")
-  done
-  if (( ! ${#installed[@]} )); then
-    echo "Nothing from ubuntu/remove.txt is installed"
-    return 0
-  fi
-  # Removing a package can also remove anything that depends on it, such as
-  # Ubuntu's desktop metapackage. Only go ahead if apt would remove exactly
-  # what was asked for.
-  mapfile -t extra < <("${apt[@]}" -s purge "${installed[@]}" \
-    | awk '/^Purg /{print $2}' | grep -vxF -f <(printf '%s\n' "${installed[@]}") || true)
-  if (( ${#extra[@]} )); then
-    warn "Not removing ${installed[*]}: apt would also remove ${extra[*]}"
-    return 0
-  fi
-  echo "Removing ${#installed[@]} packages: ${installed[*]}"
-  "${apt[@]}" purge -y "${installed[@]}"
-}
-
-ubuntu_remove_snaps() {
-  local name names=()
-  mapfile -t names < <(read_list "$script_dir/ubuntu/remove-snaps.txt")
-  for name in "${names[@]}"; do
-    if snap list "$name" >/dev/null 2>&1; then
-      echo "Removing snap $name"
-      sudo snap remove --purge "$name"
-    fi
-  done
-}
-
-ubuntu_system() {
-  mapfile -t pkgs  < <(read_list "$script_dir/ubuntu/packages.txt")
-  mapfile -t snaps < <(read_list "$script_dir/ubuntu/snaps.txt")
-  # Right after installation Ubuntu updates itself in the background; wait for
-  # its lock instead of failing.
-  apt=(sudo apt-get -o DPkg::Lock::Timeout=900)
-
-  ubuntu_remove
-
-  if ! apt-cache policy | grep -q '/universe'; then
-    echo "Enabling universe"
-    "${apt[@]}" update
-    "${apt[@]}" install -y software-properties-common
-    sudo add-apt-repository -y universe
-  fi
-
-  # Vendor repos: the signing keys in ubuntu/keys.txt go to /usr/share/keyrings/,
-  # then every .sources or .list file in ubuntu/repos/ is copied to
-  # /etc/apt/sources.list.d/. Each repo file names its key there.
-  if [[ -n "$(read_list "$script_dir/ubuntu/keys.txt")" ]] \
-     && ! { command -v curl && command -v gpg; } >/dev/null; then
-    "${apt[@]}" update
-    "${apt[@]}" install -y curl gpg     # curl isn't on a fresh Ubuntu desktop
-  fi
-  install_keys "$script_dir/ubuntu/keys.txt" /usr/share/keyrings
-  local repo
-  for repo in "$script_dir"/ubuntu/repos/*.sources "$script_dir"/ubuntu/repos/*.list; do
-    [[ -e "$repo" ]] || continue
-    echo "Adding repo $(basename "$repo")"
-    sudo install -m 644 "$repo" /etc/apt/sources.list.d/
-  done
-
-  # Answers for packages that would otherwise ask a question while installing.
-  read_list "$script_dir/ubuntu/debconf.txt" | sudo debconf-set-selections
-
-  "${apt[@]}" update
-  echo "Installing ${#pkgs[@]} packages"
-  "${apt[@]}" install -y "${pkgs[@]}"
-
-  if command -v snap >/dev/null; then
-    # The first snap command on a fresh install fails until snapd is seeded.
-    sudo snap wait system seed.loaded
-    ubuntu_remove_snaps
-    local line name
-    for line in "${snaps[@]}"; do
-      read -ra args <<<"$line"
-      name="${args[0]}"
-      if snap list "$name" >/dev/null 2>&1; then
-        echo "snap $name already installed"
-      else
-        sudo snap install "${args[@]}"
-      fi
-    done
-  fi
 }
 
 # Prints one list field (e.g. requested-packages) of the newest deployment,
@@ -353,27 +213,6 @@ silverblue_system() {
   sudo systemctl enable --now rpm-ostreed-automatic.timer
 }
 
-# Adds you to group $1 if it exists (effective at the next login).
-add_to_group() {
-  local g="$1"
-  getent group "$g" >/dev/null || return 1
-  # On Silverblue, system groups can live in /usr/lib/group, which usermod
-  # doesn't edit; copy the group into /etc/group first.
-  if ! grep -q "^$g:" /etc/group && [[ -f /usr/lib/group ]] && grep -q "^$g:" /usr/lib/group; then
-    grep "^$g:" /usr/lib/group | sudo tee -a /etc/group >/dev/null
-  fi
-  sudo usermod -aG "$g" "$USER"
-}
-
-join_groups() {
-  # Groups from <distro>/groups.txt, for apps that need device access. Groups
-  # that don't exist are skipped. Takes effect at the next login.
-  local g
-  while read -r g; do
-    add_to_group "$g" || warn "group $g doesn't exist, skipping"
-  done < <(read_list "$script_dir/$distro/groups.txt")
-}
-
 if $do_system; then
   info "Step 1/3: system packages (sudo)"
   sudo -v || die "your user needs sudo rights"
@@ -383,8 +222,7 @@ if $do_system; then
   sudo_keepalive=$!
   trap 'kill "$sudo_keepalive" 2>/dev/null || true' EXIT
 
-  "${distro}_system"
-  join_groups
+  silverblue_system
 
   kill "$sudo_keepalive" 2>/dev/null || true
   trap - EXIT
@@ -508,13 +346,12 @@ fi
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
-Next: reboot, then log into GNOME as usual.
-  Flatpak apps only show up in the app grid after a fresh login, and group
-  changes (groups.txt) take effect then too.
+Next: reboot, then log in as usual (GNOME or niri, from the gear on the login screen).
+  Flatpak apps only show up in the app grid after a fresh login.
 
     systemctl reboot
 EOF
-if [[ $distro == silverblue ]] && [[ "$(rpm-ostree status --json | python3 -c '
+if [[ "$(rpm-ostree status --json | python3 -c '
 import json, sys
 deps = json.load(sys.stdin).get("deployments", [])
 print(bool(deps and deps[0].get("staged")))')" == True ]]; then
