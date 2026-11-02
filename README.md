@@ -97,6 +97,9 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
    there and the Flatpak apps are in the launcher: rofi (`Super+D`) on sway,
    the app grid on GNOME. With `--niri`, pick **GNOME** or **Niri** with the
    gear on the login screen.
+4. **Run `chezmoi apply` once.** It builds the dotfiles' distrobox container
+   (VS Code, htop, btop), which needs the distrobox layered in step 2 and so
+   can't be built before the reboot. It takes a few minutes.
 
 ## niri on Silverblue
 

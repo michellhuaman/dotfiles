@@ -380,6 +380,8 @@ Next: reboot, then log in as usual$(
     sway-atomic) echo " (sway)" ;;
   esac).
   Flatpak apps only show up in the app launcher after a fresh login.
+  After the reboot, run `chezmoi apply` once: it builds the distrobox
+  container (VS Code, htop, btop), which needs the layered distrobox.
 
     systemctl reboot
 EOF
