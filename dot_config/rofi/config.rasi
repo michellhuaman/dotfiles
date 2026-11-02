@@ -1,3 +1,9 @@
 // rofi: Catppuccin (themes/catppuccin-default.rasi, which follows the flavor
 // theme-toggle.sh sets). Everything else is rofi's default.
 @theme "catppuccin-default"
+
+// Wider than rofi's default (50% of the screen), so long app names and
+// commands fit.
+window {
+    width: 70%;
+}
