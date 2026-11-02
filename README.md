@@ -43,7 +43,7 @@ dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, starship, tmux, systemd, ...)
   sway/config.d/        drop-ins on top of Fedora's sway config: keyboard layouts, workspaces per
-                        monitor, thin borders, wallpaper, floating blueman, keybindings, Catppuccin colors
+                        monitor, thin borders, wallpaper, floating blueman and Bitwarden, keybindings, Catppuccin colors
   autostart/            apps started at login: Bitwarden (the SSH agent) and Brave
   waybar/config.jsonc  Fedora's waybar config plus a few module settings
   waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop

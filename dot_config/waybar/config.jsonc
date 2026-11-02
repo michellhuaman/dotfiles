@@ -4,6 +4,9 @@
 {
     "include": ["/etc/xdg/waybar/config.jsonc"],
 
+    // At the bottom of the screen (Fedora's is at the top).
+    "position": "bottom",
+
     // Long window titles pushed the right-hand modules off the bar.
     "sway/window": {
         "max-length": 50
