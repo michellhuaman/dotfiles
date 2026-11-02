@@ -16,6 +16,7 @@ packages:
     - org.localsend.localsend_app
     - net.ankiweb.Anki
     - com.brave.Browser         # turn on Origin mode in Settings > System
+    - org.gnome.Boxes           # VMs (KVM), e.g. to test workstation-bootstrap branches
 
 fonts:
   # Bump a version to make the font script download it again.
