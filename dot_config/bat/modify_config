@@ -1,6 +1,0 @@
-{{- /* chezmoi:modify-template */ -}}
-{{- /* Renders .chezmoitemplates/bat-config with the Catppuccin flavor that
-       theme-toggle.sh last set in this file (mocha on a new machine), so a
-       theme toggle never shows up as a difference. Edit that file, not this. */ -}}
-{{- $flavor := regexFind "(latte|frappe|macchiato|mocha)" (lower (regexFind `(?m)^--theme[= ]"?Catppuccin [A-Za-z]+` .chezmoi.stdin)) | default "mocha" -}}
-{{- includeTemplate "bat-config" (dict "flavor" $flavor) -}}

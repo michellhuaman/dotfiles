@@ -171,8 +171,8 @@ usbeject() {
 }
 
 # Edit a dotfile by its real path, then apply it: edot ~/.config/starship.toml
-# Themed configs (a modify_ file in chezmoi) open their template in
-# .chezmoitemplates instead, since that's where the config actually lives.
+# starship.toml, the one themed config (a modify_ file in chezmoi), opens its
+# template in .chezmoitemplates instead, since that's where the config lives.
 edot() {
   if [ -z "$1" ]; then
     echo "Usage: edot <file>   e.g. edot ~/.config/alacritty/alacritty.toml"

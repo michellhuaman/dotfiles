@@ -9,18 +9,21 @@
 #   /home/youruser/.local/bin/theme-toggle.sh
 # (In sway it's bound to $mod+Shift+t in ~/.config/sway/config.d/70-bindings.conf.)
 #
-# On the sway desktop it also switches sway, waybar, dunst, rofi and swaylock,
-# whose configs read a "current" link that points at the flavor's theme file.
+# It also switches the Catppuccin flavor (Latte for light, Mocha for dark):
+# - sway, waybar, dunst, rofi, swaylock, Alacritty, btop and bat read a
+#   "current" link that points at the flavor's file; this script repoints
+#   the links (see theme_links);
+# - starship has no way to include a file, so the palette line in
+#   ~/.config/starship.toml is edited in place.
 #
 #   theme-toggle.sh         toggle light/dark
 #   theme-toggle.sh links   only point the links at the current mode's flavor
 #                           (chezmoi runs this on apply, for a new machine)
 #
-# Note on bat: this script only switches which theme bat's config points to,
-# which does NOT require rebuilding bat's cache. Run `bat cache --build`
-# (or `batcat cache --build` on Ubuntu/Debian) manually only when you add,
-# remove, or update theme files in "$(bat --config-dir)/themes", e.g. after
-# first installing the Catppuccin themes.
+# Note on bat: switching its config link does NOT require rebuilding bat's
+# cache. Run `bat cache --build` (or `batcat cache --build` on Ubuntu/Debian)
+# only when you add, remove, or update theme files in
+# "$(bat --config-dir)/themes".
 
 set -uo pipefail
 
@@ -57,11 +60,11 @@ apply_sed() {
   fi
 }
 
-# Sway desktop: point each "current" link at the theme file of flavor $1.
-# chezmoi tracks the theme files but not the links, so toggling never shows
-# up as a change. A link is only made where its theme file exists, and a real
-# file in its place is left alone.
-sway_links() {
+# Points each "current" link at the file for flavor $1. chezmoi tracks the
+# theme files but not the links, so toggling never shows up as a change. A
+# link is only made where its target exists, and a real file in its place is
+# left alone.
+theme_links() {
   local f="$1"
   link() { # $1 = link, $2 = target, relative to the link's folder
     local dir
@@ -81,6 +84,11 @@ sway_links() {
     mkdir -p "$CONFIG_DIR/dunst/dunstrc.d"
     link "$CONFIG_DIR/dunst/dunstrc.d/80-catppuccin.conf" "../themes/$f.conf"
   fi
+  # Alacritty reloads on its own when the link changes; btop reads its theme
+  # when it starts, and bat its config on every run.
+  link "$CONFIG_DIR/alacritty/themes/catppuccin-current.toml" "catppuccin-$f.toml"
+  link "$CONFIG_DIR/btop/themes/catppuccin_current.theme" "catppuccin_$f.theme"
+  link "$CONFIG_DIR/bat/config" "config-$f"
 }
 
 # Makes the running sway, waybar and dunst pick up the new links.
@@ -103,7 +111,7 @@ current="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)"
 
 if [[ "${1:-}" == links ]]; then
   # Light only if the desktop says so; dark (the default theme) otherwise.
-  if [[ "$current" == "'default'" ]]; then sway_links latte; else sway_links mocha; fi
+  if [[ "$current" == "'default'" ]]; then theme_links latte; else theme_links mocha; fi
   exit 0
 fi
 
@@ -113,34 +121,23 @@ if [[ "$current" == "'prefer-dark'" ]]; then
   scheme="default"
   gtk_theme="$GTK_THEME_LIGHT"
   icon_theme="$ICON_THEME_LIGHT"
-  flavor="latte" # lowercase, used in file names
-  label="Latte"  # capitalized, used in bat's theme name
+  flavor="latte" # used in file names
 else
   mode="dark"
   scheme="prefer-dark"
   gtk_theme="$GTK_THEME_DARK"
   icon_theme="$ICON_THEME_DARK"
   flavor="mocha"
-  label="Mocha"
 fi
 
 gsettings set org.gnome.desktop.interface color-scheme "$scheme"
 gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
 gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
 
-apply_sed "s#themes/catppuccin-[a-z]*\.toml#themes/catppuccin-${flavor}.toml#" \
-  "$CONFIG_DIR/alacritty/alacritty.toml"
-
 apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_${flavor}\"#" \
   "$CONFIG_DIR/starship.toml"
 
-apply_sed "s#themes/catppuccin_[a-z]*\.theme#themes/catppuccin_${flavor}.theme#" \
-  "$CONFIG_DIR/btop/btop.conf"
-
-apply_sed "s#--theme[= ].*#--theme=\"Catppuccin ${label}\"#" \
-  "$CONFIG_DIR/bat/config"
-
-sway_links "$flavor"
+theme_links "$flavor"
 sway_reload
 
 notify-send "Theme" "Switched to ${mode}" 2>/dev/null || true

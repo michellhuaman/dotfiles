@@ -27,7 +27,7 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
-.chezmoitemplates/      the four themed configs (see "Themes" below)
+.chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
@@ -67,9 +67,9 @@ edot ~/.config/alacritty/alacritty.toml
 applies the change when you quit:
 
 - for most files it runs `chezmoi edit --apply`;
-- for the four themed configs (Alacritty, starship, btop, bat) it opens their
-  template in `.chezmoitemplates/` instead, which is where those configs live
-  (see "Themes"). Plain `chezmoi edit` would open the wrong file for these.
+- for `~/.config/starship.toml` it opens its template in `.chezmoitemplates/`
+  instead, which is where that config lives (see "Themes"). Plain
+  `chezmoi edit` would open the wrong file for it.
 
 **2. Commit and push:**
 
@@ -97,8 +97,8 @@ chezmoi diff          # see what differs from the repo
 chezmoi re-add        # copy the changed files into the repo
 ```
 
-then continue from step 2. `re-add` skips templates and the four themed
-configs; for those, copy the change into the template with `edot` instead.
+then continue from step 2. `re-add` skips templates and `starship.toml`; for
+those, copy the change into the template with `edot` instead.
 To throw a change away, run `chezmoi apply`, which puts the repo's version
 back.
 
@@ -130,73 +130,63 @@ Each of these then goes through step 2 like any other change.
 
 `theme-toggle.sh` (`Super+Shift+T`) switches between light and dark: it sets
 the desktop's color scheme (which GTK4/libadwaita apps and Brave follow) and
-GTK theme, the sway desktop's theme links (see "The sway desktop"), and the
-Catppuccin flavor (Latte for light, Mocha for dark) inside four configs:
-
-| Config | Line it changes |
-| --- | --- |
-| `~/.config/alacritty/alacritty.toml` | `import = [".../catppuccin-mocha.toml"]` |
-| `~/.config/starship.toml` | `palette = "catppuccin_mocha"` |
-| `~/.config/btop/btop.conf` | `color_theme = ".../catppuccin_mocha.theme"` |
-| `~/.config/bat/config` | `--theme="Catppuccin Mocha"` |
-
-If these were plain files, every toggle would be a difference: `chezmoi diff`
-would show it, `apply` would undo it, and `re-add` would commit whichever
-flavor was active. So the configs are split in two:
-
-- **`.chezmoitemplates/<name>`**: the full config, with the flavor left as a
-  blank (`{{ .flavor }}`). **This is the file to edit.**
-- **`dot_config/.../modify_<name>`**: a few lines that build the file. chezmoi
-  passes it the current file from `~/.config`; it finds which flavor is active
-  there, defaulting to `mocha` if the file doesn't exist yet, and fills it into
-  the template.
-
-The result is always your config with whatever flavor is already on disk. A
-toggle never shows up in `chezmoi diff`, `apply` never undoes it, and a real
-edit (say, a new font size) still goes through. A new machine starts on Mocha,
-matching the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
-
-To change one of these configs, use `edot` with its real path. It opens the
-template and applies when you quit:
-
-```bash
-edot ~/.config/alacritty/alacritty.toml     # opens .chezmoitemplates/alacritty.toml
-```
-
-(`chezmoi edit` on these paths would open the `modify_` file instead, which is
-not where the config is.)
-
-Only the theme line is protected. Anything else changed in `~/.config` (btop,
-for example, rewrites `btop.conf` with all its settings when it quits) shows up
-in `chezmoi diff`. To keep it, copy the line into the template with `edot`.
+GTK theme, and switches every themed app between the Catppuccin flavors
+(Latte for light, Mocha for dark). A new machine starts on Mocha, matching
+the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
 Yaru on Ubuntu, Adwaita everywhere else (Fedora included). GTK3 apps (Thunar)
 need the theme named `Adwaita-dark`, which Sway Atomic doesn't ship, so
 `~/.local/share/themes/Adwaita-dark` provides it.
 
-### The sway desktop
+### Theme links
 
-Sway, waybar, dunst, rofi and swaylock use Catppuccin's own theme files
-(copied from the catppuccin/i3, waybar, dunst, rofi and swaylock repos), one
-per flavor, under each app's `themes/` folder. Each config reads a "current"
-link instead of naming a flavor:
+Most apps use Catppuccin's own theme files (copied from the catppuccin/i3,
+waybar, dunst, rofi, swaylock, alacritty, btop and bat repos), one per
+flavor, under each app's `themes/` folder. Each config reads a "current" link
+instead of naming a flavor:
 
 | Config | Reads |
 | --- | --- |
 | `~/.config/sway/config.d/80-catppuccin.conf` | `~/.config/sway/themes/catppuccin-current` |
 | `~/.config/waybar/style.css` | `~/.config/waybar/themes/catppuccin-current.css` |
 | `~/.config/rofi/themes/catppuccin-default.rasi` | `~/.config/rofi/themes/catppuccin-current.rasi` |
+| `~/.config/alacritty/alacritty.toml` | `~/.config/alacritty/themes/catppuccin-current.toml` |
+| `~/.config/btop/btop.conf` | `~/.config/btop/themes/catppuccin_current.theme` |
 | `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`); `~/.config/dunst/dunstrc` exists only so dunst reads `dunstrc.d/` |
 | `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
+| `~/.config/bat/config` | is the link itself (`config-mocha` / `config-latte`, the same apart from the theme: change both) |
 
 `theme-toggle.sh` points the links at the other flavor, reloads sway (which
 restarts waybar) and stops dunst (D-Bus starts it again for the next
-notification); rofi and swaylock read theirs when they start. chezmoi
-tracks the theme files but not the links, so this needs no `modify_` files
-and a toggle never shows up as a difference. On a new machine,
-`run_onchange_after_55-theme-links.sh.tmpl` creates the links (`theme-toggle.sh
-links`) for the current mode.
+notification). Alacritty reloads by itself when its link changes; rofi,
+swaylock and btop read theirs when they start, and bat its config on every
+run. chezmoi tracks the theme files but not the links, so the configs are
+plain files you can edit directly, and a toggle never shows up as a
+difference. On a new machine, `run_onchange_after_55-theme-links.sh.tmpl`
+creates the links (`theme-toggle.sh links`) for the current mode.
+
+(bat could pick a light or dark theme by itself from the terminal's
+background, but inside a tmux that was started before a toggle it keeps
+seeing the old color, so it uses a link too.)
+
+### starship
+
+starship can't include another file, so its flavor is the line
+`palette = "catppuccin_mocha"` inside `~/.config/starship.toml`, which
+`theme-toggle.sh` edits in place. So that a toggle doesn't show up as a
+difference, the config is split in two:
+
+- **`.chezmoitemplates/starship.toml`**: the full config, with the flavor left
+  as a blank (`{{ .flavor }}`). **This is the file to edit**: `edot
+  ~/.config/starship.toml` opens it and applies when you quit.
+- **`dot_config/modify_starship.toml`**: a few lines that build the file.
+  chezmoi passes it the current file from `~/.config`; it finds which flavor
+  is active there, defaulting to `mocha` if the file doesn't exist yet, and
+  fills it into the template.
+
+(`chezmoi edit ~/.config/starship.toml` would open the `modify_` file
+instead, which is not where the config is.)
 
 ## SSH and Git
 
