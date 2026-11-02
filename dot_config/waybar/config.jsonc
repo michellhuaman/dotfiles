@@ -1,0 +1,16 @@
+// -*- mode: jsonc -*-
+// Fedora's waybar config, with a few modules changed. Waybar has no drop-in
+// folder, so this file includes Fedora's; settings here win over it.
+{
+    "include": ["/etc/xdg/waybar/config.jsonc"],
+
+    // Long window titles pushed the right-hand modules off the bar.
+    "sway/window": {
+        "max-length": 50
+    },
+
+    // "us" or "us intl" (60-keyboard.conf), instead of "us1" / "us2".
+    "sway/language": {
+        "format": "{short} {variant}"
+    }
+}
