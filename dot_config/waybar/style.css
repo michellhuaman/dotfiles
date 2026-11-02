@@ -1,5 +1,5 @@
-/* waybar: Fedora's layout and modules (/etc/xdg/waybar/config.jsonc, left as
- * is), restyled with Catppuccin. The colors come from
+/* waybar: Fedora's layout and modules (config.jsonc includes Fedora's
+ * /etc/xdg/waybar/config.jsonc), restyled with Catppuccin. The colors come from
  * themes/catppuccin-current.css, a link theme-toggle.sh points at mocha.css or
  * latte.css (from catppuccin/waybar). */
 @import "themes/catppuccin-current.css";
@@ -74,6 +74,7 @@ button:hover {
 #idle_inhibitor,
 #scratchpad,
 #power-profiles-daemon,
+#language,
 #mpd {
     padding: 0 10px;
     background-color: @surface0;
@@ -109,6 +110,8 @@ button:hover {
 #idle_inhibitor { color: @overlay1; }
 #idle_inhibitor.activated { background-color: @rosewater; color: @base; }
 #scratchpad.empty { background-color: transparent; }
+/* Wide enough for "us intl": without it waybar shrinks the label to "…". */
+#language { color: @teal; min-width: 56px; }
 #custom-media, #mpd { color: @teal; }
 #mpd.disconnected { background-color: @red; color: @base; }
 #mpd.stopped, #mpd.paused { color: @overlay1; }
