@@ -59,6 +59,13 @@ read_list() {
   sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//' -e '/^$/d' "$1"
 }
 
+# curl for downloads. Right after boot (or a VM resume) the network can take a
+# moment, so failures, including name resolution, are retried for about 30
+# seconds before giving up.
+fetch() {
+  curl -fsSL --connect-timeout 10 --retry 6 --retry-delay 5 --retry-all-errors "$@"
+}
+
 # ---- checks ---------------------------------------------------------------------
 [[ $EUID -ne 0 ]] || die "run this as your normal user; it uses sudo when needed"
 [[ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]] \
@@ -72,8 +79,8 @@ read_list() {
 [[ -f "$script_dir/silverblue/layered.txt" ]] || die "silverblue/layered.txt not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
-command -v curl >/dev/null && { curl -fsSI --max-time 10 https://github.com >/dev/null \
-  || die "can't reach github.com; connect to the network and run this again"; }
+fetch -I --max-time 10 https://github.com >/dev/null \
+  || die "can't reach github.com; connect to the network and run this again"
 
 # ---- 1. system ------------------------------------------------------------------
 
@@ -85,7 +92,7 @@ install_keys() {
     read -r url name fpr <<<"$line"
     echo "Adding key $name"
     tmp="$(mktemp)"
-    curl -fsSL "$url" -o "$tmp"
+    fetch "$url" -o "$tmp"
     if [[ -n "$fpr" ]]; then
       got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
       [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
@@ -134,7 +141,7 @@ silverblue_system() {
     owner="${copr%%/*}" project="${copr#*/}"
     echo "Adding COPR $copr"
     tmp="$(mktemp)"
-    curl -fsSL -o "$tmp" \
+    fetch -o "$tmp" \
       "https://copr.fedorainfracloud.org/coprs/$owner/$project/repo/fedora-$fver/$owner-$project-fedora-$fver.repo" \
       || { rm -f "$tmp"; die "couldn't download the repo file for COPR $copr"; }
     sudo install -m 644 "$tmp" "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:$owner:$project.repo"
@@ -250,7 +257,7 @@ if command -v chezmoi >/dev/null; then
   echo "chezmoi already installed"
 else
   echo "Installing chezmoi to $bin_dir"
-  sh -c "$(curl -fsSL https://get.chezmoi.io)" -- -b "$bin_dir"
+  sh -c "$(fetch https://get.chezmoi.io)" -- -b "$bin_dir"
 fi
 chezmoi --version
 
@@ -259,7 +266,7 @@ chezmoi --version
 mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
 known_hosts="$HOME/.ssh/known_hosts"
 if ! ssh-keygen -F github.com -f "$known_hosts" >/dev/null 2>&1; then
-  keys="$(curl -fsS --max-time 10 https://api.github.com/meta | tr -d '\n' \
+  keys="$(fetch --max-time 10 https://api.github.com/meta | tr -d '\n' \
           | sed -n 's/.*"ssh_keys": *\[\([^]]*\)\].*/\1/p' | tr ',' '\n' \
           | sed -n 's/^[[:space:]]*"\(.*\)"[[:space:]]*$/github.com \1/p' || true)"
   if [[ -n "$keys" ]]; then
