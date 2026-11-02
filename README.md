@@ -33,8 +33,9 @@ ubuntu/groups.txt          groups your user joins (kvm, for Claude Desktop's Cow
 silverblue/layered.txt     RPMs layered with rpm-ostree (the whole set: unlisted ones are uninstalled)
 silverblue/override-remove.txt  base-image RPMs to remove (the whole set: unlisted removals are undone)
 silverblue/flatpak-remove.txt   preinstalled system Flatpaks to uninstall
+silverblue/copr.txt        COPR repos (owner/project) added before layering (DankMaterialShell)
 silverblue/repos/          vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
-silverblue/keys.txt        their signing keys, saved to /etc/pki/rpm-gpg/ (rpm-ostree can't fetch https keys)
+silverblue/keys.txt        optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
 ```
 
 Removals run before installs, and only touch what is actually installed.
@@ -61,7 +62,7 @@ packages:
 - makes the **base-image removals** match `silverblue/override-remove.txt`,
   undoing removals you've taken off the list;
 - enables Fedora's third-party repositories (`fedora-third-party enable`),
-  the same ones the first-boot setup offers;
+  the same ones the first-boot setup offers, and the COPRs in `copr.txt`;
 - uninstalls the preinstalled system Flatpaks in `flatpak-remove.txt`;
 - turns on automatic updates (`AutomaticUpdatePolicy=stage`), which download
   new images in the background and apply them at the next reboot.

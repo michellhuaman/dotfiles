@@ -264,8 +264,25 @@ silverblue_system() {
     warn "fedora-third-party not found; third-party repositories not enabled"
   fi
 
-  # Vendor repos: rpm-ostree doesn't download gpgkey=https:// URLs, so the
-  # keys go to /etc/pki/rpm-gpg/ and the repo files point there with file://.
+  # COPR repos: the repo file each project publishes, saved under the name
+  # `dnf copr enable` uses. It names its key by https:// URL and uses
+  # $releasever, so it keeps working after a Fedora upgrade. Fetched every
+  # run, so a fixed-up file reaches the machine too.
+  local copr owner project fver tmp
+  fver="$(rpm -E %fedora)"
+  while read -r copr; do
+    owner="${copr%%/*}" project="${copr#*/}"
+    echo "Adding COPR $copr"
+    tmp="$(mktemp)"
+    curl -fsSL -o "$tmp" \
+      "https://copr.fedorainfracloud.org/coprs/$owner/$project/repo/fedora-$fver/$owner-$project-fedora-$fver.repo" \
+      || { rm -f "$tmp"; die "couldn't download the repo file for COPR $copr"; }
+    sudo install -m 644 "$tmp" "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:$owner:$project.repo"
+    rm -f "$tmp"
+  done < <(read_list "$script_dir/silverblue/copr.txt")
+
+  # Vendor repos: every file in silverblue/repos/ goes to /etc/yum.repos.d/.
+  # Keys in keys.txt (optional, for a fingerprint check) go to /etc/pki/rpm-gpg/.
   install_keys "$script_dir/silverblue/keys.txt" /etc/pki/rpm-gpg
   for repo in "$script_dir"/silverblue/repos/*.repo; do
     [[ -e "$repo" ]] || continue
