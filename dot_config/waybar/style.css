@@ -1,0 +1,156 @@
+/* waybar: Fedora's layout and modules (/etc/xdg/waybar/config.jsonc, left as
+ * is), restyled with Catppuccin. The colors come from
+ * themes/catppuccin-current.css, a link theme-toggle.sh points at mocha.css or
+ * latte.css (from catppuccin/waybar). */
+@import "themes/catppuccin-current.css";
+
+* {
+    font-family: 'Noto Sans Mono', 'Font Awesome 6 Free', 'Font Awesome 6 Brands', monospace;
+    font-size: 13px;
+}
+
+window#waybar {
+    background-color: alpha(@base, 0.9);
+    border-bottom: 2px solid @surface0;
+    color: @text;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+button {
+    /* Use box-shadow instead of border so the text isn't offset */
+    box-shadow: inset 0 -2px transparent;
+    border: none;
+    border-radius: 0;
+}
+
+button:hover {
+    background: inherit;
+    box-shadow: inset 0 -2px @lavender;
+}
+
+#workspaces button {
+    padding: 0 5px;
+    background-color: transparent;
+    color: @subtext0;
+}
+
+#workspaces button:hover {
+    background: @surface0;
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+    background-color: @surface0;
+    color: @lavender;
+    box-shadow: inset 0 -2px @lavender;
+}
+
+#workspaces button.urgent {
+    background-color: @red;
+    color: @base;
+}
+
+#mode {
+    background-color: @peach;
+    color: @base;
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#wireplumber,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#power-profiles-daemon,
+#mpd {
+    padding: 0 10px;
+    background-color: @surface0;
+    color: @text;
+}
+
+#window,
+#workspaces {
+    margin: 0 4px;
+}
+
+/* If workspaces is the leftmost module, omit left margin */
+.modules-left > widget:first-child > #workspaces {
+    margin-left: 0;
+}
+
+/* If workspaces is the rightmost module, omit right margin */
+.modules-right > widget:last-child > #workspaces {
+    margin-right: 0;
+}
+
+#clock { color: @lavender; }
+#cpu { color: @green; }
+#memory { color: @mauve; }
+#disk { color: @flamingo; }
+#temperature { color: @peach; }
+#temperature.critical { background-color: @red; color: @base; }
+#backlight { color: @yellow; }
+#network { color: @sapphire; }
+#network.disconnected { background-color: @red; color: @base; }
+#pulseaudio, #wireplumber { color: @blue; }
+#pulseaudio.muted, #wireplumber.muted { color: @overlay1; }
+#idle_inhibitor { color: @overlay1; }
+#idle_inhibitor.activated { background-color: @rosewater; color: @base; }
+#scratchpad.empty { background-color: transparent; }
+#custom-media, #mpd { color: @teal; }
+#mpd.disconnected { background-color: @red; color: @base; }
+#mpd.stopped, #mpd.paused { color: @overlay1; }
+
+#battery { color: @green; }
+#battery.charging, #battery.plugged { background-color: @green; color: @base; }
+
+@keyframes blink {
+    to {
+        background-color: @text;
+        color: @base;
+    }
+}
+
+/* Using steps() instead of linear as a timing function to limit cpu usage */
+#battery.critical:not(.charging) {
+    background-color: @red;
+    color: @base;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: steps(12);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+#power-profiles-daemon { padding-right: 15px; }
+#power-profiles-daemon.performance { background-color: @red; color: @base; }
+#power-profiles-daemon.balanced { color: @blue; }
+#power-profiles-daemon.power-saver { background-color: @green; color: @base; }
+
+#tray > .passive { -gtk-icon-effect: dim; }
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: @red;
+}
+
+label:focus {
+    background-color: @crust;
+}
+
+#privacy { padding: 0; }
+#privacy-item { padding: 0 5px; color: @base; }
+#privacy-item.screenshare { background-color: @peach; }
+#privacy-item.audio-in { background-color: @green; }
+#privacy-item.audio-out { background-color: @blue; }

@@ -1,0 +1,3 @@
+// rofi: Catppuccin (themes/catppuccin-default.rasi, which follows the flavor
+// theme-toggle.sh sets). Everything else is rofi's default.
+@theme "catppuccin-default"

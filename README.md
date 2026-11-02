@@ -1,6 +1,6 @@
 # dotfiles
 
-My Fedora Silverblue setup (niri with DankMaterialShell, and GNOME), managed
+My Fedora Sway Atomic setup (Fedora's preconfigured sway, themed with Catppuccin), managed
 with [chezmoi](https://www.chezmoi.io/).
 
 This repo is the user half of the setup. The system half (layered packages,
@@ -25,12 +25,14 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
-  run_onchange_after_60-gnome-shortcuts.sh.tmpl     GNOME custom shortcuts (the whole set)
+  run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
 .chezmoitemplates/      the four themed configs (see "Themes" below)
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, starship, tmux, systemd, ...)
+  sway/config.d/        drop-ins on top of Fedora's sway config: keybindings, Catppuccin colors
+  waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 ```
 
@@ -105,7 +107,7 @@ then step 2.
 | Change | Where | Then |
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
-| a GNOME custom shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-shortcuts.sh.tmpl` (shortcuts made in Settings are replaced by this list) | `chezmoi apply` sets them |
+| a sway keybinding | `dot_config/sway/config.d/70-bindings.conf` (replaces Fedora's binding for the same keys) | `chezmoi apply`, then `$mod+Shift+c` (reload) |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
@@ -160,6 +162,28 @@ in `chezmoi diff`. To keep it, copy the line into the template with `edot`.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
 Yaru on Ubuntu, Adwaita everywhere else (Fedora included).
+
+### The sway desktop
+
+Sway, waybar, dunst, rofi and swaylock use Catppuccin's own theme files
+(copied from the catppuccin/i3, waybar, dunst, rofi and swaylock repos), one
+per flavor, under each app's `themes/` folder. Each config reads a "current"
+link instead of naming a flavor:
+
+| Config | Reads |
+| --- | --- |
+| `~/.config/sway/config.d/80-catppuccin.conf` | `~/.config/sway/themes/catppuccin-current` |
+| `~/.config/waybar/style.css` | `~/.config/waybar/themes/catppuccin-current.css` |
+| `~/.config/rofi/themes/catppuccin-default.rasi` | `~/.config/rofi/themes/catppuccin-current.rasi` |
+| `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`) |
+| `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
+
+`theme-toggle.sh` points the links at the other flavor and reloads sway,
+waybar and dunst; rofi and swaylock read theirs when they start. chezmoi
+tracks the theme files but not the links, so this needs no `modify_` files
+and a toggle never shows up as a difference. On a new machine,
+`run_onchange_after_55-theme-links.sh.tmpl` creates the links (`theme-toggle.sh
+links`) for the current mode.
 
 ## SSH and Git
 
