@@ -36,6 +36,7 @@ dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, sta
   waybar/config.jsonc  Fedora's waybar config plus a few module settings
   waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
+dot_local/private_share/themes/   Adwaita-dark for GTK3 apps (Thunar), missing on Sway Atomic
 ```
 
 chezmoi turns source names into real ones: `dot_` becomes `.`, `private_`

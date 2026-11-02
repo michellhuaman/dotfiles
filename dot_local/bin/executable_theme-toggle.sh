@@ -41,7 +41,7 @@ ubuntu)
   ;;
 *)
   GTK_THEME_LIGHT="Adwaita"
-  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps
+  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps; ~/.local/share/themes has it
   ICON_THEME_LIGHT="Adwaita"
   ICON_THEME_DARK="Adwaita"
   ;;
