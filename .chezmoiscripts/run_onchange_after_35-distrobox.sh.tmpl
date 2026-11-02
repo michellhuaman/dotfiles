@@ -3,16 +3,19 @@
 # whenever that file changes (hash: {{ include "dot_config/distrobox/assemble.ini" | sha256sum }}).
 # The first build downloads the image and packages, so it takes a few minutes.
 set -euo pipefail
-
-# distrobox is layered by workstation-bootstrap, so it's there only after
-# the reboot that follows its setup.sh. Until then this errors, and chezmoi
-# runs it again on the next apply.
-for cmd in distrobox podman; do
-  if ! command -v "$cmd" >/dev/null; then
-    echo "!! $cmd not found (reboot after workstation-bootstrap's setup.sh?); distrobox containers not built" >&2
-    exit 1
-  fi
-done
+{{- /* distrobox is layered by workstation-bootstrap, so on a new machine it
+       only exists after the reboot that follows setup.sh. Until then this
+       script only prints a note and succeeds, so the scripts after it still
+       run. Because its text depends on whether distrobox exists, chezmoi
+       sees it as changed after the reboot and runs it again, building the
+       containers, on the next `chezmoi apply`. */}}
+{{- if and (lookPath "distrobox") (lookPath "podman") }}
 
 echo "==> distrobox containers (assemble.ini)"
 distrobox assemble create --replace --file "$HOME/.config/distrobox/assemble.ini"
+{{- else }}
+
+echo "==> distrobox containers: skipped, distrobox isn't installed yet."
+echo "    After the reboot that follows workstation-bootstrap's setup.sh, run"
+echo "    \`chezmoi apply\` once to build them."
+{{- end }}
