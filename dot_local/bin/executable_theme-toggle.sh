@@ -87,12 +87,16 @@ sway_links() {
 # (rofi and swaylock read theirs each time they start.)
 sway_reload() {
   if command -v swaymsg >/dev/null 2>&1 && swaymsg -t get_version >/dev/null 2>&1; then
+    # Reloading sway also restarts its bar (waybar) with the new style. Don't
+    # also signal waybar: the signal can reach the new one before it's ready,
+    # and kill it.
     swaymsg reload >/dev/null
+  else
+    pkill -USR2 -x waybar 2>/dev/null || true
   fi
-  pkill -USR2 -x waybar 2>/dev/null || true
-  if command -v dunstctl >/dev/null 2>&1; then
-    dunstctl reload >/dev/null 2>&1 || true
-  fi
+  # `dunstctl reload` skips the dunstrc.d drop-ins, so stop dunst instead; D-Bus
+  # starts it again, with the new theme, for the next notification.
+  pkill -x dunst 2>/dev/null || true
 }
 
 current="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)"

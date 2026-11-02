@@ -178,8 +178,9 @@ link instead of naming a flavor:
 | `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`) |
 | `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
 
-`theme-toggle.sh` points the links at the other flavor and reloads sway,
-waybar and dunst; rofi and swaylock read theirs when they start. chezmoi
+`theme-toggle.sh` points the links at the other flavor, reloads sway (which
+restarts waybar) and stops dunst (D-Bus starts it again for the next
+notification); rofi and swaylock read theirs when they start. chezmoi
 tracks the theme files but not the links, so this needs no `modify_` files
 and a toggle never shows up as a difference. On a new machine,
 `run_onchange_after_55-theme-links.sh.tmpl` creates the links (`theme-toggle.sh
