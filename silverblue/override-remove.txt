@@ -5,5 +5,4 @@
 # removals no longer listed are undone with `rpm-ostree override reset`.
 # Packages that depend on each other must be listed together.
 
-firefox                   # Brave is a Flatpak (see the dotfiles)
-firefox-langpacks
+# (none: Firefox stays, next to the Brave Flatpak)
