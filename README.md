@@ -57,8 +57,9 @@ apps from Flathub (both in the dotfiles), and everything else goes in a
 toolbox. Layering changes take effect after a reboot, and a bad update is
 undone by picking the previous entry in the boot menu (or `rpm-ostree rollback`).
 
-To add a system package: add it to `layered.txt` (and its COPR to `copr.txt`,
-or its repo file to `repos/`), push, then re-run `setup.sh` and reboot.
+To add a system package: add it to `lists/layered.txt` (and its COPR to
+`lists/copr.txt`, or its repo file to `lists/repos/`), push, then re-run
+`setup.sh` and reboot. For niri-only packages, use the files in `lists/niri/`.
 
 ## Before leaving the old machine
 
