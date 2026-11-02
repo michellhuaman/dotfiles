@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
 # ddc-brightness.sh
-# Query or set monitor brightness via ddcutil, using fuzzel or zenity as the UI
-# (auto-detected, or forced via UI_BACKEND).
+# Query or set monitor brightness via ddcutil, using fuzzel, rofi or zenity as
+# the UI (auto-detected, or forced via UI_BACKEND).
 #
-# Works both under Wayland tiling window managers (e.g. Sway, via fuzzel) and
-# under GNOME (via zenity).
+# Works both under Wayland tiling window managers (e.g. Sway, via fuzzel or
+# rofi) and under GNOME (via zenity).
 #
 # Requirements:
 #   - ddcutil
 #   - notify-send (libnotify)
-#   - fuzzel (for tiling WMs) and/or zenity (for GNOME) — at least one must be installed
+#   - fuzzel or rofi (for tiling WMs) and/or zenity (for GNOME) — at least one must be installed
 #   - a monitor that supports VCP code 0x10
 #
 # Usage:
@@ -24,8 +24,8 @@
 # UI backend selection:
 #   By default the script auto-detects: if GNOME is the current desktop
 #   ($XDG_CURRENT_DESKTOP contains "GNOME"), it uses zenity; otherwise it
-#   prefers fuzzel if available, falling back to zenity.
-#   Override auto-detection by setting UI_BACKEND=fuzzel or UI_BACKEND=zenity.
+#   prefers fuzzel, then rofi (Fedora's sway ships rofi), falling back to zenity.
+#   Override auto-detection by setting UI_BACKEND=fuzzel, rofi or zenity.
 #
 # If you have more than one DDC-capable display, set DDC_DISPLAY below
 # (find the number via `ddcutil detect`).
@@ -50,10 +50,12 @@ detect_backend() {
     UI_BACKEND="zenity"
   elif command -v fuzzel &>/dev/null; then
     UI_BACKEND="fuzzel"
+  elif command -v rofi &>/dev/null; then
+    UI_BACKEND="rofi"
   elif command -v zenity &>/dev/null; then
     UI_BACKEND="zenity"
   else
-    notify "Neither fuzzel nor zenity is installed."
+    notify "None of fuzzel, rofi or zenity is installed."
     exit 1
   fi
 }
@@ -65,6 +67,11 @@ prompt_value() {
   case "$UI_BACKEND" in
   fuzzel)
     printf '%s' "$current" | fuzzel --dmenu --prompt "Brightness (current: ${current}): "
+    ;;
+  rofi)
+    # No list to pick from: what's typed (prefilled with the current value) is
+    # returned on Enter.
+    rofi -dmenu -p "Brightness" -mesg "Current: ${current}" -filter "$current" </dev/null
     ;;
   zenity)
     zenity --entry --title="Brightness" --text="Brightness (current: ${current}):" --entry-text="$current"
@@ -93,8 +100,8 @@ detect_backend
 
 current="$(current_brightness)"
 
-# fuzzel returns whatever was typed on Enter (matched or not);
-# zenity returns empty (and exit 1) on cancel — both handled below.
+# fuzzel and rofi return whatever was typed on Enter (matched or not);
+# all three return empty (and exit 1) on cancel — handled below.
 value="$(prompt_value "$current")" || value=""
 
 if [[ -z "$value" || "$value" == "$current" ]]; then
