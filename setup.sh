@@ -463,11 +463,32 @@ fi
 echo "Bitwarden's SSH agent has these keys:"
 SSH_AUTH_SOCK="$bw_sock" ssh-add -l | sed 's/^/   /'
 
+# True if ssh's error in $1 means the network isn't up yet (e.g. right after
+# boot), rather than a problem with the key.
+network_error() {
+  grep -qiE 'could not resolve hostname|temporary failure in name resolution|network is unreachable|no route to host|connection timed out|connection refused' <<<"$1"
+}
+
 echo "Checking GitHub (approve the request in Bitwarden if it asks)"
 gh_error=""
+net_tries=0
 until github_ok; do
-  warn "GitHub didn't accept a key: $gh_error"
-  read -rp "Check Bitwarden, then press Enter to try again (Ctrl+C to stop) " _
+  # Network errors retry on their own for up to a minute, then ask like any
+  # other error.
+  if network_error "$gh_error" && (( net_tries < 12 )); then
+    net_tries=$((net_tries + 1))
+    warn "Network not ready ($(head -1 <<<"$gh_error")); retrying in 5 seconds ($net_tries/12)"
+    sleep 5
+    continue
+  fi
+  if network_error "$gh_error"; then
+    warn "Still can't reach GitHub: $gh_error"
+    read -rp "Check the network connection, then press Enter to try again (Ctrl+C to stop) " _
+  else
+    warn "GitHub didn't accept a key: $gh_error"
+    read -rp "Check Bitwarden, then press Enter to try again (Ctrl+C to stop) " _
+  fi
+  net_tries=0
 done
 echo "GitHub accepts your key."
 
