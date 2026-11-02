@@ -17,7 +17,7 @@ Who does what:
 | this repo (`setup.sh`) | third-party repos, COPRs; layered packages and base-image removals; removes preinstalled Flatpaks; automatic updates; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway/niri/GNOME keybindings, Catppuccin theme, user services | no |
-| toolbox | everything else (VS Code, htop, btop, dev tools), set up by hand | no |
+| distrobox (layered here) | a `dev` container for everything else (VS Code, htop, btop), defined and built by the dotfiles; its apps show up in the launcher | no |
 
 Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
 Ventoy, ...) and losing it costs nothing.
@@ -53,8 +53,8 @@ Instead, `setup.sh`:
 
 So the lists are the full state: don't `rpm-ostree install` by hand, or the
 next run removes it. Keep `layered.txt` short: CLI tools come from mise and
-apps from Flathub (both in the dotfiles), and everything else goes in a
-toolbox. Layering changes take effect after a reboot, and a bad update is
+apps from Flathub (both in the dotfiles), and everything else goes in the
+dotfiles' distrobox container. Layering changes take effect after a reboot, and a bad update is
 undone by picking the previous entry in the boot menu (or `rpm-ostree rollback`).
 
 To add a system package: add it to `lists/layered.txt` (and its COPR to
