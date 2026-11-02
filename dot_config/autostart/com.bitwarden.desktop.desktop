@@ -1,9 +1,6 @@
 [Desktop Entry]
-# Starts Bitwarden at login so its SSH agent is there for git and ssh.
-# sway runs ~/.config/autostart entries once waybar's tray is ready; GNOME
-# reads this folder too.
 Type=Application
 Name=Bitwarden
-Icon=com.bitwarden.desktop
-Exec=/usr/bin/flatpak run com.bitwarden.desktop
-X-GNOME-Autostart-enabled=true
+X-XDP-Autostart=com.bitwarden.desktop
+Exec=flatpak run --command=bitwarden.sh com.bitwarden.desktop --autostart %U
+X-Flatpak=com.bitwarden.desktop

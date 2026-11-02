@@ -211,7 +211,10 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 `~/.ssh/config` points every host at its socket, and `.bash_profile` sets
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
 `git push` and `ssh`. It starts at login from
-`~/.config/autostart/com.bitwarden.desktop.desktop`.
+`~/.config/autostart/com.bitwarden.desktop.desktop`, which is exactly the file
+the desktop portal writes when Bitwarden asks to start at login (on GNOME it
+does, replacing ours; Fedora's sway portal can't). Keep it identical, with no
+comments, or chezmoi reports a conflict after every GNOME login.
 `~/.local/share/flatpak/overrides/com.bitwarden.desktop` lets it show its tray
 icon: the Flatpak may talk to the tray but not claim the D-Bus name the icon
 needs (always `org.freedesktop.StatusNotifierItem-2-1` inside the sandbox). Git's name and email are asked once per machine by
