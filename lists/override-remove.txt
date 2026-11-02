@@ -1,8 +1,0 @@
-# RPMs in the Sway Atomic base image that setup.sh removes with
-# `rpm-ostree override remove`. One package per line.
-#
-# This list is the whole set: entries not in the base image are skipped, and
-# removals no longer listed are undone with `rpm-ostree override reset`.
-# Packages that depend on each other must be listed together.
-
-# (none: Firefox stays, next to the Brave Flatpak)

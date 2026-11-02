@@ -2,9 +2,9 @@
 # Set up a fresh Fedora Sway Atomic install (image-based Fedora with sway).
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
-#                 layered packages and base-image removals match the lists in
-#                 lists/; removes preinstalled Flatpaks; turns on automatic
-#                 updates (sudo)
+#                 layered packages match lists/layered.txt; turns on
+#                 automatic updates (sudo). Nothing is removed from the base
+#                 image.
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -57,11 +57,6 @@ repo_url="git@github.com:$GITHUB_USER/$repo.git"
 read_list() {
   [[ -f "$1" ]] || return 0
   sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//' -e '/^$/d' "$1"
-}
-
-# Prints the entries of list $1 (e.g. layered.txt) from lists/.
-read_lists() {
-  read_list "$lists/$1"
 }
 
 # curl for downloads. Right after boot (or a VM resume) the network can take a
@@ -124,7 +119,7 @@ missing_from() {
 }
 
 atomic_system() {
-  local repo want have add drop app
+  local repo want have add drop
 
   # Fedora's third-party repos (RPM Fusion's NVIDIA driver and Steam, and
   # PyCharm). Turned on here, rather than by a first-boot switch,
@@ -152,7 +147,7 @@ atomic_system() {
       || { rm -f "$tmp"; die "couldn't download the repo file for COPR $copr"; }
     sudo install -m 644 "$tmp" "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:$owner:$project.repo"
     rm -f "$tmp"
-  done < <(read_lists copr.txt)
+  done < <(read_list "$lists/copr.txt")
 
   # Vendor repos: every file in lists/repos/ goes to /etc/yum.repos.d/.
   # Keys in keys.txt (optional, for a fingerprint check) go to /etc/pki/rpm-gpg/.
@@ -163,29 +158,10 @@ atomic_system() {
     sudo install -m 644 "$repo" /etc/yum.repos.d/
   done
 
-  # Base-image removals: the list is the whole set, so removals that are no
-  # longer listed are undone. Entries that aren't in the image are skipped.
-  want="$(read_lists override-remove.txt)"
-  have="$(ostree_list requested-base-removals)"
-  add=() drop=()
-  while read -r app; do
-    [[ -n "$app" ]] || continue
-    if rpm -q "$app" >/dev/null 2>&1; then add+=("$app"); else echo "$app isn't in the base image, skipping"; fi
-  done <<<"$(missing_from "$want" "$have")"
-  mapfile -t drop < <(missing_from "$have" "$want")
-  if (( ${#add[@]} )); then
-    echo "Removing from the base image: ${add[*]}"
-    sudo rpm-ostree override remove "${add[@]}"
-  fi
-  if (( ${#drop[@]} )); then
-    echo "Restoring to the base image (no longer in override-remove.txt): ${drop[*]}"
-    sudo rpm-ostree override reset "${drop[@]}"
-  fi
-
   # Layered packages: the list is the whole set. --allow-inactive accepts a
   # package the base image already has, so the requested set always matches
   # the list.
-  want="$(read_lists layered.txt)"
+  want="$(read_list "$lists/layered.txt")"
   have="$(ostree_list requested-packages)"
   mapfile -t add  < <(missing_from "$want" "$have")
   mapfile -t drop < <(missing_from "$have" "$want")
@@ -198,17 +174,6 @@ atomic_system() {
   if (( ${#drop[@]} )); then
     echo "Uninstalling layered packages no longer in layered.txt: ${drop[*]}"
     sudo rpm-ostree uninstall "${drop[@]}"
-  fi
-
-  # Preinstalled system Flatpaks (Fedora's remote), in one call so flatpak's
-  # note about root's search path prints once.
-  add=()
-  while read -r app; do
-    flatpak info --system "$app" >/dev/null 2>&1 && add+=("$app")
-  done < <(read_lists flatpak-remove.txt)
-  if (( ${#add[@]} )); then
-    echo "Removing ${#add[@]} flatpaks: ${add[*]}"
-    sudo flatpak uninstall --system -y --noninteractive "${add[@]}"
   fi
 
   # Automatic updates: download and stage new images in the background; they
@@ -370,7 +335,7 @@ if [[ "$(rpm-ostree status --json | python3 -c '
 import json, sys
 deps = json.load(sys.stdin).get("deployments", [])
 print(bool(deps and deps[0].get("staged")))')" == True ]]; then
-  echo "  A new deployment is staged: layered packages and removals apply after the reboot."
+  echo "  A new deployment is staged: layered packages apply after the reboot."
 fi
 cat <<EOF
 

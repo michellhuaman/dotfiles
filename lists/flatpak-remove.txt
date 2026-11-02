@@ -1,5 +1,0 @@
-# Preinstalled system-wide Flatpaks (Fedora's own remote) that setup.sh
-# uninstalls. Entries that aren't installed are skipped.
-# Check what a fresh install has with: flatpak list --system --app
-
-# (none: Sway Atomic preinstalls no Flatpaks)

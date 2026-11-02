@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | third-party repos, COPRs; layered packages and base-image removals; removes preinstalled Flatpaks; automatic updates; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | third-party repos, COPRs; layered packages; automatic updates; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway keybindings, Catppuccin theme, user services | no |
 | distrobox (layered here) | a `dev` container for everything else (VS Code, htop, btop), defined and built by the dotfiles; its apps show up in the launcher | no |
@@ -20,8 +20,6 @@ Ventoy, ...) and losing it costs nothing.
 ```
 setup.sh                        the one script to run
 lists/layered.txt               RPMs layered with rpm-ostree
-lists/override-remove.txt       base-image RPMs to remove (none)
-lists/flatpak-remove.txt        preinstalled system Flatpaks to uninstall (none)
 lists/copr.txt                  COPR repos (owner/project) added before layering (none)
 lists/repos/                    vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
 lists/keys.txt                  optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
@@ -36,17 +34,17 @@ Instead, `setup.sh`:
   the same ones the first-boot setup offers, and the COPRs in `copr.txt`;
 - makes the **layered packages** match `layered.txt`: missing ones are
   layered, layered ones no longer listed are uninstalled;
-- makes the **base-image removals** match `override-remove.txt`, undoing
-  removals you've taken off the list (entries not in the image are skipped);
-- uninstalls the preinstalled system Flatpaks in `flatpak-remove.txt`;
 - turns on automatic updates (`AutomaticUpdatePolicy=stage`), which download
   new images in the background and apply them at the next reboot.
+
+Nothing is ever removed from the base image (Firefox and the rest stay).
 
 So the lists are the full state: don't `rpm-ostree install` by hand, or the
 next run removes it. Keep `layered.txt` short: CLI tools come from mise and
 apps from Flathub (both in the dotfiles), and everything else goes in the
-dotfiles' distrobox container. Layering changes take effect after a reboot, and a bad update is
-undone by picking the previous entry in the boot menu (or `rpm-ostree rollback`).
+dotfiles' distrobox container. Layering changes take effect after a
+reboot, and a bad update is undone by picking the previous entry in the boot
+menu (or `rpm-ostree rollback`).
 
 To add a system package: add it to `lists/layered.txt` (and its COPR to
 `lists/copr.txt`, or its repo file to `lists/repos/`), push, then re-run
