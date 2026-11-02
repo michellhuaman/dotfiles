@@ -253,6 +253,17 @@ missing_from() {
 silverblue_system() {
   local repo want have add drop app
 
+  # Fedora's third-party repos (on Silverblue: RPM Fusion's NVIDIA driver and
+  # Steam, and PyCharm). Turned on here, rather than by the first-boot switch,
+  # so every machine has them. Safe to run again.
+  # Done first, so rpm-ostree can resolve packages from them below.
+  if command -v fedora-third-party >/dev/null; then
+    echo "Enabling Fedora's third-party repositories"
+    sudo fedora-third-party enable
+  else
+    warn "fedora-third-party not found; third-party repositories not enabled"
+  fi
+
   # Vendor repos: rpm-ostree doesn't download gpgkey=https:// URLs, so the
   # keys go to /etc/pki/rpm-gpg/ and the repo files point there with file://.
   install_keys "$script_dir/silverblue/keys.txt" /etc/pki/rpm-gpg
@@ -299,13 +310,16 @@ silverblue_system() {
     sudo rpm-ostree uninstall "${drop[@]}"
   fi
 
-  # Preinstalled system Flatpaks (Fedora's remote).
+  # Preinstalled system Flatpaks (Fedora's remote), in one call so flatpak's
+  # note about root's search path prints once.
+  add=()
   while read -r app; do
-    if flatpak info --system "$app" >/dev/null 2>&1; then
-      echo "Removing flatpak $app"
-      sudo flatpak uninstall --system -y --noninteractive "$app"
-    fi
+    flatpak info --system "$app" >/dev/null 2>&1 && add+=("$app")
   done < <(read_list "$script_dir/silverblue/flatpak-remove.txt")
+  if (( ${#add[@]} )); then
+    echo "Removing ${#add[@]} flatpaks: ${add[*]}"
+    sudo flatpak uninstall --system -y --noninteractive "${add[@]}"
+  fi
 
   # Automatic updates: download and stage new images in the background; they
   # take effect at the next reboot.

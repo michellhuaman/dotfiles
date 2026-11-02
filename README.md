@@ -60,6 +60,8 @@ packages:
   are layered, layered ones no longer listed are uninstalled;
 - makes the **base-image removals** match `silverblue/override-remove.txt`,
   undoing removals you've taken off the list;
+- enables Fedora's third-party repositories (`fedora-third-party enable`),
+  the same ones the first-boot setup offers;
 - uninstalls the preinstalled system Flatpaks in `flatpak-remove.txt`;
 - turns on automatic updates (`AutomaticUpdatePolicy=stage`), which download
   new images in the background and apply them at the next reboot.
