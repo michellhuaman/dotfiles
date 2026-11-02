@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora Silverblue install.
+# Set up a fresh Fedora Sway Atomic install (image-based Fedora, like Silverblue).
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
 #                 layered packages and base-image removals match the lists in
@@ -73,9 +73,9 @@ fetch() {
 
 # shellcheck disable=SC1091
 . /etc/os-release
-# Fedora Silverblue boots from an image (ostree) and has no dnf on the host.
+# Fedora's atomic desktops boot from an image (ostree) and have no dnf on the host.
 [[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted ]] \
-  || die "this repo sets up Fedora Silverblue; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+  || die "this repo sets up Fedora Sway Atomic; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
 [[ -f "$script_dir/silverblue/layered.txt" ]] || die "silverblue/layered.txt not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
@@ -120,8 +120,8 @@ missing_from() {
 silverblue_system() {
   local repo want have add drop app
 
-  # Fedora's third-party repos (on Silverblue: RPM Fusion's NVIDIA driver and
-  # Steam, and PyCharm). Turned on here, rather than by the first-boot switch,
+  # Fedora's third-party repos (RPM Fusion's NVIDIA driver and Steam, and
+  # PyCharm, on Silverblue). Turned on here, rather than by the first-boot switch,
   # so every machine has them. Safe to run again.
   # Done first, so rpm-ostree can resolve packages from them below.
   if command -v fedora-third-party >/dev/null; then
@@ -353,7 +353,7 @@ fi
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
-Next: reboot, then log in as usual (GNOME or niri, from the gear on the login screen).
+Next: reboot, then log into sway as usual.
   Flatpak apps only show up in the app grid after a fresh login.
 
     systemctl reboot

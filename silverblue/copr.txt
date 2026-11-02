@@ -2,4 +2,4 @@
 # Their repo files go to /etc/yum.repos.d/ under the name `dnf copr enable`
 # would use. A COPR's own dependency repos come with it.
 
-avengemedia/dms           # DankMaterialShell; brings avengemedia/danklinux (quickshell, matugen, dgop...)
+# (none)

@@ -7,5 +7,3 @@
 
 firefox                   # Brave is a Flatpak (see the dotfiles)
 firefox-langpacks
-gnome-tour                # Tour
-malcontent-control        # Parental Controls (the app only)
