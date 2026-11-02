@@ -9,9 +9,6 @@
 # GNOME's own shortcuts are left alone. niri has its own, in its config.
 set -euo pipefail
 
-{{- $resources := "flatpak run net.nokyan.Resources" }}
-{{- if lookPath "resources" }}{{ $resources = "resources" }}{{ end }}
-
 if ! command -v dconf >/dev/null; then
   echo "!! dconf not found; GNOME shortcuts not set" >&2
   exit 1
@@ -22,7 +19,7 @@ base=/org/gnome/settings-daemon/plugins/media-keys
 dconf reset -f "$base/custom-keybindings/"
 dconf load "$base/" <<'EOF'
 [/]
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']
 
 [custom-keybindings/custom0]
 name='Launch File Manager'
@@ -30,26 +27,21 @@ command='nautilus -w'
 binding='<Super>e'
 
 [custom-keybindings/custom1]
-name='Launch Resources'
-command='{{ $resources }}'
-binding='<Shift><Control>Escape'
-
-[custom-keybindings/custom2]
 name='Modify Monitor Brightness'
 command='{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
 binding='<Shift><Super>b'
 
-[custom-keybindings/custom3]
+[custom-keybindings/custom2]
 name='Launch Alacritty'
 command='alacritty'
 binding='<Super>Return'
 
-[custom-keybindings/custom4]
+[custom-keybindings/custom3]
 name='Change theme'
 command='bash {{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
 binding='<Shift><Super>t'
 
-[custom-keybindings/custom5]
+[custom-keybindings/custom4]
 name='Launch power menu'
 command='bash {{ .chezmoi.homeDir }}/.local/bin/powermenu.sh'
 binding='<Shift><Super>e'
