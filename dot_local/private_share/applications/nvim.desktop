@@ -1,0 +1,15 @@
+[Desktop Entry]
+# Neovim comes from mise, which installs no app entry, so rofi and "Open
+# With" menus had no Neovim. Terminal=true: rofi runs it in its -terminal
+# (Alacritty); GTK apps such as Thunar go through xdg-terminal-exec.
+Type=Application
+Name=Neovim
+GenericName=Text Editor
+Comment=Edit text files
+Icon=accessories-text-editor
+TryExec=nvim
+Exec=nvim %F
+Terminal=true
+Categories=Utility;TextEditor;
+MimeType=text/plain;text/markdown;text/x-shellscript;application/x-shellscript;application/json;application/toml;application/x-yaml;
+Keywords=Text;editor;vim;nvim;

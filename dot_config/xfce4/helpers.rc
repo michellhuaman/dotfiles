@@ -1,0 +1,5 @@
+# Xfce's preferred applications (exo-open): Thunar's "Open Terminal Here"
+# runs `exo-open --launch TerminalEmulator`. The helper is in
+# ~/.local/share/xfce4/helpers/alacritty.desktop.
+TerminalEmulator=alacritty
+TerminalEmulatorDismissed=true

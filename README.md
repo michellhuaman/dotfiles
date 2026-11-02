@@ -38,6 +38,8 @@ dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, sta
   waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 dot_local/private_share/themes/   Adwaita-dark for GTK3 apps (Thunar), missing on Sway Atomic
+dot_local/private_share/applications/nvim.desktop   Neovim in rofi and "Open With" (mise installs no app entry)
+dot_local/private_share/xfce4/helpers/, dot_config/xfce4/helpers.rc   Alacritty for Thunar's "Open Terminal Here"
 ```
 
 chezmoi turns source names into real ones: `dot_` becomes `.`, `private_`
