@@ -69,9 +69,15 @@ prompt_value() {
     printf '%s' "$current" | fuzzel --dmenu --prompt "Brightness (current: ${current}): "
     ;;
   rofi)
-    # No list to pick from: what's typed (prefilled with the current value) is
-    # returned on Enter.
-    rofi -dmenu -p "Brightness" -mesg "Current: ${current}" -filter "$current" </dev/null
+    # No list to pick from: what's typed is returned on Enter. The input starts
+    # empty (the current value is shown below it), so there's nothing to delete
+    # first; Enter on an empty input changes nothing. The theme string drops
+    # the parts of rofi's list mode that mean nothing here: the list, the
+    # match counter, and the "Type to filter" placeholder.
+    rofi -dmenu -p "Brightness" -mesg "Current: ${current}" -theme-str '
+      inputbar { children: [ "prompt", "textbox-prompt-colon", "entry" ]; }
+      entry { placeholder: "0-100"; }
+      listview { enabled: false; }' </dev/null
     ;;
   zenity)
     zenity --entry --title="Brightness" --text="Brightness (current: ${current}):" --entry-text="$current"
