@@ -25,7 +25,7 @@ so `chezmoi apply` never asks for a password.
 
 ```
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
-.chezmoiignore          repo files that are not copied to ~ (this README)
+.chezmoiignore          what chezmoi leaves alone: this README, and DMS's generated niri files (~/.config/niri/dms)
 .chezmoidata/
   packages.yaml         flatpaks (+ GNOME-only ones), Nerd Font version, mise version and checksums, systemd user units
 .chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
@@ -138,9 +138,11 @@ Each of these then goes through step 2 like any other change.
 
 ## Themes
 
-`theme-toggle.sh` switches GNOME between light and dark several times a day and
-changes the Catppuccin flavor (Latte for light, Mocha for dark) inside four
-configs:
+`theme-toggle.sh` (`Super+Shift+T` in sway, niri and GNOME) switches between
+light and dark: it sets the desktop's color scheme (which GTK4/libadwaita apps
+and Brave follow) and GTK theme, the sway desktop's theme links (see "The sway
+desktop"), DankMaterialShell's mode (see "niri and DankMaterialShell"), and
+the Catppuccin flavor (Latte for light, Mocha for dark) inside four configs:
 
 | Config | Line it changes |
 | --- | --- |
@@ -180,7 +182,9 @@ for example, rewrites `btop.conf` with all its settings when it quits) shows up
 in `chezmoi diff`. To keep it, copy the line into the template with `edot`.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
-Yaru on Ubuntu, Adwaita everywhere else (Fedora included).
+Yaru on Ubuntu, Adwaita everywhere else (Fedora included). GTK3 apps (Thunar)
+need the theme named `Adwaita-dark`, which Sway Atomic doesn't ship, so
+`~/.local/share/themes/Adwaita-dark` provides it.
 
 ### The sway desktop
 
@@ -205,20 +209,37 @@ and a toggle never shows up as a difference. On a new machine,
 `run_onchange_after_55-theme-links.sh.tmpl` creates the links (`theme-toggle.sh
 links`) for the current mode.
 
+### niri and DankMaterialShell
+
+On Silverblue with niri, DankMaterialShell (DMS) is the bar, launcher,
+notifications and wallpaper. niri starts it (`spawn-sh-at-startup "dms run"`
+in `config.kdl`), and DMS writes its own files into `~/.config/niri/dms/`
+(colors, monitor settings), which `config.kdl` includes and chezmoi ignores.
+DMS's settings (`~/.config/DankMaterialShell`) aren't tracked: set them in its
+Settings app. `theme-toggle.sh` switches DMS to light or dark
+(`dms ipc call theme light|dark`), which also regenerates niri's border colors.
+
 ## SSH and Git
 
 Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 `~/.ssh/config` points every host at its socket, and `.bash_profile` sets
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
-`git push` and `ssh`. It starts at login from
-`~/.config/autostart/com.bitwarden.desktop.desktop`, which is exactly the file
-the desktop portal writes when Bitwarden asks to start at login (on GNOME it
-does, replacing ours; Fedora's sway portal can't). Keep it identical, with no
-comments, or chezmoi reports a conflict after every GNOME login.
-`~/.local/share/flatpak/overrides/com.bitwarden.desktop` lets it show its tray
-icon: the Flatpak may talk to the tray but not claim the D-Bus name the icon
-needs (always `org.freedesktop.StatusNotifierItem-2-1` inside the sandbox). Git's name and email are asked once per machine by
-`chezmoi init`; to change them, run `chezmoi init` again.
+`git push` and `ssh`.
+
+- It starts at login from `~/.config/autostart/com.bitwarden.desktop.desktop`
+  (Brave from the file next to it). That file is exactly what the desktop
+  portal writes when Bitwarden asks to start at login: on GNOME it does, and
+  replaces ours; Fedora's sway portal can't. Keep it identical, with no
+  comments, or chezmoi reports a conflict after every GNOME login.
+- `~/.local/share/flatpak/overrides/com.bitwarden.desktop` lets it show its
+  tray icon: the Flatpak may talk to the tray but not claim the D-Bus name the
+  icon needs (always `org.freedesktop.StatusNotifierItem-2-1` inside the
+  sandbox).
+- To run in the tray, turn on "Keep Bitwarden running in the background" in
+  its settings (stored with the vault data, so not tracked here).
+
+Git's name and email are asked once per machine by `chezmoi init`; to change
+them, run `chezmoi init` again.
 
 ## CLI tools
 
@@ -233,7 +254,17 @@ version with `edot` and commit.
 
 ## Terminal
 
-`dot_config/xdg-terminals.list` makes GNOME open terminal apps (htop, btop,
-Neovim from the app grid) in Alacritty. It's read by `xdg-terminal-exec`, which
-workstation-bootstrap layers. Nautilus's "Open in Terminal" ignores it and
-always opens Ptyxis.
+Alacritty is the terminal everywhere (layered by workstation-bootstrap). Each
+launcher finds it its own way:
+
+| From | How |
+| --- | --- |
+| `Super+Return` | sway: `$term` in `70-bindings.conf`; niri: `config.kdl`; GNOME: the custom shortcuts script |
+| rofi (sway), for terminal apps such as Neovim | rofi's `-terminal alacritty` (`$menu` in `70-bindings.conf`) |
+| GTK apps: GNOME's app grid, "Open With" in Files or Thunar | `xdg-terminal-exec` (layered) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
+| Thunar's "Open Terminal Here" | Xfce's preferred terminal: `~/.config/xfce4/helpers.rc` and the helper in `~/.local/share/xfce4/helpers/` (Sway Atomic ships none) |
+| Nautilus's "Open in Terminal" | ignores all of these and always opens Ptyxis |
+
+Neovim comes from mise, which installs no app entry, so
+`~/.local/share/applications/nvim.desktop` adds one (rofi, app grid, "Open
+With").
