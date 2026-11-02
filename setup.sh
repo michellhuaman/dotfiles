@@ -354,7 +354,7 @@ fi
 info "Done."
 cat <<EOF
 Next: reboot, then log into sway as usual.
-  Flatpak apps only show up in the app grid after a fresh login.
+  Flatpak apps only show up in the launcher (rofi) after a fresh login.
 
     systemctl reboot
 EOF
