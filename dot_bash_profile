@@ -19,7 +19,9 @@ case ":$PATH:" in
   *) PATH="$HOME/.local/share/mise/shims:$PATH" ;;
 esac
 
-# Set up XDG folders
+# XDG folders. These are also what programs assume when the variables are
+# unset, but some (less's history, for one) only use the XDG folders when
+# they're set, and otherwise drop dotfiles in ~.
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_STATE_HOME="$HOME/.local/state"
@@ -37,9 +39,10 @@ else
   export VISUAL="vi"
 fi
 
-# Use Bitwarden SSH Agent. Set here, in the login shell GNOME starts the
-# session with, so it replaces the socket gcr-ssh-agent sets earlier and
-# reaches GUI apps too. Skipped on SSH logins, to keep a forwarded agent (ssh -A).
+# Use Bitwarden's SSH agent. Set here, in the login shell the desktop session
+# starts from, so GUI apps get it too and it replaces any agent socket set
+# earlier (such as gcr-ssh-agent's). Skipped on SSH logins, to keep a
+# forwarded agent (ssh -A).
 if [ -z "${SSH_CONNECTION:-}" ]; then
   export SSH_AUTH_SOCK="$HOME/.var/app/com.bitwarden.desktop/data/.bitwarden-ssh-agent.sock"
 fi
