@@ -84,9 +84,10 @@ layout {
 // REMOVED: waypaper + swaybg -> DMS manages the wallpaper; swaybg would fight with it
 // REMOVED: emacs --daemon, nextcloud -> DT's apps; add back only if you use them
 //
-// Start the shell. This is the ONLY place DMS is started: dms.service is masked
-// for this user (systemctl --user mask dms) because the package enables it
-// for every graphical session, which would also start DMS on top of GNOME.
+// Start the shell. This is the ONLY place DMS is started: the package's
+// dms.service is disabled (Fedora 44, checked 2026-11-02), so GNOME sessions
+// don't get DMS on top. If an update ever enables it for every graphical
+// session, mask it (systemctl --user mask dms) rather than starting it twice.
 spawn-sh-at-startup "dms run"
 
 // Autostart apps
