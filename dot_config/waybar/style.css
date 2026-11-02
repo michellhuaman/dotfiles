@@ -116,8 +116,11 @@ button:hover {
 #mpd.disconnected { background-color: @red; color: @base; }
 #mpd.stopped, #mpd.paused { color: @overlay1; }
 
+/* Module states change the text color only, on the usual @surface0
+ * background; charging shows in the battery icon. Colored backgrounds are
+ * kept for alerts (critical battery or temperature, no network) and for
+ * the idle inhibitor when on and sway's resize mode. */
 #battery { color: @green; }
-#battery.charging, #battery.plugged { background-color: @green; color: @base; }
 
 @keyframes blink {
     to {
@@ -138,9 +141,9 @@ button:hover {
 }
 
 #power-profiles-daemon { padding-right: 15px; }
-#power-profiles-daemon.performance { background-color: @red; color: @base; }
+#power-profiles-daemon.performance { color: @red; }
 #power-profiles-daemon.balanced { color: @blue; }
-#power-profiles-daemon.power-saver { background-color: @green; color: @base; }
+#power-profiles-daemon.power-saver { color: @green; }
 
 #tray > .passive { -gtk-icon-effect: dim; }
 #tray > .needs-attention {
