@@ -30,7 +30,8 @@ so `chezmoi apply` never asks for a password.
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
-dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
+dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, niri, starship, tmux, systemd, ...)
+                        niri's config.kdl is a template: Brave and Claude Desktop depend on what's installed
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 ```
 
