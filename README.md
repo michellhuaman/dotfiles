@@ -1,9 +1,14 @@
 # workstation-bootstrap
 
-Takes a fresh **Fedora Sway Atomic** install (image-based Fedora with sway,
-preconfigured) to my working desktop, with my dotfiles. The lists live in
-`silverblue/` (the name is historical: the same steps work on any Fedora
-atomic desktop).
+Takes a fresh Fedora atomic desktop (image-based Fedora) to my working
+desktop, with my dotfiles:
+
+- **Fedora Sway Atomic**: sway, preconfigured by Fedora. My main setup.
+- **Fedora Silverblue**: GNOME, optionally with a **niri** session (and
+  DankMaterialShell) next to it: `setup.sh --niri`.
+
+The same script and lists serve both; the dotfiles adapt to what's
+installed.
 
 Who does what:
 
@@ -11,7 +16,7 @@ Who does what:
 | --- | --- | --- |
 | this repo (`setup.sh`) | third-party repos, COPRs; layered packages and base-image removals; removes preinstalled Flatpaks; automatic updates; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
-| chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway keybindings, Catppuccin theme, user services | no |
+| chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway/niri/GNOME keybindings, Catppuccin theme, user services | no |
 | toolbox | everything else (VS Code, htop, btop, dev tools), set up by hand | no |
 
 Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
@@ -21,17 +26,19 @@ Ventoy, ...) and losing it costs nothing.
 
 ```
 setup.sh                        the one script to run
-silverblue/layered.txt          RPMs layered with rpm-ostree
-silverblue/override-remove.txt  base-image RPMs to remove
-silverblue/flatpak-remove.txt   preinstalled system Flatpaks to uninstall
-silverblue/copr.txt             COPR repos (owner/project) added before layering (none yet)
-silverblue/repos/               vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
-silverblue/keys.txt             optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
+lists/layered.txt               RPMs layered with rpm-ostree
+lists/override-remove.txt       base-image RPMs to remove (none)
+lists/flatpak-remove.txt        preinstalled system Flatpaks to uninstall (none)
+lists/copr.txt                  COPR repos (owner/project) added before layering (none)
+lists/repos/                    vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
+lists/keys.txt                  optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
+lists/niri/                     added to the lists above with --niri: niri, DMS and its COPR
 ```
 
 ## How it works
 
-Sway Atomic boots from a read-only image, so there is no `dnf` on the host.
+Fedora's atomic desktops boot from a read-only image, so there is no `dnf`
+on the host.
 Instead, `setup.sh`:
 
 - enables Fedora's third-party repositories (`fedora-third-party enable`),
@@ -63,14 +70,20 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
 
 ## Setting up a new machine
 
-1. **Install Fedora Sway Atomic.** Create your user **in the installer** and
-   make it an administrator: there is no first-boot setup to do it later, and
-   without it you won't have sudo. Connect to Wi-Fi or Ethernet.
-2. **Log into sway, plug in the drive, open a terminal (`Super+Return`) and run:**
+1. **Install Fedora Sway Atomic or Silverblue**, and make your user an
+   administrator, or you won't have sudo. On Sway Atomic, create the user
+   **in the installer**: there is no first-boot setup to do it later. On
+   Silverblue, GNOME's first-boot setup makes the first user an
+   administrator. Connect to Wi-Fi or Ethernet.
+2. **Log in, plug in the drive, open a terminal and run:**
 
    ```bash
    bash "/run/media/$USER/<drive>/workstation-bootstrap/setup.sh"
    ```
+
+   On sway the terminal is `Super+Return` (foot, until Alacritty is
+   layered); on GNOME, Ptyxis from the app grid. For a niri session next to
+   GNOME on Silverblue, add `--niri`.
 
    It asks for:
    - your **sudo password**, once, for the system step;
@@ -79,9 +92,16 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
    - to **approve the key** in Bitwarden when it checks GitHub and clones the
      dotfiles;
    - your **Git name and email**, the first time chezmoi runs.
-3. **Reboot** (`systemctl reboot`) and log into sway. The layered packages
-   are there, Flatpak apps are in rofi (`Super+D`), and `Super+Return` opens
-   Alacritty.
+3. **Reboot** (`systemctl reboot`) and log in. The layered packages are
+   there and the Flatpak apps are in the launcher: rofi (`Super+D`) on sway,
+   the app grid on GNOME. With `--niri`, pick **GNOME** or **Niri** with the
+   gear on the login screen.
+
+## niri on Silverblue
+
+`setup.sh --niri` adds `lists/niri/` (niri, DankMaterialShell and its COPR)
+to the lists; `setup.sh --no-niri` takes them away again. Without either, a
+rerun keeps the current state, so niri stays once it's layered.
 
 ## If something goes wrong
 
@@ -89,7 +109,8 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
   push, and run `setup.sh` again. A rerun only changes what differs from the
   lists, and an existing dotfiles clone is updated rather than cloned again.
   If only the dotfiles part failed, add `--no-system` to skip the system step.
-- **"A transaction is already in progress"**: the automatic updater is busy; wait a minute and run `setup.sh` again.
+- **"A transaction is already in progress"**: the automatic updater (or
+  GNOME Software) is busy; wait a minute and run `setup.sh` again.
 - **"Network not ready"**: right after boot the network can take a moment;
   `setup.sh` retries for a minute on its own.
 - **"The agent isn't answering yet, or has no keys"**: Bitwarden is locked, the

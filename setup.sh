@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora Sway Atomic install (image-based Fedora, like Silverblue).
+# Set up a fresh Fedora atomic desktop: Sway Atomic, or Silverblue (GNOME,
+# optionally with a niri session next to it, see --niri).
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
 #                 layered packages and base-image removals match the lists in
-#                 silverblue/; removes preinstalled Flatpaks; turns on
-#                 automatic updates (sudo)
+#                 lists/ (plus lists/niri/ with --niri); removes preinstalled
+#                 Flatpaks; turns on automatic updates (sudo)
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -14,7 +15,7 @@
 # Run it from a terminal in your desktop session, as your normal user:
 #   bash /path/to/workstation-bootstrap/setup.sh
 #
-# Safe to run again: the lists in silverblue/ are the whole state, so a rerun
+# Safe to run again: the lists in lists/ are the whole state, so a rerun
 # only changes what differs from them, and if the dotfiles are already cloned
 # it runs `chezmoi update` (pull and apply) instead.
 #
@@ -22,6 +23,11 @@
 #   --branch NAME   dotfiles branch to clone on the first run, e.g. a test branch
 #   --user NAME     GitHub username (default: GITHUB_USER below)
 #   --repo NAME     dotfiles repository name (default: dotfiles)
+#   --niri          also layer niri and DankMaterialShell (lists/niri/), for a
+#                   niri session next to GNOME on Silverblue
+#   --no-niri       remove them again
+#                   Without either, a rerun keeps what's there: niri stays if
+#                   it's already layered.
 #   --no-system     skip step 1, e.g. when re-running after a dotfiles fix
 
 set -euo pipefail
@@ -30,6 +36,7 @@ GITHUB_USER="michellhuaman"
 repo="dotfiles"
 branch=""
 do_system=true
+niri=""            # "", yes or no; "" keeps the current state (see --niri)
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="$HOME/.local/bin"
@@ -45,6 +52,8 @@ while [[ $# -gt 0 ]]; do
     --branch)    branch="${2:?--branch needs a name}"; shift 2 ;;
     --user)      GITHUB_USER="${2:?--user needs a name}"; shift 2 ;;
     --repo)      repo="${2:?--repo needs a name}"; shift 2 ;;
+    --niri)      niri=yes; shift ;;
+    --no-niri)   niri=no; shift ;;
     --no-system) do_system=false; shift ;;
     -h|--help)   awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)           die "unknown option: $1 (try --help)" ;;
@@ -57,6 +66,13 @@ repo_url="git@github.com:$GITHUB_USER/$repo.git"
 read_list() {
   [[ -f "$1" ]] || return 0
   sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//' -e '/^$/d' "$1"
+}
+
+# Prints the entries of list $1 (e.g. layered.txt) from lists/, plus those
+# from lists/niri/ when niri is on.
+read_lists() {
+  read_list "$lists/$1"
+  [[ "$niri" != yes ]] || read_list "$lists/niri/$1"
 }
 
 # curl for downloads. Right after boot (or a VM resume) the network can take a
@@ -75,8 +91,9 @@ fetch() {
 . /etc/os-release
 # Fedora's atomic desktops boot from an image (ostree) and have no dnf on the host.
 [[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted ]] \
-  || die "this repo sets up Fedora Sway Atomic; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
-[[ -f "$script_dir/silverblue/layered.txt" ]] || die "silverblue/layered.txt not found next to setup.sh"
+  || die "this repo sets up Fedora's atomic desktops (Sway Atomic, Silverblue); this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+lists="$script_dir/lists"
+[[ -f "$lists/layered.txt" ]] || die "lists/layered.txt not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
 fetch -I --max-time 10 https://github.com >/dev/null \
@@ -117,7 +134,7 @@ missing_from() {
   grep -vxF -f <(printf '%s\n' "$2") <<<"$1" | sed '/^$/d' || true
 }
 
-silverblue_system() {
+atomic_system() {
   local repo want have add drop app
 
   # Fedora's third-party repos (RPM Fusion's NVIDIA driver and Steam, and
@@ -146,12 +163,12 @@ silverblue_system() {
       || { rm -f "$tmp"; die "couldn't download the repo file for COPR $copr"; }
     sudo install -m 644 "$tmp" "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:$owner:$project.repo"
     rm -f "$tmp"
-  done < <(read_list "$script_dir/silverblue/copr.txt")
+  done < <(read_lists copr.txt)
 
-  # Vendor repos: every file in silverblue/repos/ goes to /etc/yum.repos.d/.
+  # Vendor repos: every file in lists/repos/ goes to /etc/yum.repos.d/.
   # Keys in keys.txt (optional, for a fingerprint check) go to /etc/pki/rpm-gpg/.
-  install_keys "$script_dir/silverblue/keys.txt" /etc/pki/rpm-gpg
-  for repo in "$script_dir"/silverblue/repos/*.repo; do
+  install_keys "$lists/keys.txt" /etc/pki/rpm-gpg
+  for repo in "$lists"/repos/*.repo; do
     [[ -e "$repo" ]] || continue
     echo "Adding repo $(basename "$repo")"
     sudo install -m 644 "$repo" /etc/yum.repos.d/
@@ -159,7 +176,7 @@ silverblue_system() {
 
   # Base-image removals: the list is the whole set, so removals that are no
   # longer listed are undone. Entries that aren't in the image are skipped.
-  want="$(read_list "$script_dir/silverblue/override-remove.txt")"
+  want="$(read_lists override-remove.txt)"
   have="$(ostree_list requested-base-removals)"
   add=() drop=()
   while read -r app; do
@@ -179,7 +196,7 @@ silverblue_system() {
   # Layered packages: the list is the whole set. --allow-inactive accepts a
   # package the base image already has, so the requested set always matches
   # the list.
-  want="$(read_list "$script_dir/silverblue/layered.txt")"
+  want="$(read_lists layered.txt)"
   have="$(ostree_list requested-packages)"
   mapfile -t add  < <(missing_from "$want" "$have")
   mapfile -t drop < <(missing_from "$have" "$want")
@@ -199,7 +216,7 @@ silverblue_system() {
   add=()
   while read -r app; do
     flatpak info --system "$app" >/dev/null 2>&1 && add+=("$app")
-  done < <(read_list "$script_dir/silverblue/flatpak-remove.txt")
+  done < <(read_lists flatpak-remove.txt)
   if (( ${#add[@]} )); then
     echo "Removing ${#add[@]} flatpaks: ${add[*]}"
     sudo flatpak uninstall --system -y --noninteractive "${add[@]}"
@@ -221,7 +238,11 @@ silverblue_system() {
 }
 
 if $do_system; then
-  info "Step 1/3: system packages (sudo)"
+  # niri: keep the current state unless --niri or --no-niri says otherwise.
+  if [[ -z "$niri" ]]; then
+    if ostree_list requested-packages | grep -qx niri; then niri=yes; else niri=no; fi
+  fi
+  info "Step 1/3: system packages (sudo)$([[ $niri == yes ]] && echo ", with niri")"
   sudo -v || die "your user needs sudo rights"
   # Package installs can outlast sudo's timeout; keep it fresh so you're only
   # asked once.
@@ -229,7 +250,7 @@ if $do_system; then
   sudo_keepalive=$!
   trap 'kill "$sudo_keepalive" 2>/dev/null || true' EXIT
 
-  silverblue_system
+  atomic_system
 
   kill "$sudo_keepalive" 2>/dev/null || true
   trap - EXIT
@@ -353,8 +374,12 @@ fi
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
-Next: reboot, then log into sway as usual.
-  Flatpak apps only show up in the launcher (rofi) after a fresh login.
+Next: reboot, then log in as usual$(
+  case "${VARIANT_ID:-}" in
+    silverblue) [[ $niri == yes ]] && echo " (GNOME or niri, from the gear on the login screen)" ;;
+    sway-atomic) echo " (sway)" ;;
+  esac).
+  Flatpak apps only show up in the app launcher after a fresh login.
 
     systemctl reboot
 EOF

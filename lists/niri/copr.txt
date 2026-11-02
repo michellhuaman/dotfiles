@@ -1,0 +1,3 @@
+# Added to ../copr.txt with `setup.sh --niri`. Same format as ../copr.txt.
+
+avengemedia/dms           # DankMaterialShell; brings avengemedia/danklinux (quickshell, matugen, dgop...)

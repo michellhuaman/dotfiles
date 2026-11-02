@@ -1,4 +1,4 @@
-# RPMs in the Silverblue base image that setup.sh removes with
+# RPMs in the base image (Sway Atomic or Silverblue) that setup.sh removes with
 # `rpm-ostree override remove`. One package per line.
 #
 # This list is the whole set: entries not in the base image are skipped, and
