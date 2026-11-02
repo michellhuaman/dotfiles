@@ -1,4 +1,4 @@
-# RPMs layered on top of the base image (Sway Atomic or Silverblue) with rpm-ostree, by setup.sh.
+# RPMs layered on top of the Sway Atomic image with rpm-ostree, by setup.sh.
 # One package per line; anything after # is a comment.
 #
 # This list is the whole layered set: setup.sh installs what's missing and
@@ -6,10 +6,10 @@
 # GUI apps come from Flathub and CLI tools from mise (both through chezmoi),
 # and anything else in the distrobox container. Changes take effect after a reboot.
 
-alacritty                 # no official flatpak; the terminal (instead of foot, GNOME's Ptyxis)
+alacritty                 # no official flatpak; the terminal instead of Sway Atomic's foot
 ddcutil                   # ddc-brightness.sh; needs the host's /dev/i2c-*
 xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xdg-terminals.list
 gcc                       # C compiler for Neovim's treesitter parsers
-dbus-tools                # dbus-send/dbus-monitor, which auto-dark-mode.nvim needs (in Sway Atomic's image already)
+dbus-tools                # dbus-send/dbus-monitor, which auto-dark-mode.nvim needs (already in the image; listed so it stays)
 tmux                      # config in the dotfiles (~/.config/tmux/tmux.conf)
 distrobox                 # containers for apps that don't belong on the host; defined in the dotfiles (~/.config/distrobox/assemble.ini)

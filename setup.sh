@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora atomic desktop: Sway Atomic, or Silverblue (GNOME,
-# optionally with a niri session next to it, see --niri).
+# Set up a fresh Fedora Sway Atomic install (image-based Fedora with sway).
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
 #                 layered packages and base-image removals match the lists in
-#                 lists/ (plus lists/niri/ with --niri); removes preinstalled
-#                 Flatpaks; turns on automatic updates (sudo)
+#                 lists/; removes preinstalled Flatpaks; turns on automatic
+#                 updates (sudo)
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -23,11 +22,6 @@
 #   --branch NAME   dotfiles branch to clone on the first run, e.g. a test branch
 #   --user NAME     GitHub username (default: GITHUB_USER below)
 #   --repo NAME     dotfiles repository name (default: dotfiles)
-#   --niri          also layer niri and DankMaterialShell (lists/niri/), for a
-#                   niri session next to GNOME on Silverblue
-#   --no-niri       remove them again
-#                   Without either, a rerun keeps what's there: niri stays if
-#                   it's already layered.
 #   --no-system     skip step 1, e.g. when re-running after a dotfiles fix
 
 set -euo pipefail
@@ -36,7 +30,6 @@ GITHUB_USER="michellhuaman"
 repo="dotfiles"
 branch=""
 do_system=true
-niri=""            # "", yes or no; "" keeps the current state (see --niri)
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="$HOME/.local/bin"
@@ -52,8 +45,6 @@ while [[ $# -gt 0 ]]; do
     --branch)    branch="${2:?--branch needs a name}"; shift 2 ;;
     --user)      GITHUB_USER="${2:?--user needs a name}"; shift 2 ;;
     --repo)      repo="${2:?--repo needs a name}"; shift 2 ;;
-    --niri)      niri=yes; shift ;;
-    --no-niri)   niri=no; shift ;;
     --no-system) do_system=false; shift ;;
     -h|--help)   awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "${BASH_SOURCE[0]}"; exit 0 ;;
     *)           die "unknown option: $1 (try --help)" ;;
@@ -68,11 +59,9 @@ read_list() {
   sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//' -e '/^$/d' "$1"
 }
 
-# Prints the entries of list $1 (e.g. layered.txt) from lists/, plus those
-# from lists/niri/ when niri is on.
+# Prints the entries of list $1 (e.g. layered.txt) from lists/.
 read_lists() {
   read_list "$lists/$1"
-  [[ "$niri" != yes ]] || read_list "$lists/niri/$1"
 }
 
 # curl for downloads. Right after boot (or a VM resume) the network can take a
@@ -89,9 +78,9 @@ fetch() {
 
 # shellcheck disable=SC1091
 . /etc/os-release
-# Fedora's atomic desktops boot from an image (ostree) and have no dnf on the host.
-[[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted ]] \
-  || die "this repo sets up Fedora's atomic desktops (Sway Atomic, Silverblue); this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+# Sway Atomic boots from an image (ostree) and has no dnf on the host.
+[[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted && "${VARIANT_ID:-}" == sway-atomic ]] \
+  || die "this repo sets up Fedora Sway Atomic; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
 lists="$script_dir/lists"
 [[ -f "$lists/layered.txt" ]] || die "lists/layered.txt not found next to setup.sh"
 
@@ -138,7 +127,7 @@ atomic_system() {
   local repo want have add drop app
 
   # Fedora's third-party repos (RPM Fusion's NVIDIA driver and Steam, and
-  # PyCharm, on Silverblue). Turned on here, rather than by the first-boot switch,
+  # PyCharm). Turned on here, rather than by a first-boot switch,
   # so every machine has them. Safe to run again.
   # Done first, so rpm-ostree can resolve packages from them below.
   if command -v fedora-third-party >/dev/null; then
@@ -238,11 +227,7 @@ atomic_system() {
 }
 
 if $do_system; then
-  # niri: keep the current state unless --niri or --no-niri says otherwise.
-  if [[ -z "$niri" ]]; then
-    if ostree_list requested-packages | grep -qx niri; then niri=yes; else niri=no; fi
-  fi
-  info "Step 1/3: system packages (sudo)$([[ $niri == yes ]] && echo ", with niri")"
+  info "Step 1/3: system packages (sudo)"
   sudo -v || die "your user needs sudo rights"
   # Package installs can outlast sudo's timeout; keep it fresh so you're only
   # asked once.
@@ -374,12 +359,8 @@ fi
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
-Next: reboot, then log in as usual$(
-  case "${VARIANT_ID:-}" in
-    silverblue) [[ $niri == yes ]] && echo " (GNOME or niri, from the gear on the login screen)" ;;
-    sway-atomic) echo " (sway)" ;;
-  esac).
-  Flatpak apps only show up in the app launcher after a fresh login.
+Next: reboot, then log into sway as usual.
+  Flatpak apps only show up in the launcher (rofi) after a fresh login.
   After the reboot, run `chezmoi apply` once: it builds the distrobox
   container (VS Code, htop, btop), which needs the layered distrobox.
 

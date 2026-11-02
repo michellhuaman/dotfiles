@@ -1,6 +1,0 @@
-# Added to ../layered.txt with `setup.sh --niri`: a niri session next to
-# GNOME on Silverblue (pick it with the gear on the login screen).
-# Same format and rules as ../layered.txt.
-
-niri
-dms                       # DankMaterialShell, from the COPR in copr.txt

@@ -2,4 +2,4 @@
 # uninstalls. Entries that aren't installed are skipped.
 # Check what a fresh install has with: flatpak list --system --app
 
-# (none: Silverblue's preinstalled GNOME apps stay; Sway Atomic has none)
+# (none: Sway Atomic preinstalls no Flatpaks)
