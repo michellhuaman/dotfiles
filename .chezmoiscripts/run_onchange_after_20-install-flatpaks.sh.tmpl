@@ -1,7 +1,11 @@
 #!/bin/bash
-# Flatpak apps, installed per user so no root or
-# polkit agent is needed.
-# Reruns whenever those lists in .chezmoidata/packages.yaml change.
+# Flatpak apps, installed per user so no root or polkit agent is needed.
+# Reruns whenever the list in .chezmoidata/packages.yaml changes.
+#
+# The list is the whole set of per-user apps: listed apps are installed, and
+# per-user apps that aren't listed are uninstalled. Their data in ~/.var/app
+# stays, so reinstalling one later picks up where it left off. System-wide
+# Flatpaks are left alone (workstation-bootstrap handles those).
 set -euo pipefail
 
 apps=(
@@ -10,10 +14,24 @@ apps=(
 {{- end }}
 )
 
+# Errors (not skips), so chezmoi reruns this on the next apply.
 if ! command -v flatpak >/dev/null; then
-  echo "!! flatpak is not installed, skipping apps" >&2
-  exit 0
+  echo "!! flatpak is not installed; run chezmoi apply again once it is" >&2
+  exit 1
+fi
+if (( ! ${#apps[@]} )); then
+  echo "!! the flatpak list is empty; refusing to uninstall every app" >&2
+  exit 1
 fi
 
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user -y --noninteractive flathub "${apps[@]}"
+
+# Per-user apps that are no longer listed, then the runtimes only they used.
+mapfile -t extra < <(flatpak list --user --app --columns=application | sort -u \
+  | grep -vxF -f <(printf '%s\n' "${apps[@]}") || true)
+if (( ${#extra[@]} )); then
+  echo "==> Uninstalling Flatpaks no longer in packages.yaml: ${extra[*]}"
+  flatpak uninstall --user -y --noninteractive "${extra[@]}"
+  flatpak uninstall --user -y --noninteractive --unused
+fi

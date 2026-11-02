@@ -6,7 +6,9 @@
 # on the next `chezmoi apply`.
 
 packages:
-  # Installed per user from Flathub (no root, no polkit prompt).
+  # Installed per user from Flathub (no root, no polkit prompt). This is the
+  # whole set: per-user apps not listed here are uninstalled (their data in
+  # ~/.var/app stays).
   flatpak:
     - com.bitwarden.desktop     # also installed by setup.sh, as the SSH agent
     - io.github.celluloid_player.Celluloid
