@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Set up a fresh Ubuntu (stock GNOME desktop) install.
 #
-#   1. System:    makes sure the packages in lists/apt.txt are installed
-#                 (and removes ones this script installed that were dropped
-#                 from the list); keeps automatic security updates on;
+#   1. System:    vendor repos (Brave, VS Code; keys checked by
+#                 fingerprint); makes sure the packages in lists/apt.txt are
+#                 installed (and removes ones this script installed that
+#                 were dropped from the list); keeps automatic security
+#                 updates on;
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
@@ -101,24 +103,89 @@ installed() {
   [[ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" == installed ]]
 }
 
+# Downloads the signing keys listed in $1 (<url> <file name> <fingerprints,
+# comma-separated>) into /etc/apt/keyrings, in the binary format apt reads.
+# Stops if a file doesn't hold exactly the listed keys.
+install_keys() {
+  local line url name fprs got want tmp
+  while read -r line; do
+    read -r url name fprs <<<"$line"
+    [[ -n "$fprs" ]] || die "apt-keys.txt: $name has no fingerprint"
+    echo "Adding key $name"
+    tmp="$(mktemp -d)"
+    fetch "$url" -o "$tmp/key" || { rm -rf "$tmp"; die "couldn't download the key $name"; }
+    # A throwaway GnuPG home, so nothing lands in ~/.gnupg.
+    got="$(gpg --homedir "$tmp" --show-keys --with-colons "$tmp/key" 2>/dev/null \
+           | awk -F: '/^pub:/ { getline; print $10 }' | sort | paste -sd,)"
+    want="$(tr ',' '\n' <<<"$fprs" | sort | paste -sd,)"
+    [[ "$got" == "$want" ]] \
+      || { rm -rf "$tmp"; die "key $name has fingerprints '$got', expected $want"; }
+    if head -c 5 "$tmp/key" | grep -q -- '-----'; then
+      gpg --homedir "$tmp" --dearmor <"$tmp/key" >"$tmp/key.gpg"
+    else
+      cp "$tmp/key" "$tmp/key.gpg"
+    fi
+    sudo install -D -m 644 -o root -g root "$tmp/key.gpg" "/etc/apt/keyrings/$name"
+    rm -rf "$tmp"
+  done < <(read_list "$1")
+}
+
 ubuntu_system() {
-  local want ours new p add=() drop=()
+  local want ours p add=() drop=()
   export DEBIAN_FRONTEND=noninteractive
 
   # Packages: install what's missing from apt.txt, and remember which ones
-  # this script installed. Listed packages are marked as manually
-  # installed, so autoremove never takes one away.
+  # this script installed, right after each install, so a run that stops
+  # halfway still knows them next time. Listed packages are marked as
+  # manually installed, so autoremove never takes one away.
   want="$(read_list "$lists/apt.txt")"
-  ours="$(sudo cat "$apt_state" 2>/dev/null || true)"
+  ours="$(cat "$apt_state" 2>/dev/null || true)"
+  # Rewrites the state file as $ours: tee, not install /dev/stdin, because
+  # sudo-rs doesn't pass a pipe through as a file.
+  save_state() {
+    ours="$(sed '/^$/d' <<<"$ours" | sort -u)"
+    sudo mkdir -p "$(dirname "$apt_state")"
+    sudo tee "$apt_state" <<<"$ours" >/dev/null
+  }
+  echo "Updating the package lists"
+  sudo apt-get update -q
+
+  # curl and gpg first: the vendor keys need them.
+  local pre=()
+  for p in curl gpg; do
+    installed "$p" || pre+=("$p")
+  done
+  if (( ${#pre[@]} )); then
+    echo "Installing ${pre[*]} (needed for the vendor keys)"
+    sudo apt-get install -y -q "${pre[@]}"
+    ours+=$'\n'"$(printf '%s\n' "${pre[@]}")"
+    save_state
+  fi
+
+  # Vendor repos: keys from apt-keys.txt (checked by fingerprint) go to
+  # /etc/apt/keyrings/, the files in apt-sources/ to /etc/apt/sources.list.d/.
+  # Fetched every run, so a new key or repo file reaches the machine too.
+  install_keys "$lists/apt-keys.txt"
+  local src
+  for src in "$lists"/apt-sources/*.sources; do
+    [[ -e "$src" ]] || continue
+    echo "Adding repo $(basename "$src")"
+    sudo install -m 644 "$src" /etc/apt/sources.list.d/
+  done
+  # VS Code's package offers to add Microsoft's repo itself; it's already
+  # here (vscode.sources), so tell it not to.
+  echo "code code/add-microsoft-repo boolean false" | sudo debconf-set-selections
+  sudo apt-get update -q
+
   while read -r p; do
     [[ -n "$p" ]] || continue
     installed "$p" || add+=("$p")
   done <<<"$want"
-  echo "Updating the package lists"
-  sudo apt-get update -q
   if (( ${#add[@]} )); then
     echo "Installing ${#add[@]} packages: ${add[*]}"
     sudo apt-get install -y -q "${add[@]}"
+    ours+=$'\n'"$(printf '%s\n' "${add[@]}")"
+    save_state
   else
     echo "All packages in apt.txt are already installed"
   fi
@@ -133,12 +200,9 @@ ubuntu_system() {
   if (( ${#drop[@]} )); then
     echo "Removing packages no longer in apt.txt: ${drop[*]}"
     sudo apt-get remove -y -q "${drop[@]}"
+    ours="$(missing_from "$ours" "$(printf '%s\n' "${drop[@]}")")"
+    save_state
   fi
-  new="$( { missing_from "$ours" "$(printf '%s\n' "${drop[@]}")"; printf '%s\n' "${add[@]}"; } \
-          | sed '/^$/d' | sort -u)"
-  # tee, not install /dev/stdin: sudo-rs doesn't pass a pipe through as a file.
-  sudo mkdir -p "$(dirname "$apt_state")"
-  sudo tee "$apt_state" <<<"$new" >/dev/null
 
   # Automatic updates: Ubuntu installs security updates in the background
   # (unattended-upgrades). This only makes sure that stays on.

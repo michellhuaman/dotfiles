@@ -7,10 +7,10 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | apt packages; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | apt packages, including Brave and VS Code from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
-| distrobox (installed here) | a `dev` container for everything else (VS Code, htop, btop), defined and built by the dotfiles; its apps show up in the app grid | no |
+| distrobox (installed here) | a `dev` container for everything else (htop, btop), defined and built by the dotfiles; its apps show up in the app grid | no |
 
 Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
 Ventoy, ...) and losing it costs nothing.
@@ -21,6 +21,8 @@ Ventoy, ...) and losing it costs nothing.
 setup.sh                        the one script to run
 update-pins.sh                  bumps every pinned version in the dotfiles, on a branch
 lists/apt.txt                   apt packages setup.sh makes sure are installed
+lists/apt-sources/              vendor repos (Brave, VS Code), copied to /etc/apt/sources.list.d/
+lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
 system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
 
@@ -28,6 +30,13 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
 
 `setup.sh`:
 
+- adds the vendor repos in `apt-sources/` (Brave's and Microsoft's, for
+  Brave and VS Code), with their keys from `apt-keys.txt`. A key file must
+  hold exactly the fingerprints listed there, or `setup.sh` stops. Brave
+  publishes no fingerprints; the ones listed are the keys shown on
+  https://brave.com/signing-keys/, which match its apt host's keyring.
+  Microsoft's is its well-known package signing key. VS Code's package is
+  told (through debconf) not to add its own copy of the repo;
 - installs the packages in `apt.txt` that are missing, and remembers which
   ones it installed (in `/var/lib/workstation-bootstrap/apt-installed.txt`).
   A package dropped from the list is removed only if `setup.sh` installed
@@ -48,8 +57,11 @@ Keep `apt.txt` short: CLI tools come from mise and apps from Flathub (both
 in the dotfiles), and everything else goes in the dotfiles' distrobox
 container.
 
-To add a system package: add it to `lists/apt.txt`, push, then re-run
-`setup.sh`.
+To add a system package: add it to `lists/apt.txt` (and, for a vendor's
+repo, its `.sources` file to `lists/apt-sources/` and its key to
+`lists/apt-keys.txt`), push, then re-run `setup.sh`. A repo dropped from
+`apt-sources/` isn't removed from the machine; delete its file in
+`/etc/apt/sources.list.d/` by hand.
 
 ## Updating the pinned versions
 
@@ -116,7 +128,7 @@ and the dotfiles in use don't change until the last step.
    use `wget`.) Follow "Setting up a new machine" from step 2, and check:
    `Super+Shift+T` switches light/dark (GNOME, Alacritty, btop, bat,
    starship), `nvim` starts with its plugins and no errors, `mise ls` shows
-   the new versions, `code` and `btop` open from the `dev` container, the
+   the new versions, `btop` opens from the `dev` container, Brave and VS Code start, the
    Nerd Font icons show in starship, and Bitwarden's unlock with system
    authentication works.
 
@@ -174,7 +186,7 @@ and the dotfiles in use don't change until the last step.
      dotfiles;
    - your **Git name and email**, the first time chezmoi runs.
 
-   The dotfiles also build the distrobox container (VS Code, htop, btop),
+   The dotfiles also build the distrobox container (htop, btop),
    which takes a few minutes.
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.

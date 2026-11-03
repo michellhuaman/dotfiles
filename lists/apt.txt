@@ -8,6 +8,7 @@
 
 # Needed by setup.sh itself (Ubuntu's desktop doesn't include all of them)
 curl
+gpg                       # checks the vendor keys in apt-keys.txt
 git
 flatpak                   # Flathub apps: Bitwarden here, the rest in the dotfiles
 
@@ -19,3 +20,7 @@ dbus-bin                  # dbus-send/dbus-monitor, which auto-dark-mode.nvim ne
 tmux                      # config in the dotfiles (~/.config/tmux/tmux.conf)
 distrobox                 # containers for apps that don't belong on the host; defined in the dotfiles (~/.config/distrobox/assemble.ini)
 podman                    # distrobox's container engine
+
+# From the vendor repos in apt-sources/ (keys in apt-keys.txt)
+brave-browser             # Brave, the default browser (set by the dotfiles)
+code                      # Visual Studio Code

@@ -1,0 +1,8 @@
+# Visual Studio Code, from Microsoft's repo (same file name as the one the
+# code package would add itself), signed by the key in lists/apt-keys.txt.
+Types: deb
+URIs: https://packages.microsoft.com/repos/code
+Suites: stable
+Components: main
+Architectures: amd64 arm64
+Signed-By: /etc/apt/keyrings/microsoft.gpg
