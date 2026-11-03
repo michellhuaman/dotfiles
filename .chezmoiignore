@@ -1,25 +1,2 @@
 # Files in this repo that chezmoi should not copy into the home folder.
 README.md
-{{- if eq .chezmoi.osRelease.id "ubuntu" }}
-
-# Stock Ubuntu runs GNOME: the sway desktop's configs (sway, waybar, rofi,
-# dunst, swaylock), Thunar's terminal helper and the Adwaita-dark copy (Ubuntu
-# has Yaru) would only be clutter there. GNOME's equivalents of the sway
-# settings are in run_onchange_after_60-gnome-settings.sh.tmpl.
-.config/sway
-.config/sway/**
-.config/waybar
-.config/waybar/**
-.config/rofi
-.config/rofi/**
-.config/dunst
-.config/dunst/**
-.config/swaylock
-.config/swaylock/**
-.config/xfce4
-.config/xfce4/**
-.local/share/xfce4
-.local/share/xfce4/**
-.local/share/themes
-.local/share/themes/**
-{{- end }}

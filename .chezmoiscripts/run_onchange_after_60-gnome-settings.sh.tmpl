@@ -1,5 +1,7 @@
 {{- /* Ubuntu (stock GNOME) only: GNOME's versions of the settings the sway
-       desktop has in dot_config/sway/config.d. Elsewhere the script is
+       desktop had in dot_config/sway/config.d, now only in the
+       fedora-sway-atomic tag. (The comments below still name those files;
+       editing them would rerun this script.) Elsewhere the script is
        empty, and chezmoi skips empty scripts. */ -}}
 {{- if eq .chezmoi.osRelease.id "ubuntu" -}}
 #!/bin/bash

@@ -7,13 +7,11 @@
 # Bind it via Settings > Keyboard > View and Customize Shortcuts > Custom
 # Shortcuts, pointing the command at the full path, e.g.:
 #   /home/youruser/.local/bin/theme-toggle.sh
-# (In sway it's bound to $mod+Shift+t in ~/.config/sway/config.d/70-bindings.conf.)
+# (The dotfiles bind it to Super+Shift+T.)
 #
 # It also switches the Catppuccin flavor (Latte for light, Mocha for dark):
-# - sway, waybar, dunst, rofi, swaylock, Alacritty, btop and bat read a
-#   "current" link that points at the flavor's file; this script repoints
-#   the links (see theme_links); so does the login screen (SDDM), through
-#   workstation-bootstrap's sddm-flavor, when that is installed;
+# - Alacritty, btop and bat read a "current" link that points at the
+#   flavor's file; this script repoints the links (see theme_links);
 # - starship has no way to include a file, so the palette line in
 #   ~/.config/starship.toml is edited in place.
 #
@@ -45,7 +43,7 @@ ubuntu)
   ;;
 *)
   GTK_THEME_LIGHT="Adwaita"
-  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps; ~/.local/share/themes has it
+  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps
   ICON_THEME_LIGHT="Adwaita"
   ICON_THEME_DARK="Adwaita"
   ;;
@@ -77,14 +75,6 @@ theme_links() {
     fi
     ln -sfn "$2" "$1"
   }
-  link "$CONFIG_DIR/sway/themes/catppuccin-current" "catppuccin-$f"
-  link "$CONFIG_DIR/waybar/themes/catppuccin-current.css" "$f.css"
-  link "$CONFIG_DIR/rofi/themes/catppuccin-current.rasi" "catppuccin-$f.rasi"
-  link "$CONFIG_DIR/swaylock/config" "themes/$f.conf"
-  if [[ -d "$CONFIG_DIR/dunst/themes" ]]; then
-    mkdir -p "$CONFIG_DIR/dunst/dunstrc.d"
-    link "$CONFIG_DIR/dunst/dunstrc.d/80-catppuccin.conf" "../themes/$f.conf"
-  fi
   # btop reads its theme when it starts, and bat its config on every run.
   link "$CONFIG_DIR/alacritty/themes/catppuccin-current.toml" "catppuccin-$f.toml"
   link "$CONFIG_DIR/btop/themes/catppuccin_current.theme" "catppuccin_$f.theme"
@@ -95,28 +85,6 @@ theme_links() {
   # alacritty.toml makes them reload, and re-read the link; its contents
   # don't change, so chezmoi sees no difference.
   [[ -f "$CONFIG_DIR/alacritty/alacritty.toml" ]] && touch "$CONFIG_DIR/alacritty/alacritty.toml"
-  # The login screen (SDDM), where workstation-bootstrap installed its
-  # helper; sudoers lets it run without a password. -n: never ask for one.
-  if [[ -x /usr/local/bin/sddm-flavor ]]; then
-    sudo -n /usr/local/bin/sddm-flavor "$f" >/dev/null 2>&1 \
-      || echo "theme-toggle: couldn't switch the login screen (sudo -n sddm-flavor $f)" >&2
-  fi
-}
-
-# Makes the running sway, waybar and dunst pick up the new links.
-# (rofi and swaylock read theirs each time they start.)
-sway_reload() {
-  if command -v swaymsg >/dev/null 2>&1 && swaymsg -t get_version >/dev/null 2>&1; then
-    # Reloading sway also restarts its bar (waybar) with the new style. Don't
-    # also signal waybar: the signal can reach the new one before it's ready,
-    # and kill it.
-    swaymsg reload >/dev/null
-  else
-    pkill -USR2 -x waybar 2>/dev/null || true
-  fi
-  # `dunstctl reload` skips the dunstrc.d drop-ins, so stop dunst instead; D-Bus
-  # starts it again, with the new theme, for the next notification.
-  pkill -x dunst 2>/dev/null || true
 }
 
 current="$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)"
@@ -150,6 +118,5 @@ apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_${flavor}\"#
   "$CONFIG_DIR/starship.toml"
 
 theme_links "$flavor"
-sway_reload
 
 notify-send "Theme" "Switched to ${mode}" 2>/dev/null || true

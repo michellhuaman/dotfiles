@@ -1,6 +1,0 @@
-/* Adwaita-dark for GTK3 apps (Thunar, ...), which theme-toggle.sh selects in
- * dark mode. GTK3 only has Adwaita built in; its dark stylesheet is built in
- * too, but the "Adwaita-dark" name comes from the gnome-themes-extra package,
- * which Sway Atomic doesn't ship. Without it GTK3 falls back to light
- * Adwaita. This is the same one line that package installs. */
-@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");

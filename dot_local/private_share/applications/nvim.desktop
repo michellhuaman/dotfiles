@@ -1,7 +1,7 @@
 [Desktop Entry]
-# Neovim comes from mise, which installs no app entry, so rofi and "Open
-# With" menus had no Neovim. Terminal=true: rofi runs it in its -terminal
-# (Alacritty); GTK apps such as Thunar go through xdg-terminal-exec.
+# Neovim comes from mise, which installs no app entry, so the app grid and
+# "Open With" menus had no Neovim. Terminal=true: GNOME runs it in the
+# terminal from xdg-terminal-exec (Alacritty).
 Type=Application
 Name=Neovim
 GenericName=Text Editor

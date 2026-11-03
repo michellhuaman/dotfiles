@@ -1,20 +1,19 @@
 # dotfiles
 
 My desktop setup, managed with [chezmoi](https://www.chezmoi.io/): stock
-**Ubuntu** (GNOME), and before that Fedora Sway Atomic (Fedora's
-preconfigured sway, themed with Catppuccin).
+**Ubuntu** (GNOME), themed with Catppuccin.
 
-On Ubuntu, the sway desktop's configs (sway, waybar, rofi, dunst, swaylock,
-Thunar's helpers, Adwaita-dark) aren't copied (`.chezmoiignore`), and
-`run_onchange_after_60-gnome-settings.sh.tmpl` gives GNOME the same
-keyboard layouts, tap to click, night light, wallpaper and shortcuts
-(Super+Return Alacritty, Super+Shift+Return Brave, Super+Shift+T
-theme-toggle, Super+Shift+B monitor brightness). Everything else (shell,
-Alacritty, Neovim, mise, tmux, btop, bat, starship, the flatpaks, the
-distrobox container) is the same on both.
+`run_onchange_after_60-gnome-settings.sh.tmpl` sets GNOME's keyboard
+layouts, tap to click, night light, wallpaper and shortcuts (Super+Return
+Alacritty, Super+Shift+Return Brave, Super+Shift+T theme-toggle,
+Super+Shift+B monitor brightness).
 
-This repo is the user half of the setup. The system half (layered packages,
-COPRs, third-party repos, and installing Bitwarden and chezmoi) is in
+The previous setup, Fedora Sway Atomic (sway, waybar, rofi, dunst,
+swaylock, Thunar's helpers), is kept as the tag `fedora-sway-atomic`:
+`git checkout fedora-sway-atomic` to look at it.
+
+This repo is the user half of the setup. The system half (apt packages,
+third-party repos, and installing Bitwarden and chezmoi) is in
 [workstation-bootstrap](https://github.com/michellhuaman/workstation-bootstrap),
 whose `setup.sh` clones and applies this repo on a new machine.
 
@@ -25,7 +24,7 @@ so `chezmoi apply` never asks for a password.
 
 ```
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
-.chezmoiignore          repo files that are not copied to ~ (this README; the sway desktop on Ubuntu)
+.chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
   packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
 .chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
@@ -36,23 +35,17 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_35-distrobox.sh.tmpl           builds the distrobox containers; reruns when assemble.ini changes
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
-  run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
+  run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
   run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, wallpaper, shortcuts
 .chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
-  sway/config.d/        drop-ins on top of Fedora's sway config: keyboard layouts, workspaces per
-                        monitor, thin borders, wallpaper, night light, floating blueman and Bitwarden, keybindings, Catppuccin colors
   autostart/            apps started at login: Bitwarden (the SSH agent) and Brave (apt package)
   distrobox/assemble.ini  the distrobox containers (see "Containers")
-  waybar/config.jsonc  Fedora's waybar config plus a few module settings
-  waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
-dot_local/private_share/themes/   Adwaita-dark for GTK3 apps (Thunar), missing on Sway Atomic
-dot_local/private_share/applications/nvim.desktop   Neovim in rofi and "Open With" (mise installs no app entry)
-dot_local/private_share/xfce4/helpers/, dot_config/xfce4/helpers.rc   Alacritty for Thunar's "Open Terminal Here"
+dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
 
 chezmoi turns source names into real ones: `dot_` becomes `.`, `private_`
@@ -126,20 +119,19 @@ then step 2.
 | Change | Where | Then |
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
-| a sway keybinding | `dot_config/sway/config.d/70-bindings.conf` (replaces Fedora's binding for the same keys) | `chezmoi apply`, then `$mod+Shift+c` (reload) |
+| a keyboard shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-settings.sh.tmpl` | `chezmoi apply` |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
 | a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
 | an app or tool in the container | `edot ~/.config/distrobox/assemble.ini` (`additional_packages`, plus `exported_apps`/`exported_bins` to reach it from the host) | `chezmoi apply` rebuilds the container |
-| a layered RPM or COPR | not here: workstation-bootstrap's lists | re-run its `setup.sh`, then reboot |
+| a system (apt) package | not here: workstation-bootstrap's lists | re-run its `setup.sh` |
 
 Each of these then goes through step 2 like any other change.
 
 **All the pinned versions at once** (mise, the Nerd Font, the CLI tools,
-the Neovim plugins, the container's Fedora, and the login screen theme in
-workstation-bootstrap): workstation-bootstrap's `update-pins.sh` bumps them
+the Neovim plugins and the container's Fedora): workstation-bootstrap's `update-pins.sh` bumps them
 to the latest stable releases on a branch, to test in a VM before merging.
 Its README, "Updating the pinned versions", has the steps.
 
@@ -152,42 +144,27 @@ GTK theme, and switches every themed app between the Catppuccin flavors
 the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
-Yaru on Ubuntu, Adwaita everywhere else (Fedora included). GTK3 apps (Thunar)
-need the theme named `Adwaita-dark`, which Sway Atomic doesn't ship, so
-`~/.local/share/themes/Adwaita-dark` provides it.
+Yaru on Ubuntu, Adwaita everywhere else.
 
 ### Theme links
 
-Most apps use Catppuccin's own theme files (copied from the catppuccin/i3,
-waybar, dunst, rofi, swaylock, alacritty, btop and bat repos), one per
+Most apps use Catppuccin's own theme files (copied from the catppuccin/alacritty,
+btop and bat repos), one per
 flavor, under each app's `themes/` folder. Each config reads a "current" link
 instead of naming a flavor:
 
 | Config | Reads |
 | --- | --- |
-| `~/.config/sway/config.d/80-catppuccin.conf` | `~/.config/sway/themes/catppuccin-current` |
-| `~/.config/waybar/style.css` | `~/.config/waybar/themes/catppuccin-current.css` |
-| `~/.config/rofi/themes/catppuccin-default.rasi` | `~/.config/rofi/themes/catppuccin-current.rasi` |
 | `~/.config/alacritty/alacritty.toml` | `~/.config/alacritty/themes/catppuccin-current.toml` |
 | `~/.config/btop/btop.conf` | `~/.config/btop/themes/catppuccin_current.theme`. That's its only line, and the file is read-only, so settings changed in btop's menu last only until it quits |
-| `~/.config/dunst/dunstrc.d/80-catppuccin.conf` | is the link itself (`../themes/<flavor>.conf`); `~/.config/dunst/dunstrc` exists only so dunst reads `dunstrc.d/` |
-| `~/.config/swaylock/config` | is the link itself (`themes/<flavor>.conf`) |
 | `~/.config/bat/config` | is the link itself (`config-mocha` / `config-latte`, the same apart from the theme: change both) |
 
-`theme-toggle.sh` points the links at the other flavor, reloads sway (which
-restarts waybar) and stops dunst (D-Bus starts it again for the next
-notification) and touches `alacritty.toml`, which makes open Alacritty windows reload; rofi,
-swaylock and btop read theirs when they start, and bat its config on every
-run. chezmoi tracks the theme files but not the links, so the configs are
+`theme-toggle.sh` points the links at the other flavor and touches
+`alacritty.toml`, which makes open Alacritty windows reload; btop reads its
+theme when it starts, and bat its config on every run. chezmoi tracks the theme files but not the links, so the configs are
 plain files you can edit directly, and a toggle never shows up as a
 difference. On a new machine, `run_onchange_after_55-theme-links.sh.tmpl`
 creates the links (`theme-toggle.sh links`) for the current mode.
-
-The login screen (SDDM) follows too. Its themes and link are system files,
-installed by workstation-bootstrap together with `/usr/local/bin/sddm-flavor`
-and a sudoers rule that lets you run it without a password; `theme_links`
-calls `sudo -n sddm-flavor <flavor>` when that helper exists, and only warns
-if it fails. The login screen shows the new flavor the next time it starts.
 
 (bat could pick a light or dark theme by itself from the terminal's
 background, but inside a tmux that was started before a toggle it keeps
@@ -221,7 +198,7 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 - It starts at login from `~/.config/autostart/com.bitwarden.desktop.desktop`
   (Brave from the file next to it). That file is exactly what the desktop
   portal writes when Bitwarden asks to start at login (on desktops whose
-  portal can, such as GNOME; Fedora's sway portal can't), so it has no
+  portal can, such as GNOME), so it has no
   comments: if a portal ever rewrites it, nothing changes.
 - `~/.local/share/flatpak/overrides/com.bitwarden.desktop` lets it show its
   tray icon: the Flatpak may talk to the tray but not claim the D-Bus name the
@@ -255,7 +232,7 @@ rebuilds it from scratch with `distrobox assemble` whenever that file
 changes. Anything installed in it by hand is lost on the next rebuild;
 your home folder is never touched.
 
-Its apps are exported: they're in rofi (as "... (on dev)"),
+Its apps are exported: they're in the app grid (as "... (on dev)"),
 and `htop` and `btop` work from the host's terminal. (Brave and VS Code are
 native apt packages from workstation-bootstrap, from their vendors' repos.) For a shell
 inside it: `distrobox enter dev`. distrobox and podman, which runs the
@@ -264,15 +241,13 @@ the container is built during `setup.sh`'s first `chezmoi apply`.
 
 ## Terminal
 
-Alacritty is the terminal (layered by workstation-bootstrap, instead of
-Fedora's foot). Each launcher finds it its own way:
+Alacritty is the terminal (an apt package from workstation-bootstrap).
+Each launcher finds it its own way:
 
 | From | How |
 | --- | --- |
-| `Super+Return` | `$term` in `70-bindings.conf` |
-| rofi (sway), for terminal apps such as Neovim | rofi's `-terminal alacritty` (`$menu` in `70-bindings.conf`) |
-| GTK apps, e.g. Thunar's "Open With" | `xdg-terminal-exec` (layered) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
-| Thunar's "Open Terminal Here" | Xfce's preferred terminal: `~/.config/xfce4/helpers.rc` and the helper in `~/.local/share/xfce4/helpers/` (Sway Atomic ships none) |
+| `Super+Return` | a custom shortcut in `run_onchange_after_60-gnome-settings.sh.tmpl` |
+| terminal apps such as Neovim, from the app grid or "Open With" | `xdg-terminal-exec` (apt) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
 
 Neovim comes from mise, which installs no app entry, so
-`~/.local/share/applications/nvim.desktop` adds one (rofi, "Open With").
+`~/.local/share/applications/nvim.desktop` adds one (app grid, "Open With").
