@@ -259,10 +259,14 @@ atomic_system() {
   # apps/desktop/resources/com.bitwarden.desktop.policy (bitwarden/clients,
   # unchanged since 92a620dd9c06), kept here so nothing unpinned is
   # installed as root. restorecon gives it the label of the rest of /etc.
+  # polkitd only watches action folders that existed when it started, and
+  # /etc/polkit-1/actions usually didn't; a reload makes it read the file now
+  # without dropping the running authentication agent (a restart could).
   echo "Installing Bitwarden's polkit action (unlock with system authentication)"
   sudo install -D -m 644 -o root -g root "$script_dir/system/com.bitwarden.Bitwarden.policy" \
     /etc/polkit-1/actions/com.bitwarden.Bitwarden.policy
   sudo restorecon -R /etc/polkit-1/actions
+  sudo systemctl reload polkit
 }
 
 if $do_system; then
