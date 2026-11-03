@@ -19,7 +19,8 @@ no key. Pushes go over SSH, through Bitwarden's agent.
 ## Layout
 
 ```
-setup.sh                        the one script to run
+autoinstall.yaml                answers for the Ubuntu installer ("Automated installation")
+setup.sh                        the one script to run, after the first login
 update-pins.sh                  bumps every pinned version (chezmoi here, the rest in the dotfiles), on a branch
 lists/apt.txt                   apt packages setup.sh makes sure are installed
 lists/apt-sources/              vendor repos (Brave, VS Code, mise), copied to /etc/apt/sources.list.d/
@@ -161,9 +162,21 @@ and the dotfiles in use don't change until the last step.
 
 ## Setting up a new machine
 
-1. **Install Ubuntu** (the normal desktop install). The user you create in
-   the installer is an administrator, so it has sudo. Connect to Wi-Fi or
-   Ethernet.
+1. **Install Ubuntu.** Connect to Wi-Fi or Ethernet when the installer
+   asks, and at "Type of installation" pick **Automated installation** with
+   this URL:
+
+   ```
+   https://raw.githubusercontent.com/michellhuaman/workstation-bootstrap/main/autoinstall.yaml
+   ```
+
+   `autoinstall.yaml` answers the language, keyboard, timezone, the
+   minimized desktop, drivers, codecs and updates. The installer still asks
+   for the disk (Erase disk, advanced: LVM with encryption, and a
+   passphrase) and for your name, username, hostname and password, so
+   nothing is wiped unasked and no password hash is in this public repo.
+   (Without the file, the normal interactive install with the same choices
+   works too.) The user you create is an administrator, so it has sudo.
 2. **Log in, open a terminal (`Ctrl+Alt+T`) and run** (wget comes with
    Ubuntu; curl and git may not yet):
 

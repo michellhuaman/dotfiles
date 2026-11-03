@@ -1,0 +1,35 @@
+# Answers for the Ubuntu Desktop installer: pick "Automated installation"
+# when it asks and give it this file's raw URL:
+#   https://raw.githubusercontent.com/michellhuaman/workstation-bootstrap/main/autoinstall.yaml
+#
+# It answers what's the same on every machine; the installer still asks for
+# the disk (and the encryption passphrase) and for the user, so nothing is
+# ever wiped unasked and no password hash lives in a public file. These are
+# the choices of the last manual install (/var/log/installer/telemetry).
+# After the first login, run setup.sh as usual (see the README).
+#
+# Reference: https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
+autoinstall:
+  version: 1
+
+  # Still asked: which disk, how (Erase disk > encrypted LVM, with a
+  # passphrase), and name, username, hostname and password.
+  interactive-sections:
+    - storage
+    - identity
+
+  locale: en_US.UTF-8
+  # The dotfiles add US International and swap Caps Lock and Escape later.
+  keyboard:
+    layout: us
+  timezone: Europe/Madrid
+
+  # Ubuntu Desktop (minimized): setup.sh and the dotfiles add the rest.
+  source:
+    id: ubuntu-desktop-minimal
+    search_drivers: true
+  drivers:
+    install: true             # third-party drivers, if the machine needs any
+  codecs:
+    install: true             # ubuntu-restricted-addons (media codecs)
+  updates: all                # security and regular updates, before the first boot
