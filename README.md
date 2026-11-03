@@ -47,7 +47,8 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
   it, so nothing Ubuntu came with is ever removed (Firefox, the snaps and
   the rest stay);
 - adds your user to the groups in `groups.txt` (libvirt, so virt-manager
-  manages VMs without sudo), effective at the next login. A group dropped
+  manages VMs without sudo), effective after a reboot (logging out isn't
+  enough: your systemd user manager keeps the old groups). A group dropped
   from the list isn't removed: `sudo gpasswd -d "$USER" <group>`;
 - makes sure libvirt's default NAT network (`virbr0`, 192.168.122.0/24)
   exists, starts at boot and is running, so new VMs get network access

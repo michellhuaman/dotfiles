@@ -208,7 +208,7 @@ ubuntu_system() {
     save_state
   fi
 
-  # Groups from groups.txt, joined once (effective at the next login). A
+  # Groups from groups.txt, joined once (effective after a reboot). A
   # group whose package isn't installed doesn't exist yet: skipped, with a
   # warning.
   local g me
@@ -217,7 +217,7 @@ ubuntu_system() {
     if ! getent group "$g" >/dev/null; then
       warn "group $g doesn't exist (is its package installed?); not joining it"
     elif ! id -nG "$me" | tr ' ' '\n' | grep -qxF "$g"; then
-      echo "Adding $me to the $g group (effective at the next login)"
+      echo "Adding $me to the $g group (effective after a reboot)"
       sudo usermod -aG "$g" "$me"
     fi
   done < <(read_list "$lists/groups.txt")
@@ -346,8 +346,10 @@ fi
 info "Done."
 cat <<EOF
 Next: reboot (systemctl reboot) and log in again. Flatpak apps only show up
-in the app grid after a fresh login, new groups (libvirt) apply from the
-next login, and ddcutil's i2c module loads at boot.
+in the app grid after a fresh login, new groups (libvirt) only reach the
+desktop after a reboot (logging out keeps the old ones: GNOME's apps run
+under your systemd user manager, which outlives a logout), and ddcutil's
+i2c module loads at boot.
 
   In Bitwarden, after logging in (master password and two-step login):
   - File > Settings > App settings (all accounts): turn on "Enable SSH

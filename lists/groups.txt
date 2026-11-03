@@ -1,4 +1,5 @@
-# Groups setup.sh adds your user to (effective at the next login). One per
+# Groups setup.sh adds your user to (effective after a reboot; logging out
+# isn't enough, as the systemd user manager keeps the old groups). One per
 # line; anything after # is a comment. A group dropped from this list isn't
 # taken away again: `sudo gpasswd -d "$USER" <group>` does that.
 
