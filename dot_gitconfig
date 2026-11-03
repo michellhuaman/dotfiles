@@ -1,0 +1,9 @@
+[user]
+	name = Michell Huaman
+	email = michell.huaman.fernandez@outlook.com
+
+[init]
+	defaultBranch = main
+
+[core]
+    editor = nvim

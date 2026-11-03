@@ -10,8 +10,8 @@
 # if that happens, set GITHUB_TOKEN and run `chezmoi apply` again.
 set -euo pipefail
 
-mise="$HOME/.local/bin/mise"     # installed by .chezmoiexternal.toml.tmpl
-[[ -x "$mise" ]] || { echo "!! $mise is missing; run chezmoi apply again" >&2; exit 1; }
+mise="$(command -v mise)" \
+  || { echo "!! mise is missing (an apt package from workstation-bootstrap); run its setup.sh" >&2; exit 1; }
 
 cd "$HOME"   # the global config, not some project's mise.toml
 echo "==> CLI tools (mise)"

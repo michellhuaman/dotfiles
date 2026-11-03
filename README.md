@@ -23,27 +23,23 @@ so `chezmoi apply` never asks for a password.
 ## Layout
 
 ```
-.chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
 .chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
-  packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
-.chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
+  packages.yaml         flatpaks, Nerd Font version, systemd user units
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
   run_onchange_after_25-install-cli-tools.sh.tmpl   mise install + prune; reruns when the mise config changes
   run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
-  run_onchange_after_35-distrobox.sh.tmpl           builds the distrobox containers; reruns when assemble.ini changes
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
   run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, wallpaper, shortcuts
 .chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
-dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl
+dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
   autostart/            apps started at login: Bitwarden (the SSH agent) and Brave (apt package)
-  distrobox/assemble.ini  the distrobox containers (see "Containers")
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
@@ -121,17 +117,15 @@ then step 2.
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
 | a keyboard shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-settings.sh.tmpl` | `chezmoi apply` |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
-| a new mise release | `mise.version` and both `mise.sha256` lines in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads and verifies it |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
-| an app or tool in the container | `edot ~/.config/distrobox/assemble.ini` (`additional_packages`, plus `exported_apps`/`exported_bins` to reach it from the host) | `chezmoi apply` rebuilds the container |
 | a system (apt) package | not here: workstation-bootstrap's lists | re-run its `setup.sh` |
 
 Each of these then goes through step 2 like any other change.
 
-**All the pinned versions at once** (mise, the Nerd Font, the CLI tools,
-the Neovim plugins and the container's Fedora): workstation-bootstrap's `update-pins.sh` bumps them
+**All the pinned versions at once** (the Nerd Font, the CLI tools, the
+Neovim plugins, and chezmoi in workstation-bootstrap): workstation-bootstrap's `update-pins.sh` bumps them
 to the latest stable releases on a branch, to test in a VM before merging.
 Its README, "Updating the pinned versions", has the steps.
 
@@ -207,37 +201,20 @@ Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 - To run in the tray, turn on "Keep Bitwarden running in the background" in
   its settings (stored with the vault data, so not tracked here).
 
-Git's name and email are asked once per machine by `chezmoi init`; to change
-them, run `chezmoi init` again.
+Git's name and email are in `dot_gitconfig`, the same on every machine.
 
 ## CLI tools
 
 Command-line tools (Neovim, lazygit, ripgrep, fd, bat, starship,
 tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
-machine gets the same versions whatever the distro. They're pinned in
+machine gets the same versions. mise itself is an apt package from its own
+repo (workstation-bootstrap), updated with the system. They're pinned in
 `~/.config/mise/config.toml`, and that file is the whole set: on each change
 chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`
 through its shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead
 of any distro copy. `update` lists newer releases; to take one, bump the
 version with `edot` and commit (or bump everything with workstation-bootstrap's
 `update-pins.sh`).
-
-## Containers
-
-Apps and tools that don't belong on the host (htop, btop) live in a
-[distrobox](https://distrobox.it) container named `dev`: a Fedora that shares
-your home folder, user and desktop session, so its apps open as normal
-windows. `~/.config/distrobox/assemble.ini` describes it completely, and chezmoi
-rebuilds it from scratch with `distrobox assemble` whenever that file
-changes. Anything installed in it by hand is lost on the next rebuild;
-your home folder is never touched.
-
-Its apps are exported: they're in the app grid (as "... (on dev)"),
-and `htop` and `btop` work from the host's terminal. (Brave and VS Code are
-native apt packages from workstation-bootstrap, from their vendors' repos.) For a shell
-inside it: `distrobox enter dev`. distrobox and podman, which runs the
-containers, come from workstation-bootstrap (apt on Ubuntu), so on Ubuntu
-the container is built during `setup.sh`'s first `chezmoi apply`.
 
 ## Terminal
 

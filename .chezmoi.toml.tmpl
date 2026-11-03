@@ -1,8 +1,0 @@
-{{- /* Per-machine settings, asked once by `chezmoi init` and kept in
-       ~/.config/chezmoi/chezmoi.toml afterwards. */ -}}
-{{- $gitName  := promptStringOnce . "git.name"  "Git name (for commits)" -}}
-{{- $gitEmail := promptStringOnce . "git.email" "Git email (for commits)" -}}
-
-[data.git]
-    name = {{ $gitName | quote }}
-    email = {{ $gitEmail | quote }}
