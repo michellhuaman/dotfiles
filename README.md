@@ -157,9 +157,7 @@ and the dotfiles in use don't change until the last step.
 
 1. **Update the pins** and test them (previous section), so the new machine
    starts from current versions that a VM has already run.
-2. **Copy `~/Pictures/wallpapers`** to the new machine; the images aren't
-   in the dotfiles.
-3. **Refresh the copy on the drive:**
+2. **Refresh the copy on the drive:**
 
    ```bash
    git -C "/media/$USER/<drive>/workstation-bootstrap" pull
@@ -185,9 +183,7 @@ and the dotfiles in use don't change until the last step.
 
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.
-4. **Copy `~/Pictures/wallpapers`** back and run `chezmoi apply`, which
-   sets the wallpaper.
-5. **In Bitwarden**, after logging in: File > Settings > Security > turn on
+4. **In Bitwarden**, after logging in: File > Settings > Security > turn on
    **Unlock with system authentication**. Bitwarden then unlocks with your
    login password (or a fingerprint, if the machine has a reader) instead of
    the master password. After Bitwarden starts, the first unlock still needs
