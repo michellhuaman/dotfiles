@@ -6,7 +6,8 @@
 # on the next `chezmoi apply`.
 
 packages:
-  # Installed per user from Flathub (no root, no polkit prompt). This is the
+  # Installed per user from Flathub (no root, no polkit prompt). Brave and VS
+  # Code are apt packages instead (workstation-bootstrap). This is the
   # whole set: per-user apps not listed here are uninstalled (their data in
   # ~/.var/app stays).
   flatpak:
@@ -15,7 +16,6 @@ packages:
     - org.libreoffice.LibreOffice
     - org.localsend.localsend_app
     - net.ankiweb.Anki
-    - com.brave.Browser         # turn on Origin mode in Settings > System
     - org.gnome.Boxes           # VMs (KVM), e.g. to test workstation-bootstrap branches
 
 fonts:

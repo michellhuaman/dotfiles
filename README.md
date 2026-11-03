@@ -45,7 +45,7 @@ private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
   sway/config.d/        drop-ins on top of Fedora's sway config: keyboard layouts, workspaces per
                         monitor, thin borders, wallpaper, night light, floating blueman and Bitwarden, keybindings, Catppuccin colors
-  autostart/            apps started at login: Bitwarden (the SSH agent) and Brave
+  autostart/            apps started at login: Bitwarden (the SSH agent) and Brave (apt package)
   distrobox/assemble.ini  the distrobox containers (see "Containers")
   waybar/config.jsonc  Fedora's waybar config plus a few module settings
   waybar, dunst, rofi, swaylock   Catppuccin for the rest of the sway desktop
@@ -247,7 +247,7 @@ version with `edot` and commit (or bump everything with workstation-bootstrap's
 
 ## Containers
 
-Apps and tools that don't belong on the host (VS Code, htop, btop) live in a
+Apps and tools that don't belong on the host (htop, btop) live in a
 [distrobox](https://distrobox.it) container named `dev`: a Fedora that shares
 your home folder, user and desktop session, so its apps open as normal
 windows. `~/.config/distrobox/assemble.ini` describes it completely, and chezmoi
@@ -256,11 +256,11 @@ changes. Anything installed in it by hand is lost on the next rebuild;
 your home folder is never touched.
 
 Its apps are exported: they're in rofi (as "... (on dev)"),
-and `code`, `htop` and `btop` work from the host's terminal. For a shell
-inside it: `distrobox enter dev`. distrobox itself is layered by
-workstation-bootstrap, and podman, which runs the containers, is part of
-Fedora's atomic images. On a new machine the container is built on the
-first `chezmoi apply` after the reboot that follows `setup.sh`.
+and `htop` and `btop` work from the host's terminal. (Brave and VS Code are
+native apt packages from workstation-bootstrap, from their vendors' repos.) For a shell
+inside it: `distrobox enter dev`. distrobox and podman, which runs the
+containers, come from workstation-bootstrap (apt on Ubuntu), so on Ubuntu
+the container is built during `setup.sh`'s first `chezmoi apply`.
 
 ## Terminal
 

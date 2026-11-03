@@ -82,7 +82,7 @@ shortcut() { # $1 id, $2 name, $3 keys, $4 command
   add_to_list "$media_keys" custom-keybindings "$path"
 }
 shortcut terminal     "Terminal (Alacritty)" '<Super>Return'       'alacritty'
-shortcut browser      "Brave"                '<Super><Shift>Return' 'flatpak run com.brave.Browser'
+shortcut browser      "Brave"                '<Super><Shift>Return' 'brave-browser'
 shortcut theme-toggle "Toggle light/dark"    '<Super><Shift>t'     '{{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
 shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
 {{- end }}

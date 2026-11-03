@@ -1,7 +1,0 @@
-[Desktop Entry]
-# Starts Brave (Flatpak) at login, like Bitwarden next to it.
-Type=Application
-Name=Brave
-Icon=com.brave.Browser
-Exec=/usr/bin/flatpak run com.brave.Browser
-X-GNOME-Autostart-enabled=true
