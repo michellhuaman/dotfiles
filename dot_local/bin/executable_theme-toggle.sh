@@ -84,11 +84,16 @@ theme_links() {
     mkdir -p "$CONFIG_DIR/dunst/dunstrc.d"
     link "$CONFIG_DIR/dunst/dunstrc.d/80-catppuccin.conf" "../themes/$f.conf"
   fi
-  # Alacritty reloads on its own when the link changes; btop reads its theme
-  # when it starts, and bat its config on every run.
+  # btop reads its theme when it starts, and bat its config on every run.
   link "$CONFIG_DIR/alacritty/themes/catppuccin-current.toml" "catppuccin-$f.toml"
   link "$CONFIG_DIR/btop/themes/catppuccin_current.theme" "catppuccin_$f.theme"
   link "$CONFIG_DIR/bat/config" "config-$f"
+  # Open Alacritty windows reload when alacritty.toml changes, but don't
+  # notice the imported link changing when its path goes through a link
+  # (/home is one, to /var/home, on Fedora's atomic desktops). Touching
+  # alacritty.toml makes them reload, and re-read the link; its contents
+  # don't change, so chezmoi sees no difference.
+  [[ -f "$CONFIG_DIR/alacritty/alacritty.toml" ]] && touch "$CONFIG_DIR/alacritty/alacritty.toml"
 }
 
 # Makes the running sway, waybar and dunst pick up the new links.

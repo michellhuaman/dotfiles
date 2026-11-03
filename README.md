@@ -159,7 +159,7 @@ instead of naming a flavor:
 
 `theme-toggle.sh` points the links at the other flavor, reloads sway (which
 restarts waybar) and stops dunst (D-Bus starts it again for the next
-notification). Alacritty reloads by itself when its link changes; rofi,
+notification) and touches `alacritty.toml`, which makes open Alacritty windows reload; rofi,
 swaylock and btop read theirs when they start, and bat its config on every
 run. chezmoi tracks the theme files but not the links, so the configs are
 plain files you can edit directly, and a toggle never shows up as a
