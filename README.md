@@ -10,6 +10,7 @@ Who does what:
 | this repo (`setup.sh`) | apt packages, including Brave and VS Code from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
+| distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
 
 Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
 Ventoy, ...) and losing it costs nothing.
@@ -123,9 +124,9 @@ and the dotfiles in use don't change until the last step.
 
    (A fresh Ubuntu may not have curl yet: `sudo apt install curl` first, or
    use `wget`.) Follow "Setting up a new machine" from step 2, and check:
-   `Super+Shift+T` switches light/dark (GNOME, Alacritty, btop, bat,
+   `Super+Shift+T` switches light/dark (GNOME, Alacritty, bat,
    starship), `nvim` starts with its plugins and no errors, `mise ls` shows
-   the new versions, `btop` opens, Brave and VS Code start, the
+   the new versions, Brave and VS Code start, the
    Nerd Font icons show in starship, and Bitwarden's unlock with system
    authentication works.
 

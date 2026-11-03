@@ -18,8 +18,8 @@ xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xd
 gcc                       # C compiler for Neovim's treesitter parsers
 dbus-bin                  # dbus-send/dbus-monitor, which auto-dark-mode.nvim needs
 tmux                      # config in the dotfiles (~/.config/tmux/tmux.conf)
-htop                      # process viewer
-btop                      # resource monitor; its Catppuccin theme is in the dotfiles
+distrobox                 # containers, for anything that doesn't belong on the host
+podman                    # distrobox's container engine
 
 # From the vendor repos in apt-sources/ (keys in apt-keys.txt)
 brave-browser             # Brave, the default browser (set by the dotfiles)
