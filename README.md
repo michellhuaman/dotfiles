@@ -126,6 +126,12 @@ then step 2.
 
 Each of these then goes through step 2 like any other change.
 
+**All the pinned versions at once** (mise, the Nerd Font, the CLI tools,
+the Neovim plugins, the container's Fedora, and the login screen theme in
+workstation-bootstrap): workstation-bootstrap's `update-pins.sh` bumps them
+to the latest stable releases on a branch, to test in a VM before merging.
+Its README, "Updating the pinned versions", has the steps.
+
 ## Themes
 
 `theme-toggle.sh` (`Super+Shift+T`) switches between light and dark: it sets
@@ -225,7 +231,8 @@ machine gets the same versions whatever the distro. They're pinned in
 chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`
 through its shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead
 of any distro copy. `update` lists newer releases; to take one, bump the
-version with `edot` and commit.
+version with `edot` and commit (or bump everything with workstation-bootstrap's
+`update-pins.sh`).
 
 ## Containers
 
