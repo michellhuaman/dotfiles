@@ -112,43 +112,45 @@ and the dotfiles in use don't change until the last step.
    out, set `GITHUB_TOKEN` and run it again (after deleting the branches and
    worktrees it made).
 
-2. **Make the branches reachable from a VM.** `setup.sh --branch` clones
-   the dotfiles branch from GitHub, so push that one (only the branch):
+2. **Push the branches** (only the branches; `main` stays as it is), so the
+   VM can download them from GitHub:
 
    ```bash
-   git -C ~/repos/dotfiles-pins-YYYY-MM-DD push -u origin pins-YYYY-MM-DD
+   b=pins-YYYY-MM-DD
+   git -C ~/repos/workstation-bootstrap-$b push -u origin "$b"
+   git -C ~/repos/dotfiles-$b push -u origin "$b"
    ```
 
-   and serve this repo to the VM:
+3. **Test in the VM** ("The test VM" below). Go back to the fresh install
+   and start it:
 
    ```bash
-   mkdir -p ~/vm-share
-   git -C ~/repos/workstation-bootstrap archive \
-     --prefix=workstation-bootstrap/ -o ~/vm-share/bootstrap.tar.gz HEAD
-   python3 -m http.server -d ~/vm-share -b 127.0.0.1 8000
+   virsh -c qemu:///system snapshot-revert ws-test fresh-install
+   virsh -c qemu:///system start ws-test
    ```
 
-3. **Test in a VM** (GNOME Boxes), installed from the Ubuntu release you run;
-   reverting to a snapshot of a fresh install is quicker. Then, in the VM:
+   Then open it in Virtual Machine Manager, unlock the disk, log in, and in
+   a terminal (`Ctrl+Alt+T`):
 
    ```bash
-   curl -O http://10.0.2.2:8000/bootstrap.tar.gz && tar -xzf bootstrap.tar.gz
-   bash workstation-bootstrap/setup.sh --branch pins-YYYY-MM-DD
+   b=pins-YYYY-MM-DD
+   wget -qO- https://github.com/michellhuaman/workstation-bootstrap/archive/refs/heads/$b.tar.gz | tar -xz
+   bash workstation-bootstrap-$b/setup.sh --branch "$b"
    ```
 
-   (A fresh Ubuntu may not have curl yet: `sudo apt install curl` first, or
-   use `wget`.) Follow "Setting up a new machine" from step 2, and check:
-   `Super+Shift+T` switches light/dark (GNOME, Alacritty, bat,
-   starship), `nvim` starts with its plugins and no errors, `mise ls` shows
-   the new versions, Brave and VS Code start, the
-   Nerd Font icons show in starship, and Bitwarden's unlock with system
-   authentication works.
+   (For a repo that got no branch: download `main` instead, or leave out
+   `--branch`.) Reboot the VM, and check: `Super+Shift+T` switches
+   light/dark (GNOME, Alacritty, bat, starship), `nvim` starts with its
+   plugins and no errors, `mise ls` shows the new versions, Brave and VS
+   Code start, the Nerd Font icons show in starship, Bitwarden starts at
+   login, and its unlock with system authentication works.
 
 4. **If a bump breaks something**, undo just that commit in its worktree,
-   push the dotfiles branch again and re-test:
+   push that branch again and re-test from the fresh install (step 3):
 
    ```bash
    git -C ~/repos/dotfiles-pins-YYYY-MM-DD revert <commit>
+   git -C ~/repos/dotfiles-pins-YYYY-MM-DD push
    ```
 
 5. **Merge, push and clean up**, once the VM is fine:
@@ -156,6 +158,7 @@ and the dotfiles in use don't change until the last step.
    ```bash
    b=pins-YYYY-MM-DD
    git -C ~/repos/workstation-bootstrap merge --ff-only "$b" && git -C ~/repos/workstation-bootstrap push
+   git -C ~/repos/workstation-bootstrap push origin --delete "$b"
    chezmoi git -- merge --ff-only "$b" && chezmoi git -- push && chezmoi apply
    chezmoi git -- push origin --delete "$b"
    git -C ~/repos/workstation-bootstrap worktree remove ~/repos/workstation-bootstrap-$b
@@ -164,7 +167,42 @@ and the dotfiles in use don't change until the last step.
    chezmoi git -- branch -d "$b"
    ```
 
-   (Skip the lines for a repo that got no branch.)
+   (Skip the lines for a repo that got no branch.) Then shut the VM down:
+   `virsh -c qemu:///system shutdown ws-test`.
+
+### The test VM
+
+`ws-test` is a libvirt VM (QEMU/KVM, the system connection) with a fresh
+Ubuntu installed from `autoinstall.yaml` and the snapshot `fresh-install`
+of it, taken shut off, after the first login and before `setup.sh`.
+Reverting to it throws away everything since. To make it again (for a new
+Ubuntu release, say): put the ISO in libvirt's image folder, which the VM
+can read (your home and USB drives it can't):
+
+```bash
+iso=ubuntu-26.04.1-desktop-amd64.iso
+virsh -c qemu:///system vol-create-as default "$iso" "$(stat -c %s "/path/to/$iso")" --format raw
+virsh -c qemu:///system vol-upload --pool default "$iso" "/path/to/$iso"
+virt-install --connect qemu:///system --name ws-test --osinfo ubuntu25.10 \
+  --memory 6144 --vcpus 4 --cpu host-passthrough --boot uefi \
+  --disk size=40,format=qcow2,bus=virtio \
+  --cdrom "/var/lib/libvirt/images/$iso" \
+  --network network=default,model=virtio --graphics spice --video virtio \
+  --noautoconsole
+```
+
+(`--osinfo` is the newest Ubuntu that `virt-install --osinfo list` knows;
+it only picks defaults.) Install it like a real machine ("Setting up a new
+machine", step 1, with the automated installation), log in once, shut it
+down, and snapshot it:
+
+```bash
+virsh -c qemu:///system shutdown ws-test
+virsh -c qemu:///system snapshot-create-as ws-test fresh-install --disk-only --atomic
+```
+
+The snapshot is disk-only (external): libvirt can't take the usual
+internal snapshots of a VM with UEFI firmware.
 
 ## Before leaving the old machine
 
