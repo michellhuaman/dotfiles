@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | apt packages, including Brave, VS Code, mise and Claude Desktop from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | apt packages, including Brave, VS Code, mise and Claude Desktop from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent, for pushing (both repos are public, so nothing needs it to install) | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |

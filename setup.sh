@@ -10,7 +10,7 @@
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
-#   2. Bitwarden: Flathub, Bitwarden and chezmoi
+#   2. chezmoi:   the pinned release, and GitHub's SSH host keys
 #   3. Dotfiles:  chezmoi clones the dotfiles (public, over HTTPS) and applies
 #                 them, with pushes going over SSH (Bitwarden's agent); its
 #                 scripts install the flatpaks, CLI tools, fonts, GNOME
@@ -43,7 +43,6 @@ do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="$HOME/.local/bin"
-bw_app="com.bitwarden.desktop"
 # Packages this script installed (as opposed to ones Ubuntu came with), so a
 # package dropped from lists/apt.txt can be removed without ever touching
 # Ubuntu's own.
@@ -84,7 +83,7 @@ fetch() {
 # ---- checks ---------------------------------------------------------------------
 [[ $EUID -ne 0 ]] || die "run this as your normal user; it uses sudo when needed"
 [[ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]] \
-  || die "run this from a terminal inside your desktop session; Bitwarden needs a desktop"
+  || die "run this from a terminal inside your desktop session; the dotfiles change its settings"
 
 # shellcheck disable=SC1091
 . /etc/os-release
@@ -308,15 +307,10 @@ done
 fetch -I --max-time 10 https://github.com >/dev/null \
   || die "can't reach github.com; connect to the network and run this again"
 
-# ---- 2. Bitwarden and chezmoi ---------------------------------------------------
-info "Step 2/3: Bitwarden and chezmoi"
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-if flatpak info "$bw_app" >/dev/null 2>&1; then
-  echo "Bitwarden already installed"
-else
-  flatpak install --user -y --noninteractive flathub "$bw_app"
-fi
-
+# ---- 2. chezmoi -----------------------------------------------------------------
+# Bitwarden is one of the dotfiles' Flatpaks: nothing here needs it, since
+# the dotfiles are cloned over HTTPS.
+info "Step 2/3: chezmoi"
 mkdir -p "$bin_dir"
 case ":$PATH:" in *":$bin_dir:"*) ;; *) export PATH="$bin_dir:$PATH" ;; esac
 # get.chezmoi.io checks the download against the release's checksums.
