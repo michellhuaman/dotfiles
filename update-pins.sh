@@ -305,18 +305,18 @@ info "Summary"
 cat "$summary"
 
 kept=()
-for pair in "$boot_repo:$boot_wt" "$dot_repo:$dot_wt"; do
-  repo="${pair%%:*}" wt="${pair#*:}"
+for pair in "workstation-bootstrap:$boot_repo:$boot_wt" "dotfiles:$dot_repo:$dot_wt"; do
+  IFS=: read -r label repo wt <<<"$pair"
   keep=false
   [[ "$wt" == "$boot_wt" && -e "$tmp/keep-bootstrap" ]] && keep=true
   if ! $keep && [[ -z "$(git -C "$wt" status --porcelain)" && "$(git -C "$wt" rev-list --count "main..$branch")" == 0 ]]; then
     git -C "$repo" worktree remove "$wt"
     git -C "$repo" branch -q -D "$branch"
-    echo "$(basename "$repo"): nothing to bump, no branch"
+    echo "$label: nothing to bump, no branch"
   else
     kept+=("$wt")
     echo
-    echo "$(basename "$repo") ($wt):"
+    echo "$label ($wt):"
     git -C "$wt" log --oneline "main..$branch" | sed 's/^/  /'
     $keep && echo "  (kept for the polkit action under \"To review\")"
   fi
