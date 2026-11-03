@@ -42,8 +42,8 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
   Microsoft's is its well-known package signing key. VS Code's package is
   told (through debconf) not to add its own copy of the repo. Claude
   Desktop's package leaves its copy out when the repo is already there, and
-  one it wrote earlier (`claude-desktop.list`) is deleted, since apt won't
-  take both;
+  an earlier copy (`claude-desktop.list`, from the package or Anthropic's
+  manual install steps) is deleted, since apt won't take both;
 - installs the packages in `apt.txt` that are missing, and remembers which
   ones it installed (in `/var/lib/workstation-bootstrap/apt-installed.txt`).
   A package dropped from the list is removed only if `setup.sh` installed

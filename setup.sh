@@ -151,6 +151,19 @@ ubuntu_system() {
     sudo mkdir -p "$(dirname "$apt_state")"
     sudo tee "$apt_state" <<<"$ours" >/dev/null
   }
+  # Claude Desktop's package adds its own copy of its repo
+  # (claude-desktop.list, with another key file) unless another source has
+  # it, and so do Anthropic's manual install steps; apt refuses either next
+  # to claude-desktop.sources (added below). A claude-desktop.list holding
+  # only that repo goes, before the first update, which it would break.
+  local cd_list=/etc/apt/sources.list.d/claude-desktop.list
+  if [[ -f "$cd_list" ]] \
+     && ! grep -v -e '^[[:space:]]*\(#.*\)\{0,1\}$' \
+                  -e 'downloads\.claude\.ai/claude-desktop/' "$cd_list" | grep -q .; then
+    echo "Removing $cd_list (claude-desktop.sources has the repo)"
+    sudo rm -f "$cd_list"
+  fi
+
   echo "Updating the package lists"
   sudo apt-get update -q
 
@@ -179,14 +192,6 @@ ubuntu_system() {
   # VS Code's package offers to add Microsoft's repo itself; it's already
   # here (vscode.sources), so tell it not to.
   echo "code code/add-microsoft-repo boolean false" | sudo debconf-set-selections
-  # Claude Desktop's package adds its own copy (claude-desktop.list, with
-  # another key file) unless another source has the repo, and apt refuses
-  # the two together. claude-desktop.sources is that source; a copy the
-  # package wrote before it was here goes.
-  local cd_list=/etc/apt/sources.list.d/claude-desktop.list
-  if [[ "$(head -n 1 "$cd_list" 2>/dev/null)" == "### Managed by the claude-desktop package." ]]; then
-    sudo rm -f "$cd_list"
-  fi
   sudo apt-get update -q
 
   while read -r p; do
@@ -239,7 +244,12 @@ ubuntu_system() {
       sudo virsh -q net-define /usr/share/libvirt/networks/default.xml
     fi
     sudo virsh -q net-autostart default >/dev/null
-    if ! sudo virsh net-info default | grep -q '^Active: *yes'; then
+    # Read in full first: grep -q stops at the match, and sudo-rs, relaying
+    # the rest, then fails with a broken pipe, which pipefail would take as
+    # "not active".
+    local net_info
+    net_info="$(sudo virsh net-info default)"
+    if ! grep -q '^Active: *yes' <<<"$net_info"; then
       echo "Starting libvirt's default network"
       sudo virsh -q net-start default
     fi
