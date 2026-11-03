@@ -17,6 +17,7 @@ packages:
     - org.localsend.localsend_app
     - net.ankiweb.Anki
     - org.gnome.Boxes           # VMs (KVM), e.g. to test workstation-bootstrap branches
+    - com.mattjakeman.ExtensionManager  # GNOME Shell extensions: browse, install and configure them from extensions.gnome.org
 
 fonts:
   # Bump a version to make the font script download it again.
