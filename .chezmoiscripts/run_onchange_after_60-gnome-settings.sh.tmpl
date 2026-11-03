@@ -11,12 +11,15 @@
 #   80-wallpaper    ~/Pictures/wallpapers/0133.jpg, once it's there
 #   70-bindings     Super+Return Alacritty, Super+Shift+Return Brave,
 #                   Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
-#                   Super+F maximize (toggles), Super+W close window
+#                   Super+F maximize (toggles), Super+W close window,
+#                   Super+1-4 workspace 1-4, Super+Shift+1-4 move the window
+#                   there (4 fixed workspaces instead of GNOME's dynamic ones)
 #
 # Reruns when this file changes, and when the wallpaper appears (copy
 # ~/Pictures/wallpapers over, then `chezmoi apply`). Settings changed later
 # in GNOME's Settings stay until then. Keyboard options and shortcuts are
-# added to what's there, never replace it.
+# added to what's there, never replace it; the only keys taken away are
+# Super+1-4 and Super+Shift+1-4 (the dash's apps) for the workspaces.
 set -euo pipefail
 
 if ! command -v gsettings >/dev/null; then
@@ -37,6 +40,20 @@ if cur.startswith("@as "):    # how gsettings prints an empty list
 items = ast.literal_eval(cur)
 if item not in items:
     items.append(item)
+print(repr(items))' "$cur" "$3")"
+  [[ "$new" == "$cur" ]] || gsettings set "$1" "$2" "$new"
+}
+
+# Removes the string $3 from the string-list setting $1 $2, if it's in it.
+remove_from_list() {
+  local cur new
+  cur="$(gsettings get "$1" "$2")"
+  new="$(python3 -c '
+import ast, sys
+cur, item = sys.argv[1], sys.argv[2]
+if cur.startswith("@as "):    # how gsettings prints an empty list
+    cur = cur[4:]
+items = [i for i in ast.literal_eval(cur) if i != item]
 print(repr(items))' "$cur" "$3")"
   [[ "$new" == "$cur" ]] || gsettings set "$1" "$2" "$new"
 }
@@ -91,4 +108,21 @@ shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.
 wm_keys=org.gnome.desktop.wm.keybindings
 add_to_list "$wm_keys" toggle-maximized '<Super>f'
 add_to_list "$wm_keys" close            '<Super>w'
+
+# Workspaces 1-4, like sway's $mod+1-4 and $mod+Shift+1-4. GNOME only has
+# the workspaces in use plus an empty one, so 3 and 4 often wouldn't exist:
+# keep 4 instead.
+gsettings set org.gnome.mutter dynamic-workspaces false
+gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
+# Super+1-4 open the dash's apps, in GNOME Shell and again in Ubuntu's dock
+# (which also has Super+Shift+1-4); the dock's are all turned off, leaving
+# Super+Ctrl+1-4 unused too.
+if gsettings list-schemas | grep -qx org.gnome.shell.extensions.dash-to-dock; then
+  gsettings set org.gnome.shell.extensions.dash-to-dock hot-keys false
+fi
+for n in 1 2 3 4; do
+  remove_from_list org.gnome.shell.keybindings "switch-to-application-$n" "<Super>$n"
+  add_to_list "$wm_keys" "switch-to-workspace-$n" "<Super>$n"
+  add_to_list "$wm_keys" "move-to-workspace-$n"   "<Super><Shift>$n"
+done
 {{- end }}
