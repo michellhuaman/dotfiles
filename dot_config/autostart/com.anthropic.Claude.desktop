@@ -1,0 +1,9 @@
+[Desktop Entry]
+# Starts Claude Desktop (the claude-desktop apt package) at login, like
+# Brave and Bitwarden next to it.
+Type=Application
+Name=Claude
+Icon=claude-desktop
+Exec=/usr/bin/claude-desktop
+StartupWMClass=com.anthropic.Claude
+X-GNOME-Autostart-enabled=true
