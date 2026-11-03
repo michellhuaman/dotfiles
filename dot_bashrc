@@ -1,10 +1,5 @@
 # .bashrc
 
-# Source global definitions (Fedora; Ubuntu's bash reads /etc/bash.bashrc by itself)
-if [ -f /etc/bashrc ]; then
-  . /etc/bashrc
-fi
-
 # Stop here if not running interactively. Environment variables belong in
 # .bash_profile, since GNOME's (non-interactive) login shell stops here too.
 [[ $- != *i* ]] && return
@@ -34,19 +29,19 @@ if [[ "${PROMPT_COMMAND[*]:-} ${STARSHIP_PROMPT_COMMAND:-}" != *"history -a"* ]]
   PROMPT_COMMAND="history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi
 
-# Tab completion. Fedora loads it from /etc/bashrc; Ubuntu leaves it to ~/.bashrc
+# Tab completion. Ubuntu leaves it to ~/.bashrc
 if ! shopt -oq posix && [ -z "${BASH_COMPLETION_VERSINFO:-}" ] \
   && [ -f /usr/share/bash-completion/bash_completion ]; then
   . /usr/share/bash-completion/bash_completion
 fi
 
-# Let less open archives and .deb files. Fedora sets LESSOPEN in /etc/profile.d
-if [ -z "${LESSOPEN:-}" ] && command -v lesspipe >/dev/null 2>&1; then
+# Let less open archives and .deb files.
+if command -v lesspipe >/dev/null 2>&1; then
   eval "$(SHELL=/bin/sh lesspipe)"
 fi
 
-# Colors for ls and grep. Fedora sets these in /etc/bashrc; Ubuntu leaves them to ~/.bashrc
-if [ -z "${LS_COLORS:-}" ] && command -v dircolors >/dev/null 2>&1; then
+# Colors for ls and grep. Ubuntu leaves them to ~/.bashrc
+if command -v dircolors >/dev/null 2>&1; then
   eval "$(dircolors -b)"
 fi
 
@@ -81,40 +76,19 @@ alias da='date "+%Y-%m-%d %A %T %Z"'
 # FUNCTIONS
 #######################################################
 
-# System update for image-based Fedora such as Sway Atomic (rpm-ostree), Fedora (dnf) and
-# Ubuntu/Debian (apt), then Flatpak and Snap apps
+# System update (apt), then Flatpak and Snap apps
 # Remove any old 'update' alias first so re-sourcing this file doesn't break the function
 unalias update 2>/dev/null
 update() {
-  local ids status=0
-  # Read the distro in a subshell so os-release's variables don't leak into this shell
-  ids="$(. /etc/os-release && echo " ${ID:-} ${ID_LIKE:-} ")"
-  # Image-based Fedora (Sway Atomic) has no dnf on the host
-  [ -e /run/ostree-booted ] && ids=" ostree "
-
-  case "$ids" in
-    *" ostree "*)
-      # Stages the new image; it takes effect at the next reboot
-      rpm-ostree upgrade || return 1
-      ;;
-    *" fedora "*)
-      sudo dnf upgrade --refresh || return 1
-      ;;
-    *" ubuntu "* | *" debian "*)
-      sudo apt update && sudo apt upgrade && sudo apt autoremove || return 1
-      ;;
-    *)
-      echo "update: unsupported distro:$ids" >&2
-      return 1
-      ;;
-  esac
+  local status=0
+  sudo apt update && sudo apt upgrade && sudo apt autoremove || return 1
 
   # Update Flatpak apps if Flatpak is installed
   if command -v flatpak >/dev/null 2>&1; then
     flatpak update || status=1
   fi
 
-  # Update Snap packages if Snap is installed (common on Ubuntu)
+  # Update Snap packages if Snap is installed
   if command -v snap >/dev/null 2>&1; then
     sudo snap refresh || status=1
   fi
@@ -125,13 +99,9 @@ update() {
     (cd "$HOME" && mise outdated --bump) || echo "update: couldn't check (offline or rate-limited?)"
   fi
 
-  # Ubuntu/Debian create this file when an update needs a reboot (kernel, libc...)
+  # Ubuntu creates this file when an update needs a reboot (kernel, libc...)
   if [ -f /var/run/reboot-required ]; then
     echo "update: a reboot is required to finish the update"
-  fi
-  # rpm-ostree stages the new image for the next boot
-  if [ -e /run/ostree-booted ] && rpm-ostree status 2>/dev/null | grep -q 'Staged: yes'; then
-    echo "update: reboot to switch to the new image"
   fi
 
   return "$status"

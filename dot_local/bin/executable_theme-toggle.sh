@@ -28,26 +28,11 @@ set -uo pipefail
 
 CONFIG_DIR="$HOME/.config"
 
-# Pick GTK and icon themes based on the running distro.
-# Ubuntu ships Yaru; everything else (Fedora included) gets GNOME's
-# upstream default, Adwaita. Adwaita has no separate dark icon theme,
-# so the icons stay "Adwaita" in both modes.
-distro_id="$(. /etc/os-release 2>/dev/null && echo "${ID:-}")"
-
-case "$distro_id" in
-ubuntu)
-  GTK_THEME_LIGHT="Yaru"
-  GTK_THEME_DARK="Yaru-dark"
-  ICON_THEME_LIGHT="Yaru"
-  ICON_THEME_DARK="Yaru-dark"
-  ;;
-*)
-  GTK_THEME_LIGHT="Adwaita"
-  GTK_THEME_DARK="Adwaita-dark" # only affects GTK3 apps
-  ICON_THEME_LIGHT="Adwaita"
-  ICON_THEME_DARK="Adwaita"
-  ;;
-esac
+# Ubuntu's GTK and icon themes (Yaru) in each mode.
+GTK_THEME_LIGHT="Yaru"
+GTK_THEME_DARK="Yaru-dark"
+ICON_THEME_LIGHT="Yaru"
+ICON_THEME_DARK="Yaru-dark"
 
 # Apply a sed substitution to a config file only if that file exists,
 # so a missing app config never aborts the rest of the toggle.
@@ -80,10 +65,9 @@ theme_links() {
   link "$CONFIG_DIR/btop/themes/catppuccin_current.theme" "catppuccin_$f.theme"
   link "$CONFIG_DIR/bat/config" "config-$f"
   # Open Alacritty windows reload when alacritty.toml changes, but don't
-  # notice the imported link changing when its path goes through a link
-  # (/home is one, to /var/home, on Fedora's atomic desktops). Touching
-  # alacritty.toml makes them reload, and re-read the link; its contents
-  # don't change, so chezmoi sees no difference.
+  # always notice the imported link changing. Touching alacritty.toml makes
+  # them reload, and re-read the link; its contents don't change, so
+  # chezmoi sees no difference.
   [[ -f "$CONFIG_DIR/alacritty/alacritty.toml" ]] && touch "$CONFIG_DIR/alacritty/alacritty.toml"
 }
 

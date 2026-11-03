@@ -138,7 +138,7 @@ GTK theme, and switches every themed app between the Catppuccin flavors
 the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
-Yaru on Ubuntu, Adwaita everywhere else.
+Ubuntu's Yaru.
 
 ### Theme links
 
