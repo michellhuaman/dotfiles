@@ -187,7 +187,9 @@ instead, which is not where the config is.)
 Bitwarden (Flatpak) holds the SSH keys and is the SSH agent.
 `~/.ssh/config` points every host at its socket, and `.bash_profile` sets
 `SSH_AUTH_SOCK` to the same place, so Bitwarden must be unlocked for
-`git push` and `ssh`.
+`git push` and `ssh`. This repo is public, so it's pulled over HTTPS
+(`chezmoi update` needs no key) and pushed over SSH: `setup.sh` sets
+origin's push URL to `git@github.com:...`.
 
 - It starts at login from `~/.config/autostart/com.bitwarden.desktop.desktop`
   (Brave from the file next to it). That file is exactly what the desktop
