@@ -11,6 +11,7 @@ Who does what:
 | Bitwarden | holds the SSH keys and is the SSH agent, for pushing (both repos are public, so nothing needs it to install) | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
+| QEMU/KVM, libvirt and virt-manager (installed here) | virtual machines, in Virtual Machine Manager (QEMU/KVM, the system connection) | no, once you're in the libvirt group |
 
 Nothing secret lives here or in the dotfiles, so both repos are public:
 a new machine downloads this one and clones the dotfiles over HTTPS, with
@@ -25,6 +26,7 @@ update-pins.sh                  bumps every pinned version (chezmoi here, the re
 lists/apt.txt                   apt packages setup.sh makes sure are installed
 lists/apt-sources/              vendor repos (Brave, VS Code, mise), copied to /etc/apt/sources.list.d/
 lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
+lists/groups.txt                groups setup.sh adds your user to (libvirt)
 system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
 
@@ -44,6 +46,12 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
   A package dropped from the list is removed only if `setup.sh` installed
   it, so nothing Ubuntu came with is ever removed (Firefox, the snaps and
   the rest stay);
+- adds your user to the groups in `groups.txt` (libvirt, so virt-manager
+  manages VMs without sudo), effective at the next login. A group dropped
+  from the list isn't removed: `sudo gpasswd -d "$USER" <group>`;
+- makes sure libvirt's default NAT network (`virbr0`, 192.168.122.0/24)
+  exists, starts at boot and is running, so new VMs get network access
+  (the package normally does this itself);
 - keeps Ubuntu's automatic security updates (unattended-upgrades) on. They
   are on by default; this only makes sure;
 - installs Bitwarden's polkit action, which its "Unlock with system

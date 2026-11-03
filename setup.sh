@@ -4,8 +4,9 @@
 #   1. System:    vendor repos (Brave, VS Code, mise; keys checked by
 #                 fingerprint); makes sure the packages in lists/apt.txt are
 #                 installed (and removes ones this script installed that
-#                 were dropped from the list); keeps automatic security
-#                 updates on;
+#                 were dropped from the list); adds you to the groups in
+#                 lists/groups.txt; libvirt's default VM network; keeps
+#                 automatic security updates on;
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
@@ -207,6 +208,35 @@ ubuntu_system() {
     save_state
   fi
 
+  # Groups from groups.txt, joined once (effective at the next login). A
+  # group whose package isn't installed doesn't exist yet: skipped, with a
+  # warning.
+  local g me
+  me="$(id -un)"
+  while read -r g; do
+    if ! getent group "$g" >/dev/null; then
+      warn "group $g doesn't exist (is its package installed?); not joining it"
+    elif ! id -nG "$me" | tr ' ' '\n' | grep -qxF "$g"; then
+      echo "Adding $me to the $g group (effective at the next login)"
+      sudo usermod -aG "$g" "$me"
+    fi
+  done < <(read_list "$lists/groups.txt")
+
+  # libvirt's default network (NAT, 192.168.122.0/24) for VMs: the package
+  # defines and autostarts it; this only makes sure it's there, starts at
+  # boot, and runs now.
+  if command -v virsh >/dev/null; then
+    if ! sudo virsh -q net-info default >/dev/null 2>&1; then
+      echo "Defining libvirt's default network"
+      sudo virsh -q net-define /usr/share/libvirt/networks/default.xml
+    fi
+    sudo virsh -q net-autostart default >/dev/null
+    if ! sudo virsh net-info default | grep -q '^Active: *yes'; then
+      echo "Starting libvirt's default network"
+      sudo virsh -q net-start default
+    fi
+  fi
+
   # Automatic updates: Ubuntu installs security updates in the background
   # (unattended-upgrades). This only makes sure that stays on.
   local conf=/etc/apt/apt.conf.d/20auto-upgrades
@@ -316,7 +346,8 @@ fi
 info "Done."
 cat <<EOF
 Next: reboot (systemctl reboot) and log in again. Flatpak apps only show up
-in the app grid after a fresh login, and ddcutil's i2c module loads at boot.
+in the app grid after a fresh login, new groups (libvirt) apply from the
+next login, and ddcutil's i2c module loads at boot.
 
   In Bitwarden, after logging in (master password and two-step login):
   - File > Settings > App settings (all accounts): turn on "Enable SSH

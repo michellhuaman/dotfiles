@@ -1,0 +1,5 @@
+# Groups setup.sh adds your user to (effective at the next login). One per
+# line; anything after # is a comment. A group dropped from this list isn't
+# taken away again: `sudo gpasswd -d "$USER" <group>` does that.
+
+libvirt                   # VMs in virt-manager (qemu:///system) without sudo
