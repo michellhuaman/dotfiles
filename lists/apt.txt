@@ -21,15 +21,15 @@ tmux                      # config in the dotfiles (~/.config/tmux/tmux.conf)
 distrobox                 # containers, for anything that doesn't belong on the host
 podman                    # distrobox's container engine
 
-# Virtual machines: QEMU/KVM through libvirt. The virt-manager window is a
-# Flatpak (the dotfiles), which talks to this libvirt (qemu:///system). setup.sh
+# Virtual machines: QEMU/KVM through libvirt, run from virt-manager. setup.sh
 # adds you to the libvirt group (groups.txt) and keeps libvirt's default NAT
 # network starting at boot.
 qemu-system-x86           # the emulator, using KVM
 qemu-utils                # qemu-img, for disk images
 libvirt-daemon-system     # libvirt's system daemon (qemu:///system)
 libvirt-clients           # virsh
-virtinst                  # virt-install and virt-clone: make VMs from the command line
+virt-manager              # Virtual Machine Manager, the GUI (native: the Flatpak can't see the host's QEMU)
+virtinst                  # virt-install and virt-clone (a virt-manager dependency; listed so it stays)
 ovmf                      # UEFI firmware for VMs
 
 # From the vendor repos in apt-sources/ (keys in apt-keys.txt)

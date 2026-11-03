@@ -11,7 +11,7 @@ Who does what:
 | Bitwarden | holds the SSH keys and is the SSH agent, for pushing (both repos are public, so nothing needs it to install) | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
-| QEMU/KVM and libvirt (installed here), virt-manager (Flatpak, in the dotfiles) | virtual machines: Virtual Machine Manager's "QEMU/KVM" connection, or `virsh` and `virt-install` | no, once you're in the libvirt group |
+| QEMU/KVM, libvirt and virt-manager (installed here) | virtual machines: Virtual Machine Manager's "QEMU/KVM" connection, or `virsh` and `virt-install` | no, once you're in the libvirt group |
 
 Nothing secret lives here or in the dotfiles, so both repos are public:
 a new machine downloads this one and clones the dotfiles over HTTPS, with
