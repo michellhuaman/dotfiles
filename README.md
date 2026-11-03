@@ -19,6 +19,7 @@ Ventoy, ...) and losing it costs nothing.
 
 ```
 setup.sh                        the one script to run
+update-pins.sh                  bumps every pinned version, here and in the dotfiles, on a branch
 lists/layered.txt               RPMs layered with rpm-ostree
 lists/copr.txt                  COPR repos (owner/project) added before layering (none)
 lists/repos/                    vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
@@ -53,7 +54,8 @@ Instead, `setup.sh`:
   copies it into `/usr/share/polkit-1/actions`, which is read-only here, so it
   goes to `/etc/polkit-1/actions` (polkit reads both). The file in `system/`
   is a copy of Bitwarden's `com.bitwarden.desktop.policy`, so nothing
-  unpinned gets installed as root; compare it with upstream now and then.
+  unpinned gets installed as root; `update-pins.sh` compares it with
+  upstream and shows any difference for review.
 
 Nothing is ever removed from the base image (Firefox and the rest stay).
 
@@ -68,13 +70,116 @@ To add a system package: add it to `lists/layered.txt` (and its COPR to
 `lists/copr.txt`, or its repo file to `lists/repos/`), push, then re-run
 `setup.sh` and reboot.
 
+## Updating the pinned versions
+
+Everything downloaded is pinned to an exact version, so every machine gets
+what was tested. `update-pins.sh` moves all the pins to the latest stable
+release at once:
+
+| Repo | Pin | Latest from |
+| --- | --- | --- |
+| this one | Catppuccin SDDM theme, `sddm_version` and checksums in `setup.sh` | catppuccin/sddm's latest release |
+| dotfiles | mise, version and checksums in `.chezmoidata/packages.yaml` | jdx/mise's latest release and its `SHASUMS256.txt` |
+| dotfiles | Nerd Font, `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release |
+| dotfiles | CLI tools, `dot_config/mise/config.toml` | `mise outdated --bump` |
+| dotfiles | Neovim plugins, `dot_config/nvim/lazy-lock.json` | `:Lazy sync`, run in a scratch folder |
+| dotfiles | the distrobox container's Fedora, `fedora-toolbox:NN` in `assemble.ini` | the newest stable Fedora Sway Atomic |
+| this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
+
+"Latest" never means a pre-release or beta. catppuccin/sddm and the Nerd
+Fonts publish no checksums, so for the SDDM themes the script records the
+hash of the file it downloads: that guarantees later installs get the file
+the VM tested, not that the file is genuine. mise's checksums come from its
+release. The Catppuccin theme files in the dotfiles are copies, not pins;
+re-copy them from catppuccin/<app> by hand if you ever want to.
+
+Do this before moving to a new machine, and every couple of months
+otherwise, so each round is small. All of it happens on branches: `main`
+and the dotfiles in use don't change until the last step.
+
+1. **Bump.** With Bitwarden unlocked (the script fetches both repos first):
+
+   ```bash
+   bash ~/repos/workstation-bootstrap/update-pins.sh
+   ```
+
+   It makes a branch `pins-YYYY-MM-DD` in both repos, in the worktrees
+   `~/repos/workstation-bootstrap-pins-YYYY-MM-DD` and
+   `~/repos/dotfiles-pins-YYYY-MM-DD`, with one commit per bump, and prints
+   what it changed, what failed, and what to review (the polkit action, and
+   the ISO to install). A repo with nothing to bump gets no branch. If
+   GitHub's rate limit runs out, set `GITHUB_TOKEN` and run it again (after
+   deleting the branches and worktrees it made).
+
+2. **Make the branches reachable from a VM.** `setup.sh --branch` clones
+   the dotfiles branch from GitHub, so push that one (only the branch):
+
+   ```bash
+   git -C ~/repos/dotfiles-pins-YYYY-MM-DD push -u origin pins-YYYY-MM-DD
+   ```
+
+   and serve this repo's branch to the VM:
+
+   ```bash
+   mkdir -p ~/vm-share
+   git -C ~/repos/workstation-bootstrap-pins-YYYY-MM-DD archive \
+     --prefix=workstation-bootstrap/ -o ~/vm-share/bootstrap.tar.gz HEAD
+   python3 -m http.server -d ~/vm-share -b 127.0.0.1 8000
+   ```
+
+   (If only the dotfiles changed, archive `main` of this repo instead.)
+
+3. **Test in a VM** (GNOME Boxes). Install Fedora Sway Atomic from the ISO
+   the script named; if the Fedora release didn't change, reverting to a
+   snapshot of a fresh install is quicker. Then, in the VM:
+
+   ```bash
+   curl -O http://10.0.2.2:8000/bootstrap.tar.gz && tar -xzf bootstrap.tar.gz
+   bash workstation-bootstrap/setup.sh --branch pins-YYYY-MM-DD
+   ```
+
+   follow "Setting up a new machine" from step 2 (reboot, `chezmoi apply`),
+   and check: the login screen in Catppuccin, `Super+Shift+T` switches
+   everything including the login screen, `nvim` starts with its plugins
+   and no errors, `mise ls` shows the new versions, `code` and `btop` open
+   from the `dev` container, the Nerd Font icons show in waybar and
+   starship, and Bitwarden's unlock with system authentication works.
+
+4. **If a bump breaks something**, undo just that commit in its worktree,
+   push the dotfiles branch again and re-test:
+
+   ```bash
+   git -C ~/repos/dotfiles-pins-YYYY-MM-DD revert <commit>
+   ```
+
+5. **Merge, push and clean up**, once the VM is fine:
+
+   ```bash
+   b=pins-YYYY-MM-DD
+   git -C ~/repos/workstation-bootstrap merge --ff-only "$b" && git -C ~/repos/workstation-bootstrap push
+   chezmoi git -- merge --ff-only "$b" && chezmoi git -- push && chezmoi apply
+   chezmoi git -- push origin --delete "$b"
+   git -C ~/repos/workstation-bootstrap worktree remove ~/repos/workstation-bootstrap-$b
+   git -C ~/repos/workstation-bootstrap branch -d "$b"
+   chezmoi git -- worktree remove ~/repos/dotfiles-$b
+   chezmoi git -- branch -d "$b"
+   ```
+
+   (Skip the lines for a repo that got no branch.) If this repo changed,
+   run `setup.sh` on this machine too, so it gets the new login screen
+   theme, and refresh the drive (next section).
+
 ## Before leaving the old machine
 
-Refresh the copy on the drive:
+1. **Update the pins** and test them (previous section), so the new machine
+   starts from current versions that a VM has already run.
+2. **Copy `~/Pictures/wallpapers`** to the new machine; the images aren't
+   in the dotfiles.
+3. **Refresh the copy on the drive:**
 
-```bash
-git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
-```
+   ```bash
+   git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
+   ```
 
 ## Setting up a new machine
 
