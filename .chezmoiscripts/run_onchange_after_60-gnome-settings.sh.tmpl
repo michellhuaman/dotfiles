@@ -10,7 +10,8 @@
 #   85-night-light  4000 K between sunset and sunrise in Madrid
 #   80-wallpaper    ~/Pictures/wallpapers/0133.jpg, once it's there
 #   70-bindings     Super+Return Alacritty, Super+Shift+Return Brave,
-#                   Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh
+#                   Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
+#                   Super+F maximize (toggles), Super+W close window
 #
 # Reruns when this file changes, and when the wallpaper appears (copy
 # ~/Pictures/wallpapers over, then `chezmoi apply`). Settings changed later
@@ -85,4 +86,9 @@ shortcut terminal     "Terminal (Alacritty)" '<Super>Return'       'alacritty'
 shortcut browser      "Brave"                '<Super><Shift>Return' 'brave-browser'
 shortcut theme-toggle "Toggle light/dark"    '<Super><Shift>t'     '{{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
 shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
+
+# Window keys, next to GNOME's defaults (Alt+F10, Alt+F4).
+wm_keys=org.gnome.desktop.wm.keybindings
+add_to_list "$wm_keys" toggle-maximized '<Super>f'
+add_to_list "$wm_keys" close            '<Super>w'
 {{- end }}
