@@ -12,8 +12,8 @@
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
-#                 scripts install the flatpaks, CLI tools, fonts, the
-#                 distrobox container, GNOME settings and user services
+#                 scripts install the flatpaks, CLI tools, fonts, GNOME
+#                 settings and user services
 #                 (no sudo)
 #
 # Run it from a terminal in your GNOME session, as your normal user:

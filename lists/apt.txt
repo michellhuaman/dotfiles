@@ -4,7 +4,7 @@
 # setup.sh installs what's missing, and removes a package dropped from this
 # list only if setup.sh installed it (Ubuntu's own packages always stay).
 # Keep it short: GUI apps come from Flathub and CLI tools from mise (both
-# through chezmoi), and anything else goes in the distrobox container.
+# through chezmoi).
 
 # Needed by setup.sh itself (Ubuntu's desktop doesn't include all of them)
 curl
@@ -18,8 +18,8 @@ xdg-terminal-exec         # runs terminal apps in the terminal from ~/.config/xd
 gcc                       # C compiler for Neovim's treesitter parsers
 dbus-bin                  # dbus-send/dbus-monitor, which auto-dark-mode.nvim needs
 tmux                      # config in the dotfiles (~/.config/tmux/tmux.conf)
-distrobox                 # containers for apps that don't belong on the host; defined in the dotfiles (~/.config/distrobox/assemble.ini)
-podman                    # distrobox's container engine
+htop                      # process viewer
+btop                      # resource monitor; its Catppuccin theme is in the dotfiles
 
 # From the vendor repos in apt-sources/ (keys in apt-keys.txt)
 brave-browser             # Brave, the default browser (set by the dotfiles)

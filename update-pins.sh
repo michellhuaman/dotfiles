@@ -4,8 +4,7 @@
 # bump that breaks something in the test VM can be dropped on its own.
 #
 #   dotfiles:  mise itself (version and checksums), the Nerd Font, the CLI
-#              tools in mise's config, the Neovim plugins (lazy-lock.json),
-#              and the Fedora release of the distrobox container
+#              tools in mise's config and the Neovim plugins (lazy-lock.json)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -234,25 +233,6 @@ EOF
   commit "$dot_wt" "Update Neovim plugins ($changed changed, lazy-lock.json)"
 }
 
-fedora_release() {
-  local f="$dot_wt/dot_config/distrobox/assemble.ini" cur latest
-  # Fedora's own list of releases; "45 Beta" and the like don't count. The
-  # container follows Fedora's latest stable release.
-  latest="$(fetch https://fedoraproject.org/releases.json | python3 -c '
-import json, sys
-vers = [int(r["version"]) for r in json.load(sys.stdin)
-        if r.get("variant") == "Workstation" and r.get("arch") == "x86_64"
-        and r.get("version", "").isdigit()]
-print(max(vers))')"
-  note "Fedora: $latest is the latest stable release"
-  cur="$(sed -n 's|^image=registry.fedoraproject.org/fedora-toolbox:\([0-9]*\)$|\1|p' "$f")"
-  if [[ "$cur" -ge "$latest" ]]; then note "distrobox container: fedora-toolbox:$cur"; return 0; fi
-  fetch -o /dev/null -I "https://registry.fedoraproject.org/v2/fedora-toolbox/manifests/$latest" \
-    || { echo "registry.fedoraproject.org has no fedora-toolbox:$latest yet" >&2; return 1; }
-  set_value "$f" '^image=registry\.fedoraproject\.org/fedora-toolbox:(?P<v>[0-9]+)$' "$latest"
-  commit "$dot_wt" "distrobox: fedora-toolbox $cur to $latest"
-}
-
 failed=()
 run() {
   local rc
@@ -273,7 +253,6 @@ run "mise" mise_itself
 run "Nerd Font" nerd_font
 run "CLI tools (mise)" cli_tools
 run "Neovim plugins" nvim_plugins
-run "Fedora release (distrobox)" fedora_release
 
 # ---- results --------------------------------------------------------------------
 info "Summary"

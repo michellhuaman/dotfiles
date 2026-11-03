@@ -10,7 +10,6 @@ Who does what:
 | this repo (`setup.sh`) | apt packages, including Brave and VS Code from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
-| distrobox (installed here) | a `dev` container for everything else (htop, btop), defined and built by the dotfiles; its apps show up in the app grid | no |
 
 Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
 Ventoy, ...) and losing it costs nothing.
@@ -54,8 +53,7 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
   with upstream and shows any difference for review.
 
 Keep `apt.txt` short: CLI tools come from mise and apps from Flathub (both
-in the dotfiles), and everything else goes in the dotfiles' distrobox
-container.
+in the dotfiles).
 
 To add a system package: add it to `lists/apt.txt` (and, for a vendor's
 repo, its `.sources` file to `lists/apt-sources/` and its key to
@@ -75,7 +73,6 @@ latest stable release at once:
 | dotfiles | Nerd Font, `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release |
 | dotfiles | CLI tools, `dot_config/mise/config.toml` | `mise outdated --bump` |
 | dotfiles | Neovim plugins, `dot_config/nvim/lazy-lock.json` | `:Lazy sync`, run in a scratch folder |
-| dotfiles | the distrobox container's Fedora, `fedora-toolbox:NN` in `assemble.ini` | Fedora's newest stable release |
 | this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
 
 "Latest" never means a pre-release or beta. mise's checksums come from its
@@ -128,7 +125,7 @@ and the dotfiles in use don't change until the last step.
    use `wget`.) Follow "Setting up a new machine" from step 2, and check:
    `Super+Shift+T` switches light/dark (GNOME, Alacritty, btop, bat,
    starship), `nvim` starts with its plugins and no errors, `mise ls` shows
-   the new versions, `btop` opens from the `dev` container, Brave and VS Code start, the
+   the new versions, `btop` opens, Brave and VS Code start, the
    Nerd Font icons show in starship, and Bitwarden's unlock with system
    authentication works.
 
@@ -186,8 +183,6 @@ and the dotfiles in use don't change until the last step.
      dotfiles;
    - your **Git name and email**, the first time chezmoi runs.
 
-   The dotfiles also build the distrobox container (htop, btop),
-   which takes a few minutes.
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.
 4. **Copy `~/Pictures/wallpapers`** back and run `chezmoi apply`, which
