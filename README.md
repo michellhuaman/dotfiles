@@ -4,7 +4,7 @@ My desktop setup, managed with [chezmoi](https://www.chezmoi.io/): stock
 **Ubuntu** (GNOME), themed with Catppuccin.
 
 `run_onchange_after_60-gnome-settings.sh.tmpl` sets GNOME's keyboard
-layouts, tap to click, night light, wallpaper and shortcuts (Super+Return
+layouts, tap to click, night light and shortcuts (Super+Return
 Alacritty, Super+Shift+Return Brave, Super+Shift+T theme-toggle,
 Super+Shift+B monitor brightness).
 
@@ -33,7 +33,7 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
-  run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, wallpaper, shortcuts
+  run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, shortcuts
 .chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor

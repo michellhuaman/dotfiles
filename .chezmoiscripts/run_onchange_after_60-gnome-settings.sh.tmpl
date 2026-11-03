@@ -1,26 +1,22 @@
-{{- /* Ubuntu (stock GNOME) only: GNOME's versions of the settings the sway
-       desktop had in dot_config/sway/config.d, now only in the
-       fedora-sway-atomic tag. (The comments below still name those files;
-       editing them would rerun this script.) Elsewhere the script is
-       empty, and chezmoi skips empty scripts. */ -}}
+{{- /* Ubuntu (stock GNOME) only. Elsewhere the script is empty, and
+       chezmoi skips empty scripts. */ -}}
 {{- if eq .chezmoi.osRelease.id "ubuntu" -}}
 #!/bin/bash
-# GNOME settings that match the sway desktop's (dot_config/sway/config.d):
-#   60-keyboard     US and US International layouts, Caps Lock and Escape
-#                   swapped (Super+Space switches layouts, GNOME's default)
-#   60-touchpad     tap to click
-#   85-night-light  4000 K between sunset and sunrise in Madrid
-#   80-wallpaper    ~/Pictures/wallpapers/0133.jpg, once it's there
-#   70-bindings     Super+Return Alacritty, Super+Shift+Return Brave,
-#                   Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
-#                   Super+E Files (new window),
-#                   Super+F maximize (toggles), Super+W close window,
-#                   Super+1-4 workspace 1-4, Super+Shift+1-4 move the window
-#                   there (4 fixed workspaces instead of GNOME's dynamic ones)
+# GNOME settings:
+#   keyboard     US and US International layouts, Caps Lock and Escape
+#                swapped (Super+Space switches layouts, GNOME's default)
+#   touchpad     tap to click
+#   night light  4000 K between sunset and sunrise in Madrid
+#   shortcuts    Super+Return Alacritty, Super+Shift+Return Brave,
+#                Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
+#                Super+E Files (new window),
+#                Super+F maximize (toggles), Super+W close window,
+#                Super+1-4 workspace 1-4, Super+Shift+1-4 move the window
+#                there (4 fixed workspaces instead of GNOME's dynamic ones)
+# The wallpaper is left to you (Settings > Appearance).
 #
-# Reruns when this file changes, and when the wallpaper appears (copy
-# ~/Pictures/wallpapers over, then `chezmoi apply`). Settings changed later
-# in GNOME's Settings stay until then. Keyboard options and shortcuts are
+# Reruns when this file changes. Settings changed later in GNOME's Settings
+# stay until then. Keyboard options and shortcuts are
 # added to what's there, never replace it; the only keys taken away are
 # Super+1-4 and Super+Shift+1-4 (the dash's apps) for the workspaces.
 set -euo pipefail
@@ -29,7 +25,7 @@ if ! command -v gsettings >/dev/null; then
   echo "!! gsettings not found, skipping the GNOME settings" >&2
   exit 0
 fi
-echo "==> GNOME settings (keyboard, touchpad, night light, wallpaper, shortcuts)"
+echo "==> GNOME settings (keyboard, touchpad, night light, shortcuts)"
 
 # Adds the string $3 to the string-list setting $1 $2, if it isn't in it yet.
 add_to_list() {
@@ -71,25 +67,12 @@ gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
 # --- night light -------------------------------------------------------
 # Automatic: from sunset to sunrise. GNOME gets those from the location,
 # and uses the last one it knew when location services are off (Ubuntu's
-# default), so Madrid's goes in as that, like wlsunset's -l/-L on sway.
+# default), so Madrid's goes in as that.
 color=org.gnome.settings-daemon.plugins.color
 gsettings set "$color" night-light-enabled true
 gsettings set "$color" night-light-schedule-automatic true
 gsettings set "$color" night-light-temperature 4000
 gsettings set "$color" night-light-last-coordinates '(40.4, -3.7)'
-
-# --- wallpaper ---------------------------------------------------------
-{{- $wallpaper := joinPath .chezmoi.homeDir "Pictures/wallpapers/0133.jpg" }}
-{{- if stat $wallpaper }}
-# zoom crops it to cover the screen, like sway's "fill".
-bg=org.gnome.desktop.background
-gsettings set "$bg" picture-uri 'file://{{ $wallpaper }}'
-gsettings set "$bg" picture-uri-dark 'file://{{ $wallpaper }}'
-gsettings set "$bg" picture-options 'zoom'
-{{- else }}
-# {{ $wallpaper }} isn't there yet: Ubuntu's wallpaper stays. Copy
-# ~/Pictures/wallpapers over, then run `chezmoi apply`.
-{{- end }}
 
 # --- shortcuts ---------------------------------------------------------
 # GNOME runs the command without a shell, so paths are spelled out.
@@ -113,7 +96,7 @@ wm_keys=org.gnome.desktop.wm.keybindings
 add_to_list "$wm_keys" toggle-maximized '<Super>f'
 add_to_list "$wm_keys" close            '<Super>w'
 
-# Workspaces 1-4, like sway's $mod+1-4 and $mod+Shift+1-4. GNOME only has
+# Workspaces 1-4. GNOME only has
 # the workspaces in use plus an empty one, so 3 and 4 often wouldn't exist:
 # keep 4 instead.
 gsettings set org.gnome.mutter dynamic-workspaces false
