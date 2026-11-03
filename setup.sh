@@ -10,7 +10,8 @@
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
-#   2. chezmoi:   the pinned release, and GitHub's SSH host keys
+#   2. chezmoi:   the version pinned in the dotfiles' mise config, run through
+#                 mise; and GitHub's SSH host keys
 #   3. Dotfiles:  chezmoi clones the dotfiles (public, over HTTPS) and applies
 #                 them, with pushes going over SSH (Bitwarden's agent); its
 #                 scripts install the flatpaks, CLI tools, fonts, GNOME
@@ -37,12 +38,9 @@ set -euo pipefail
 GITHUB_USER="michellhuaman"
 repo="dotfiles"
 branch=""
-# chezmoi release to install (update-pins.sh bumps it).
-chezmoi_version="v2.74.0"
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bin_dir="$HOME/.local/bin"
 # Packages this script installed (as opposed to ones Ubuntu came with), so a
 # package dropped from lists/apt.txt can be removed without ever touching
 # Ubuntu's own.
@@ -301,7 +299,7 @@ else
   info "Step 1/3: skipped (--no-system)"
 fi
 
-for cmd in git ssh-keygen curl flatpak; do
+for cmd in git ssh-keygen curl flatpak mise; do
   command -v "$cmd" >/dev/null || die "$cmd is missing; run setup.sh without --no-system"
 done
 fetch -I --max-time 10 https://github.com >/dev/null \
@@ -311,15 +309,15 @@ fetch -I --max-time 10 https://github.com >/dev/null \
 # Bitwarden is one of the dotfiles' Flatpaks: nothing here needs it, since
 # the dotfiles are cloned over HTTPS.
 info "Step 2/3: chezmoi"
-mkdir -p "$bin_dir"
-case ":$PATH:" in *":$bin_dir:"*) ;; *) export PATH="$bin_dir:$PATH" ;; esac
-# get.chezmoi.io checks the download against the release's checksums.
-if [[ "$(chezmoi --version 2>/dev/null)" == "chezmoi version $chezmoi_version,"* ]]; then
-  echo "chezmoi $chezmoi_version already installed"
-else
-  echo "Installing chezmoi $chezmoi_version to $bin_dir"
-  sh -c "$(fetch https://get.chezmoi.io)" -- -b "$bin_dir" -t "$chezmoi_version"
-fi
+# chezmoi is one of the dotfiles' CLI tools, so it runs at the version their
+# ~/.config/mise/config.toml pins (on the branch being cloned). mise
+# downloads it once, checking the release's checksums and their cosign
+# signature; after the dotfiles' own `mise install` it's a normal command.
+mise_config="https://raw.githubusercontent.com/$GITHUB_USER/$repo/${branch:-main}/dot_config/mise/config.toml"
+chezmoi_version="$(fetch "$mise_config" | sed -n 's/^chezmoi *= *"\([^"]*\)".*/\1/p')"
+[[ -n "$chezmoi_version" ]] || die "no chezmoi version in $mise_config"
+chezmoi() { (cd "$HOME" && mise exec "chezmoi@$chezmoi_version" -- chezmoi "$@"); }
+echo "chezmoi $chezmoi_version, through mise"
 chezmoi --version
 
 # Trust GitHub's published host keys (fetched over HTTPS) instead of

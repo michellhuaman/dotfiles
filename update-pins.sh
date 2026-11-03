@@ -3,9 +3,8 @@
 # stable release, on a new branch in each repo, one commit per bump, so a
 # bump that breaks something in the test VM can be dropped on its own.
 #
-#   this repo: the chezmoi release setup.sh installs
-#   dotfiles:  the Nerd Font, the CLI tools in mise's config and the Neovim
-#              plugins (lazy-lock.json)
+#   dotfiles:  the Nerd Font, the CLI tools in mise's config (chezmoi
+#              included) and the Neovim plugins (lazy-lock.json)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -154,15 +153,6 @@ polkit_action() {
   fi
 }
 
-chezmoi_pin() {
-  local f="$boot_wt/setup.sh" cur new
-  cur="$(sed -n 's/^chezmoi_version="\(v[^"]*\)".*/\1/p' "$f")"
-  new="$(latest_release twpayne/chezmoi)"
-  if [[ "$cur" == "$new" ]]; then note "chezmoi: $cur is the latest"; return 0; fi
-  set_value "$f" '^chezmoi_version="(?P<v>v[^"]+)"' "$new"
-  commit "$boot_wt" "Bump chezmoi from $cur to $new"
-}
-
 nerd_font() {
   local f="$dot_wt/.chezmoidata/packages.yaml" cur new
   cur="$(sed -n 's/^ *nerd_fonts: *\(v[^ #]*\).*/\1/p' "$f")"
@@ -240,7 +230,6 @@ run() {
 }
 
 run "Bitwarden polkit action" polkit_action
-run "chezmoi" chezmoi_pin
 run "Nerd Font" nerd_font
 run "CLI tools (mise)" cli_tools
 run "Neovim plugins" nvim_plugins
