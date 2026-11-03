@@ -24,3 +24,4 @@ podman                    # distrobox's container engine
 # From the vendor repos in apt-sources/ (keys in apt-keys.txt)
 brave-browser             # Brave, the default browser (set by the dotfiles)
 code                      # Visual Studio Code
+mise                      # installs the CLI tools in the dotfiles' ~/.config/mise/config.toml

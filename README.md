@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | apt packages, including Brave and VS Code from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | apt packages, including Brave, VS Code and mise from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
@@ -19,9 +19,9 @@ Ventoy, ...) and losing it costs nothing.
 
 ```
 setup.sh                        the one script to run
-update-pins.sh                  bumps every pinned version in the dotfiles, on a branch
+update-pins.sh                  bumps every pinned version (chezmoi here, the rest in the dotfiles), on a branch
 lists/apt.txt                   apt packages setup.sh makes sure are installed
-lists/apt-sources/              vendor repos (Brave, VS Code), copied to /etc/apt/sources.list.d/
+lists/apt-sources/              vendor repos (Brave, VS Code, mise), copied to /etc/apt/sources.list.d/
 lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
 system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
@@ -30,8 +30,8 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
 
 `setup.sh`:
 
-- adds the vendor repos in `apt-sources/` (Brave's and Microsoft's, for
-  Brave and VS Code), with their keys from `apt-keys.txt`. A key file must
+- adds the vendor repos in `apt-sources/` (Brave's, Microsoft's and
+  mise's, for Brave, VS Code and mise), with their keys from `apt-keys.txt`. A key file must
   hold exactly the fingerprints listed there, or `setup.sh` stops. Brave
   publishes no fingerprints; the ones listed are the keys shown on
   https://brave.com/signing-keys/, which match its apt host's keyring.
@@ -70,14 +70,14 @@ latest stable release at once:
 
 | Repo | Pin | Latest from |
 | --- | --- | --- |
-| dotfiles | mise, version and checksums in `.chezmoidata/packages.yaml` | jdx/mise's latest release and its `SHASUMS256.txt` |
+| this one | chezmoi, `chezmoi_version` in `setup.sh` | twpayne/chezmoi's latest release |
 | dotfiles | Nerd Font, `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release |
 | dotfiles | CLI tools, `dot_config/mise/config.toml` | `mise outdated --bump` |
 | dotfiles | Neovim plugins, `dot_config/nvim/lazy-lock.json` | `:Lazy sync`, run in a scratch folder |
 | this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
 
-"Latest" never means a pre-release or beta. mise's checksums come from its
-release. The Catppuccin theme files in the dotfiles are copies, not pins;
+"Latest" never means a pre-release or beta. mise itself isn't pinned: it's
+an apt package from its own repo, updated with the rest of the system. The Catppuccin theme files in the dotfiles are copies, not pins;
 re-copy them from catppuccin/<app> by hand if you ever want to.
 
 Do this before moving to a new machine, and every couple of months
@@ -182,7 +182,6 @@ and the dotfiles in use don't change until the last step.
      (all accounts) > Enable SSH agent**, then press Enter;
    - to **approve the key** in Bitwarden when it checks GitHub and clones the
      dotfiles;
-   - your **Git name and email**, the first time chezmoi runs.
 
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.

@@ -8,3 +8,7 @@ https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
 
 # Microsoft's package signing key (VS Code).
 https://packages.microsoft.com/keys/microsoft.asc microsoft.gpg BC528686B50D79E339D3721CEB3E94ADBE1229CF
+
+# mise's release key, the same one that signs its GitHub releases
+# (SHASUMS256.asc).
+https://mise.jdx.dev/gpg-key.pub mise.gpg 24853EC9F655CE80B48E6C3A8B81C9D17413A06D

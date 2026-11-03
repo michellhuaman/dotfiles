@@ -3,8 +3,9 @@
 # stable release, on a new branch in each repo, one commit per bump, so a
 # bump that breaks something in the test VM can be dropped on its own.
 #
-#   dotfiles:  mise itself (version and checksums), the Nerd Font, the CLI
-#              tools in mise's config and the Neovim plugins (lazy-lock.json)
+#   this repo: the chezmoi release setup.sh installs
+#   dotfiles:  the Nerd Font, the CLI tools in mise's config and the Neovim
+#              plugins (lazy-lock.json)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -46,8 +47,7 @@ done
 for cmd in git curl python3 sha256sum unzip chezmoi tar; do
   command -v "$cmd" >/dev/null || die "$cmd is missing"
 done
-mise_bin="$(command -v mise || echo "$HOME/.local/bin/mise")"
-[[ -x "$mise_bin" ]] || die "mise is missing; run chezmoi apply first"
+mise_bin="$(command -v mise)" || die "mise is missing; run setup.sh first"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 boot_repo="$(git -C "$script_dir" rev-parse --show-toplevel)"
@@ -154,22 +154,13 @@ polkit_action() {
   fi
 }
 
-mise_itself() {
-  local f="$dot_wt/.chezmoidata/packages.yaml" cur new arch asset sum
-  cur="$(sed -n 's/^  version: *\(v[^ #]*\).*/\1/p' "$f")"
-  new="$(latest_release jdx/mise)"
-  if [[ "$cur" == "$new" ]]; then note "mise: $cur is the latest"; return 0; fi
-  # Checksums from the release's own list (which mise also signs:
-  # SHASUMS256.txt.minisig, SHASUMS256.asc).
-  fetch -o "$tmp/SHASUMS256.txt" "https://github.com/jdx/mise/releases/download/$new/SHASUMS256.txt"
-  for arch in amd64:x64 arm64:arm64; do
-    asset="mise-$new-linux-${arch#*:}"
-    sum="$(awk -v a="$asset" '$2 == a || $2 == "./" a { print $1 }' "$tmp/SHASUMS256.txt")"
-    [[ "$sum" =~ ^[0-9a-f]{64}$ ]] || { echo "no checksum for $asset in SHASUMS256.txt" >&2; return 1; }
-    set_value "$f" "^\s*${arch%%:*}: (?P<v>[0-9a-f]{64})" "$sum"
-  done
-  set_value "$f" '^  version: (?P<v>v[^\s#]+)' "$new"
-  commit "$dot_wt" "Bump mise from $cur to $new"
+chezmoi_pin() {
+  local f="$boot_wt/setup.sh" cur new
+  cur="$(sed -n 's/^chezmoi_version="\(v[^"]*\)".*/\1/p' "$f")"
+  new="$(latest_release twpayne/chezmoi)"
+  if [[ "$cur" == "$new" ]]; then note "chezmoi: $cur is the latest"; return 0; fi
+  set_value "$f" '^chezmoi_version="(?P<v>v[^"]+)"' "$new"
+  commit "$boot_wt" "Bump chezmoi from $cur to $new"
 }
 
 nerd_font() {
@@ -249,7 +240,7 @@ run() {
 }
 
 run "Bitwarden polkit action" polkit_action
-run "mise" mise_itself
+run "chezmoi" chezmoi_pin
 run "Nerd Font" nerd_font
 run "CLI tools (mise)" cli_tools
 run "Neovim plugins" nvim_plugins

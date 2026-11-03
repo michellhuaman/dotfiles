@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Set up a fresh Ubuntu (stock GNOME desktop) install.
 #
-#   1. System:    vendor repos (Brave, VS Code; keys checked by
+#   1. System:    vendor repos (Brave, VS Code, mise; keys checked by
 #                 fingerprint); makes sure the packages in lists/apt.txt are
 #                 installed (and removes ones this script installed that
 #                 were dropped from the list); keeps automatic security
@@ -34,6 +34,8 @@ set -euo pipefail
 GITHUB_USER="michellhuaman"
 repo="dotfiles"
 branch=""
+# chezmoi release to install (update-pins.sh bumps it).
+chezmoi_version="v2.74.0"
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -266,11 +268,12 @@ fi
 
 mkdir -p "$bin_dir"
 case ":$PATH:" in *":$bin_dir:"*) ;; *) export PATH="$bin_dir:$PATH" ;; esac
-if command -v chezmoi >/dev/null; then
-  echo "chezmoi already installed"
+# get.chezmoi.io checks the download against the release's checksums.
+if [[ "$(chezmoi --version 2>/dev/null)" == "chezmoi version $chezmoi_version,"* ]]; then
+  echo "chezmoi $chezmoi_version already installed"
 else
-  echo "Installing chezmoi to $bin_dir"
-  sh -c "$(fetch https://get.chezmoi.io)" -- -b "$bin_dir"
+  echo "Installing chezmoi $chezmoi_version to $bin_dir"
+  sh -c "$(fetch https://get.chezmoi.io)" -- -b "$bin_dir" -t "$chezmoi_version"
 fi
 chezmoi --version
 
