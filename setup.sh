@@ -24,7 +24,7 @@
 # are already cloned it runs `chezmoi update` (pull and apply) instead.
 #
 # Options:
-#   --branch NAME   dotfiles branch to clone on the first run (default: ubuntu)
+#   --branch NAME   dotfiles branch to clone on the first run (default: main)
 #   --user NAME     GitHub username (default: GITHUB_USER below)
 #   --repo NAME     dotfiles repository name (default: dotfiles)
 #   --no-system     skip step 1, e.g. when re-running after a dotfiles fix
@@ -33,9 +33,7 @@ set -euo pipefail
 
 GITHUB_USER="michellhuaman"
 repo="dotfiles"
-# The dotfiles' Ubuntu changes live on their ubuntu branch until it's merged
-# into main; then set this back to "" (main).
-branch="ubuntu"
+branch=""
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -85,7 +83,7 @@ fetch() {
 # shellcheck disable=SC1091
 . /etc/os-release
 [[ "${ID:-}" == ubuntu ]] \
-  || die "this branch sets up Ubuntu; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+  || die "this script sets up Ubuntu; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
 lists="$script_dir/lists"
 [[ -f "$lists/apt.txt" ]] || die "lists/apt.txt not found next to setup.sh"
 

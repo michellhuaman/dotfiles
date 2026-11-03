@@ -225,5 +225,4 @@ bash setup.sh --branch bootstrap-test
 ```
 
 This only matters on the first run; after that chezmoi stays on that branch.
-`setup.sh` clones the dotfiles' `ubuntu` branch by default until that branch
-is merged into `main`.
+Without `--branch`, `setup.sh` clones the dotfiles' `main`.
