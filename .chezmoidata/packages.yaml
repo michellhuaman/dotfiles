@@ -16,7 +16,6 @@ packages:
     - org.libreoffice.LibreOffice
     - org.localsend.localsend_app
     - net.ankiweb.Anki
-    - org.gnome.Boxes           # VMs (KVM), e.g. to test workstation-bootstrap branches
     - org.gnome.Extensions      # GNOME Shell extensions: turn on/off and configure the installed ones
 
 fonts:
