@@ -13,7 +13,7 @@ swaylock, Thunar's helpers), is kept as the tag `fedora-sway-atomic`:
 `git checkout fedora-sway-atomic` to look at it.
 
 This repo is the user half of the setup. The system half (apt packages,
-third-party repos, and installing Bitwarden and chezmoi) is in
+third-party repos, Bitwarden's polkit action, and installing chezmoi) is in
 [workstation-bootstrap](https://github.com/michellhuaman/workstation-bootstrap),
 whose `setup.sh` clones and applies this repo on a new machine.
 
