@@ -8,12 +8,13 @@ Who does what:
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
 | this repo (`setup.sh`) | apt packages, including Brave, VS Code and mise from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
-| Bitwarden | holds the SSH keys and is the SSH agent | no |
+| Bitwarden | holds the SSH keys and is the SSH agent, for pushing (both repos are public, so nothing needs it to install) | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
 
-Nothing secret lives here, so the flash drive can be any filesystem (exFAT,
-Ventoy, ...) and losing it costs nothing.
+Nothing secret lives here or in the dotfiles, so both repos are public:
+a new machine downloads this one and clones the dotfiles over HTTPS, with
+no key. Pushes go over SSH, through Bitwarden's agent.
 
 ## Layout
 
@@ -84,7 +85,7 @@ Do this before moving to a new machine, and every couple of months
 otherwise, so each round is small. All of it happens on branches: `main`
 and the dotfiles in use don't change until the last step.
 
-1. **Bump.** With Bitwarden unlocked (the script fetches both repos first):
+1. **Bump** (the script fetches both repos first):
 
    ```bash
    bash ~/repos/workstation-bootstrap/update-pins.sh
@@ -150,41 +151,40 @@ and the dotfiles in use don't change until the last step.
    chezmoi git -- branch -d "$b"
    ```
 
-   (Skip the lines for a repo that got no branch.) If this repo changed,
-   refresh the drive (next section).
+   (Skip the lines for a repo that got no branch.)
 
 ## Before leaving the old machine
 
 1. **Update the pins** and test them (previous section), so the new machine
    starts from current versions that a VM has already run.
-2. **Refresh the copy on the drive:**
-
-   ```bash
-   git -C "/media/$USER/<drive>/workstation-bootstrap" pull
-   ```
+2. **Push everything** in both repos: the new machine gets them from GitHub.
 
 ## Setting up a new machine
 
 1. **Install Ubuntu** (the normal desktop install). The user you create in
    the installer is an administrator, so it has sudo. Connect to Wi-Fi or
    Ethernet.
-2. **Log in, plug in the drive, open a terminal (`Ctrl+Alt+T`) and run:**
+2. **Log in, open a terminal (`Ctrl+Alt+T`) and run** (wget comes with
+   Ubuntu; curl and git may not yet):
 
    ```bash
-   bash "/media/$USER/<drive>/workstation-bootstrap/setup.sh"
+   wget -qO- https://github.com/michellhuaman/workstation-bootstrap/archive/refs/heads/main.tar.gz | tar -xz
+   bash workstation-bootstrap-main/setup.sh
    ```
 
-   It asks for:
-   - your **sudo password**, once, for the system step;
-   - to **log into Bitwarden** and turn on **File > Settings > App settings
-     (all accounts) > Enable SSH agent**, then press Enter;
-   - to **approve the key** in Bitwarden when it checks GitHub and clones the
-     dotfiles;
+   It only asks for your **sudo password**, once, for the system step.
+   To change this repo later, clone it instead:
+   `git clone git@github.com:michellhuaman/workstation-bootstrap.git ~/repos/workstation-bootstrap`
+   (after step 4, which makes the SSH key work).
 
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.
-4. **In Bitwarden**, after logging in: File > Settings > Security > turn on
-   **Unlock with system authentication**. Bitwarden then unlocks with your
+4. **In Bitwarden**, log in (it starts at login), then:
+   - File > Settings > App settings (all accounts) > turn on **Enable SSH
+     agent**, so `git push` works. Check with `ssh -T git@github.com`
+     (approve the request in Bitwarden).
+   - File > Settings > Security > turn on **Unlock with system
+     authentication**. Bitwarden then unlocks with your
    login password (or a fingerprint, if the machine has a reader) instead of
    the master password. After Bitwarden starts, the first unlock still needs
    the master password. This one can't be automated: Bitwarden keeps it in
@@ -199,12 +199,12 @@ and the dotfiles in use don't change until the last step.
 - **"Could not get lock /var/lib/dpkg/lock-frontend"**: the automatic
   updater (or the App Center) is busy; wait a minute and run `setup.sh`
   again.
-- **"Network not ready"**: right after boot the network can take a moment;
-  `setup.sh` retries for a minute on its own.
-- **"The agent isn't answering yet, or has no keys"**: Bitwarden is locked, the
-  SSH agent switch is off, or the vault has no SSH key items.
-- **"GitHub didn't accept a key"**: the key in Bitwarden isn't added to your
-  GitHub account, or you denied the request in Bitwarden.
+- **"can't reach github.com"**: right after boot the network can take a
+  moment (downloads retry for about 30 seconds on their own); connect and
+  run `setup.sh` again.
+- **`git push` fails with "Permission denied (publickey)"**: Bitwarden is
+  locked, its SSH agent switch is off, the vault has no SSH key items, or
+  the key isn't added to your GitHub account.
 - **`<your-user> is not in the sudoers file`**: the user isn't an
   administrator. From an administrator account, run
   `sudo usermod -aG sudo <your-user>`, then log out and back in.

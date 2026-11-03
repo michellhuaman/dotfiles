@@ -9,15 +9,17 @@
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
-#   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
-#                 Bitwarden's SSH agent and checks that GitHub accepts the key
-#   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
+#   2. Bitwarden: Flathub, Bitwarden and chezmoi
+#   3. Dotfiles:  chezmoi clones the dotfiles (public, over HTTPS) and applies
+#                 them, with pushes going over SSH (Bitwarden's agent); its
 #                 scripts install the flatpaks, CLI tools, fonts, GNOME
 #                 settings and user services
 #                 (no sudo)
 #
 # Run it from a terminal in your GNOME session, as your normal user:
 #   bash /path/to/workstation-bootstrap/setup.sh
+#
+# Nothing waits on Bitwarden: it's only needed later, to push.
 #
 # Safe to run again: lists/apt.txt is the whole set of packages this script
 # manages, so a rerun only changes what differs from it, and if the dotfiles
@@ -41,7 +43,6 @@ do_system=true
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="$HOME/.local/bin"
 bw_app="com.bitwarden.desktop"
-bw_sock="$HOME/.var/app/$bw_app/data/.bitwarden-ssh-agent.sock"
 # Packages this script installed (as opposed to ones Ubuntu came with), so a
 # package dropped from lists/apt.txt can be removed without ever touching
 # Ubuntu's own.
@@ -61,7 +62,9 @@ while [[ $# -gt 0 ]]; do
     *)           die "unknown option: $1 (try --help)" ;;
   esac
 done
-repo_url="git@github.com:$GITHUB_USER/$repo.git"
+# Pulls over HTTPS (public, no key needed); pushes over SSH (Bitwarden).
+repo_url="https://github.com/$GITHUB_USER/$repo.git"
+push_url="git@github.com:$GITHUB_USER/$repo.git"
 
 # Prints the entries of a list file: comments, blank lines and trailing
 # spaces removed, one entry per line.
@@ -251,7 +254,7 @@ else
   info "Step 1/3: skipped (--no-system)"
 fi
 
-for cmd in git ssh ssh-add ssh-keygen curl flatpak; do
+for cmd in git ssh-keygen curl flatpak; do
   command -v "$cmd" >/dev/null || die "$cmd is missing; run setup.sh without --no-system"
 done
 fetch -I --max-time 10 https://github.com >/dev/null \
@@ -278,7 +281,7 @@ fi
 chezmoi --version
 
 # Trust GitHub's published host keys (fetched over HTTPS) instead of
-# whatever answers the first time.
+# whatever answers the first time, for the first push.
 mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
 known_hosts="$HOME/.ssh/known_hosts"
 if ! ssh-keygen -F github.com -f "$known_hosts" >/dev/null 2>&1; then
@@ -293,77 +296,20 @@ if ! ssh-keygen -F github.com -f "$known_hosts" >/dev/null 2>&1; then
     warn "Couldn't fetch GitHub's host keys; ssh will trust the first one it sees"
   fi
 fi
-ssh_opts=(-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o IdentityAgent="$bw_sock")
-
-agent_ready() {
-  [[ -S "$bw_sock" ]] && SSH_AUTH_SOCK="$bw_sock" ssh-add -l >/dev/null 2>&1
-}
-
-github_ok() {
-  local out
-  out="$(SSH_AUTH_SOCK="$bw_sock" ssh "${ssh_opts[@]}" -T git@github.com 2>&1 || true)"
-  grep -q "successfully authenticated" <<<"$out" && return 0
-  gh_error="$out"
-  return 1
-}
-
-if ! agent_ready; then
-  pgrep -f "$bw_app" >/dev/null || setsid -f flatpak run "$bw_app" >/dev/null 2>&1
-  cat <<EOF
-
-Bitwarden is opening. In it:
-  1. Log in (master password and two-step login).
-  2. File > Settings > App settings (all accounts): turn on "Enable SSH agent".
-Leave Bitwarden open and unlocked, then come back here.
-EOF
-  until agent_ready; do
-    read -rp "Press Enter when the SSH agent is on (Ctrl+C to stop) " _
-    agent_ready || warn "The agent isn't answering yet, or has no keys. Is Bitwarden unlocked?"
-  done
-fi
-echo "Bitwarden's SSH agent has these keys:"
-SSH_AUTH_SOCK="$bw_sock" ssh-add -l | sed 's/^/   /'
-
-# True if ssh's error in $1 means the network isn't up yet (e.g. right after
-# boot), rather than a problem with the key.
-network_error() {
-  grep -qiE 'could not resolve hostname|temporary failure in name resolution|network is unreachable|no route to host|connection timed out|connection refused' <<<"$1"
-}
-
-echo "Checking GitHub (approve the request in Bitwarden if it asks)"
-gh_error=""
-net_tries=0
-until github_ok; do
-  # Network errors retry on their own for up to a minute, then ask like any
-  # other error.
-  if network_error "$gh_error" && (( net_tries < 12 )); then
-    net_tries=$((net_tries + 1))
-    warn "Network not ready ($(head -1 <<<"$gh_error")); retrying in 5 seconds ($net_tries/12)"
-    sleep 5
-    continue
-  fi
-  if network_error "$gh_error"; then
-    warn "Still can't reach GitHub: $gh_error"
-    read -rp "Check the network connection, then press Enter to try again (Ctrl+C to stop) " _
-  else
-    warn "GitHub didn't accept a key: $gh_error"
-    read -rp "Check Bitwarden, then press Enter to try again (Ctrl+C to stop) " _
-  fi
-  net_tries=0
-done
-echo "GitHub accepts your key."
 
 # ---- 3. dotfiles ----------------------------------------------------------------
 info "Step 3/3: dotfiles"
-export SSH_AUTH_SOCK="$bw_sock"
 source_dir="$(chezmoi source-path 2>/dev/null || echo "${XDG_DATA_HOME:-$HOME/.local/share}/chezmoi")"
 if [[ -d "$source_dir/.git" ]]; then
   echo "Dotfiles already in $source_dir; pulling and applying"
+  chezmoi git -- remote set-url origin "$repo_url"
+  chezmoi git -- remote set-url --push origin "$push_url"
   chezmoi update --verbose
 else
   init_args=(init --apply --verbose)
   [[ -n "$branch" ]] && init_args+=(--branch "$branch")
   chezmoi "${init_args[@]}" "$repo_url"
+  chezmoi git -- remote set-url --push origin "$push_url"
 fi
 
 # ---- done -----------------------------------------------------------------------
@@ -372,9 +318,12 @@ cat <<EOF
 Next: reboot (systemctl reboot) and log in again. Flatpak apps only show up
 in the app grid after a fresh login, and ddcutil's i2c module loads at boot.
 
-  In Bitwarden, unlock with your login password instead of the master
-  password (or a fingerprint, if the machine has a reader): after logging
-  in, File > Settings > Security > "Unlock with system authentication".
+  In Bitwarden, after logging in (master password and two-step login):
+  - File > Settings > App settings (all accounts): turn on "Enable SSH
+    agent", so git push works (check with: ssh -T git@github.com);
+  - File > Settings > Security: "Unlock with system authentication", to
+    unlock with your login password (or a fingerprint, if the machine has
+    a reader) instead of the master password.
 EOF
 if [[ -f /var/run/reboot-required ]]; then
   echo "  Ubuntu also says an update needs a reboot."

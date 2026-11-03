@@ -114,14 +114,14 @@ for repo in "$boot_repo" "$dot_repo"; do
   git -C "$repo" rev-parse --verify -q main >/dev/null || die "$name has no main branch"
   ! git -C "$repo" rev-parse --verify -q "refs/heads/$branch" >/dev/null \
     || die "$name already has a branch $branch; delete it or pass --branch"
-  # Start from main as it is on GitHub. Fetching needs Bitwarden unlocked.
+  # Start from main as it is on GitHub.
   if git -C "$repo" fetch -q origin main 2>/dev/null; then
     behind="$(git -C "$repo" rev-list --count main..origin/main)"
     ahead="$(git -C "$repo" rev-list --count origin/main..main)"
     (( behind == 0 )) || die "$name's main is $behind commits behind GitHub; pull first"
     (( ahead == 0 )) || warn "$name's main has $ahead commits not on GitHub yet; the branch includes them"
   else
-    warn "couldn't fetch $name (is Bitwarden unlocked?); starting from the local main"
+    warn "couldn't fetch $name; starting from the local main"
   fi
 done
 [[ ! -e "$boot_wt" ]] || die "$boot_wt already exists"
