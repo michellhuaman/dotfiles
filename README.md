@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | third-party repos, COPRs; layered packages; automatic updates; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | third-party repos, COPRs; layered packages; automatic updates; Catppuccin login screen; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway keybindings, Catppuccin theme, user services | no |
 | distrobox (layered here) | a `dev` container for everything else (VS Code, htop, btop), defined and built by the dotfiles; its apps show up in the launcher | no |
@@ -23,6 +23,7 @@ lists/layered.txt               RPMs layered with rpm-ostree
 lists/copr.txt                  COPR repos (owner/project) added before layering (none)
 lists/repos/                    vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
 lists/keys.txt                  optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
+system/sddm-flavor              switches the login screen between Latte and Mocha (installed to /usr/local/bin)
 ```
 
 ## How it works
@@ -35,7 +36,16 @@ Instead, `setup.sh`:
 - makes the **layered packages** match `layered.txt`: missing ones are
   layered, layered ones no longer listed are uninstalled;
 - turns on automatic updates (`AutomaticUpdatePolicy=stage`), which download
-  new images in the background and apply them at the next reboot.
+  new images in the background and apply them at the next reboot;
+- gives the login screen (SDDM) Catppuccin's theme: Latte and Mocha from a
+  pinned [catppuccin/sddm](https://github.com/catppuccin/sddm) release
+  (checked by SHA-256) go to `/usr/local/share/sddm/themes`, and
+  `/etc/sddm.conf.d/10-catppuccin.conf` points SDDM at the
+  `catppuccin-current` link there. `sddm-flavor latte|mocha` repoints the
+  link, and `/etc/sudoers.d/sddm-flavor` lets you run it, with just those
+  two arguments, without a password, so the dotfiles' `theme-toggle.sh`
+  switches the login screen too. To pin a newer release, change
+  `sddm_version` and the checksums in `setup.sh`.
 
 Nothing is ever removed from the base image (Firefox and the rest stay).
 

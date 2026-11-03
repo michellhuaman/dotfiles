@@ -1,0 +1,27 @@
+#!/bin/sh
+# sddm-flavor latte|mocha
+#
+# Points the login screen (SDDM) at the Catppuccin flavor given: it repoints
+# the catppuccin-current link that /etc/sddm.conf.d/10-catppuccin.conf names
+# as the theme. Takes effect the next time the login screen starts.
+#
+# setup.sh installs this as /usr/local/bin/sddm-flavor (root-owned), with a
+# sudoers rule that lets you run it, with exactly these arguments, without a
+# password; the dotfiles' theme-toggle.sh calls it with `sudo -n`. The
+# themes folder stays root-only, because a theme is code the login screen
+# runs.
+
+set -eu
+
+dir=/usr/local/share/sddm/themes
+accent=lavender # keep in sync with sddm_accent in setup.sh
+
+case "${1:-}" in
+  latte|mocha) ;;
+  *) echo "usage: sddm-flavor latte|mocha" >&2; exit 2 ;;
+esac
+
+theme="catppuccin-$1-$accent"
+[ -f "$dir/$theme/metadata.desktop" ] || { echo "sddm-flavor: $dir/$theme is not installed" >&2; exit 1; }
+[ "$(readlink "$dir/catppuccin-current" 2>/dev/null || true)" = "$theme" ] && exit 0
+ln -sfn "$theme" "$dir/catppuccin-current"

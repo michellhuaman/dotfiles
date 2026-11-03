@@ -3,8 +3,8 @@
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
 #                 layered packages match lists/layered.txt; turns on
-#                 automatic updates (sudo). Nothing is removed from the base
-#                 image.
+#                 automatic updates; Catppuccin login screen (sudo).
+#                 Nothing is removed from the base image.
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
@@ -118,6 +118,65 @@ missing_from() {
   grep -vxF -f <(printf '%s\n' "$2") <<<"$1" | sed '/^$/d' || true
 }
 
+# Login screen (SDDM): Catppuccin's theme in Latte and Mocha, from a pinned
+# release, checked against its checksums. The image's theme folder is
+# read-only, so the themes go to /usr/local/share/sddm/themes (which is under
+# /var), and /etc/sddm.conf.d/10-catppuccin.conf points SDDM at the
+# catppuccin-current link there. The image's other SDDM settings (sway runs
+# the login screen) stay as they are.
+# sddm-flavor (system/) repoints the link; a sudoers rule lets you run it
+# without a password, so the dotfiles' theme-toggle.sh can switch the login
+# screen along with everything else. Everything stays root-owned: a theme is
+# code the login screen runs.
+sddm_version="v1.1.2"
+sddm_accent="lavender" # also in system/sddm-flavor
+declare -A sddm_sha256=(
+  [latte]=c5f0dffa27faae35b1b940f84c6f6f6fb1301e11a6017a51b6d33bc881867f4b
+  [mocha]=08b5a99524bff09b3beedd292c5897433308a914a639236f04b15be60cef0829
+)
+
+sddm_theme() {
+  local themes=/usr/local/share/sddm/themes flavor name tmp
+  sudo mkdir -p "$themes"
+  # Replaced on every run, so a new pinned version (or a damaged copy) is
+  # picked up; the catppuccin-current link is kept.
+  for flavor in latte mocha; do
+    name="catppuccin-$flavor-$sddm_accent"
+    echo "Installing login screen theme $name ($sddm_version)"
+    tmp="$(mktemp -d)"
+    fetch -o "$tmp/$name.zip" \
+      "https://github.com/catppuccin/sddm/releases/download/$sddm_version/$name-sddm.zip" \
+      || { rm -rf "$tmp"; die "couldn't download $name-sddm.zip"; }
+    sha256sum -c --quiet <<<"${sddm_sha256[$flavor]}  $tmp/$name.zip" \
+      || { rm -rf "$tmp"; die "$name-sddm.zip doesn't match its checksum"; }
+    unzip -q "$tmp/$name.zip" -d "$tmp"
+    [[ -f "$tmp/$name/metadata.desktop" ]] \
+      || { rm -rf "$tmp"; die "$name-sddm.zip has no $name/metadata.desktop"; }
+    sudo rm -rf "${themes:?}/$name"
+    sudo cp -r "$tmp/$name" "$themes/"
+    rm -rf "$tmp"
+  done
+  sudo chmod -R u=rwX,go=rX "$themes"
+  # Dark by default; theme-toggle.sh (run by chezmoi apply) sets the real one.
+  [[ -L "$themes/catppuccin-current" ]] \
+    || sudo ln -s "catppuccin-mocha-$sddm_accent" "$themes/catppuccin-current"
+
+  sudo install -m 755 -o root -g root "$script_dir/system/sddm-flavor" /usr/local/bin/sddm-flavor
+
+  tmp="$(mktemp)"
+  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/sddm-flavor latte, /usr/local/bin/sddm-flavor mocha\n' \
+    "$(id -un)" >"$tmp"
+  sudo visudo -cqf "$tmp" || { rm -f "$tmp"; die "the sudoers rule for sddm-flavor doesn't parse"; }
+  sudo install -m 440 -o root -g root "$tmp" /etc/sudoers.d/sddm-flavor
+  rm -f "$tmp"
+
+  tmp="$(mktemp)"
+  printf '[Theme]\nThemeDir=%s\nCurrent=catppuccin-current\n' "$themes" >"$tmp"
+  sudo mkdir -p /etc/sddm.conf.d
+  sudo install -m 644 -o root -g root "$tmp" /etc/sddm.conf.d/10-catppuccin.conf
+  rm -f "$tmp"
+}
+
 atomic_system() {
   local repo want have add drop
 
@@ -189,6 +248,8 @@ atomic_system() {
     sudo rpm-ostree reload
   fi
   sudo systemctl enable --now rpm-ostreed-automatic.timer
+
+  sddm_theme
 }
 
 if $do_system; then
