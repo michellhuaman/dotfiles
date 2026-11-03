@@ -34,6 +34,7 @@ so `chezmoi apply` never asks for a password.
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
   run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, shortcuts
+  run_onchange_after_65-virt-manager-connection.sh  virt-manager Flatpak: connects to the host's libvirt (qemu:///system)
 .chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor
