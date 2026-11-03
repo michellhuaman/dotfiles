@@ -1,7 +1,17 @@
 # dotfiles
 
-My Fedora Sway Atomic setup (Fedora's preconfigured sway, themed with
-Catppuccin), managed with [chezmoi](https://www.chezmoi.io/).
+My desktop setup, managed with [chezmoi](https://www.chezmoi.io/): stock
+**Ubuntu** (GNOME), and before that Fedora Sway Atomic (Fedora's
+preconfigured sway, themed with Catppuccin).
+
+On Ubuntu, the sway desktop's configs (sway, waybar, rofi, dunst, swaylock,
+Thunar's helpers, Adwaita-dark) aren't copied (`.chezmoiignore`), and
+`run_onchange_after_60-gnome-settings.sh.tmpl` gives GNOME the same
+keyboard layouts, tap to click, night light, wallpaper and shortcuts
+(Super+Return Alacritty, Super+Shift+Return Brave, Super+Shift+T
+theme-toggle, Super+Shift+B monitor brightness). Everything else (shell,
+Alacritty, Neovim, mise, tmux, btop, bat, starship, the flatpaks, the
+distrobox container) is the same on both.
 
 This repo is the user half of the setup. The system half (layered packages,
 COPRs, third-party repos, and installing Bitwarden and chezmoi) is in
@@ -15,7 +25,7 @@ so `chezmoi apply` never asks for a password.
 
 ```
 .chezmoi.toml.tmpl      per-machine settings, asked once by `chezmoi init` (Git name/email)
-.chezmoiignore          repo files that are not copied to ~ (this README)
+.chezmoiignore          repo files that are not copied to ~ (this README; the sway desktop on Ubuntu)
 .chezmoidata/
   packages.yaml         flatpaks, Nerd Font version, mise version and checksums, systemd user units
 .chezmoiexternal.toml.tmpl  downloads mise itself (pinned, checksum-verified)
@@ -27,6 +37,7 @@ so `chezmoi apply` never asks for a password.
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the sway desktop's theme links at the current flavor
+  run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, wallpaper, shortcuts
 .chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig.tmpl      uses the name/email from .chezmoi.toml.tmpl

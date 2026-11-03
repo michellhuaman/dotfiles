@@ -3,12 +3,13 @@
 # whenever that file changes (hash: {{ include "dot_config/distrobox/assemble.ini" | sha256sum }}).
 # The first build downloads the image and packages, so it takes a few minutes.
 set -euo pipefail
-{{- /* distrobox is layered by workstation-bootstrap, so on a new machine it
-       only exists after the reboot that follows setup.sh. Until then this
-       script only prints a note and succeeds, so the scripts after it still
-       run. Because its text depends on whether distrobox exists, chezmoi
-       sees it as changed after the reboot and runs it again, building the
-       containers, on the next `chezmoi apply`. */}}
+{{- /* distrobox comes from workstation-bootstrap (apt on Ubuntu, which
+       setup.sh installs before applying the dotfiles; layered on Fedora's
+       atomic images, where it only exists after a reboot). Until it's there
+       this script only prints a note and succeeds, so the scripts after it
+       still run. Because its text depends on whether distrobox exists,
+       chezmoi sees it as changed once it does and runs it again, building
+       the containers, on the next `chezmoi apply`. */}}
 {{- if and (lookPath "distrobox") (lookPath "podman") }}
 
 echo "==> distrobox containers (assemble.ini)"
@@ -16,6 +17,6 @@ distrobox assemble create --replace --file "$HOME/.config/distrobox/assemble.ini
 {{- else }}
 
 echo "==> distrobox containers: skipped, distrobox isn't installed yet."
-echo "    After the reboot that follows workstation-bootstrap's setup.sh, run"
-echo "    \`chezmoi apply\` once to build them."
+echo "    Once workstation-bootstrap's setup.sh has installed it (after the"
+echo "    reboot, on Fedora's atomic images), run \`chezmoi apply\` once to build them."
 {{- end }}

@@ -1,0 +1,88 @@
+{{- /* Ubuntu (stock GNOME) only: GNOME's versions of the settings the sway
+       desktop has in dot_config/sway/config.d. Elsewhere the script is
+       empty, and chezmoi skips empty scripts. */ -}}
+{{- if eq .chezmoi.osRelease.id "ubuntu" -}}
+#!/bin/bash
+# GNOME settings that match the sway desktop's (dot_config/sway/config.d):
+#   60-keyboard     US and US International layouts, Caps Lock and Escape
+#                   swapped (Super+Space switches layouts, GNOME's default)
+#   60-touchpad     tap to click
+#   85-night-light  4000 K between sunset and sunrise in Madrid
+#   80-wallpaper    ~/Pictures/wallpapers/0133.jpg, once it's there
+#   70-bindings     Super+Return Alacritty, Super+Shift+Return Brave,
+#                   Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh
+#
+# Reruns when this file changes, and when the wallpaper appears (copy
+# ~/Pictures/wallpapers over, then `chezmoi apply`). Settings changed later
+# in GNOME's Settings stay until then. Keyboard options and shortcuts are
+# added to what's there, never replace it.
+set -euo pipefail
+
+if ! command -v gsettings >/dev/null; then
+  echo "!! gsettings not found, skipping the GNOME settings" >&2
+  exit 0
+fi
+echo "==> GNOME settings (keyboard, touchpad, night light, wallpaper, shortcuts)"
+
+# Adds the string $3 to the string-list setting $1 $2, if it isn't in it yet.
+add_to_list() {
+  local cur new
+  cur="$(gsettings get "$1" "$2")"
+  new="$(python3 -c '
+import ast, sys
+cur, item = sys.argv[1], sys.argv[2]
+if cur.startswith("@as "):    # how gsettings prints an empty list
+    cur = cur[4:]
+items = ast.literal_eval(cur)
+if item not in items:
+    items.append(item)
+print(repr(items))' "$cur" "$3")"
+  [[ "$new" == "$cur" ]] || gsettings set "$1" "$2" "$new"
+}
+
+# --- keyboard ----------------------------------------------------------
+gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'us'), ('xkb', 'us+intl')]"
+add_to_list org.gnome.desktop.input-sources xkb-options 'caps:swapescape'
+
+# --- touchpad ----------------------------------------------------------
+gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
+
+# --- night light -------------------------------------------------------
+# Automatic: from sunset to sunrise. GNOME gets those from the location,
+# and uses the last one it knew when location services are off (Ubuntu's
+# default), so Madrid's goes in as that, like wlsunset's -l/-L on sway.
+color=org.gnome.settings-daemon.plugins.color
+gsettings set "$color" night-light-enabled true
+gsettings set "$color" night-light-schedule-automatic true
+gsettings set "$color" night-light-temperature 4000
+gsettings set "$color" night-light-last-coordinates '(40.4, -3.7)'
+
+# --- wallpaper ---------------------------------------------------------
+{{- $wallpaper := joinPath .chezmoi.homeDir "Pictures/wallpapers/0133.jpg" }}
+{{- if stat $wallpaper }}
+# zoom crops it to cover the screen, like sway's "fill".
+bg=org.gnome.desktop.background
+gsettings set "$bg" picture-uri 'file://{{ $wallpaper }}'
+gsettings set "$bg" picture-uri-dark 'file://{{ $wallpaper }}'
+gsettings set "$bg" picture-options 'zoom'
+{{- else }}
+# {{ $wallpaper }} isn't there yet: Ubuntu's wallpaper stays. Copy
+# ~/Pictures/wallpapers over, then run `chezmoi apply`.
+{{- end }}
+
+# --- shortcuts ---------------------------------------------------------
+# GNOME runs the command without a shell, so paths are spelled out.
+media_keys=org.gnome.settings-daemon.plugins.media-keys
+shortcut() { # $1 id, $2 name, $3 keys, $4 command
+  local path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/dotfiles-$1/"
+  local schema="$media_keys.custom-keybinding:$path"
+  gsettings set "$schema" name "$2"
+  gsettings set "$schema" binding "$3"
+  gsettings set "$schema" command "$4"
+  add_to_list "$media_keys" custom-keybindings "$path"
+}
+shortcut terminal     "Terminal (Alacritty)" '<Super>Return'       'alacritty'
+shortcut browser      "Brave"                '<Super><Shift>Return' 'flatpak run com.brave.Browser'
+shortcut theme-toggle "Toggle light/dark"    '<Super><Shift>t'     '{{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
+shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
+{{- end }}

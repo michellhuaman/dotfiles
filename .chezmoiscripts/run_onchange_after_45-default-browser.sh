@@ -1,6 +1,6 @@
 #!/bin/sh
 # Brave (Flatpak) as the default browser for links and web pages; without
-# this, Fedora's /usr/share/applications/mimeapps.list picks Firefox.
+# this, the distro's own mimeapps.list (Fedora's, or Ubuntu's) picks Firefox.
 # xdg-settings/xdg-mime only change these lines of ~/.config/mimeapps.list,
 # so entries other programs add there (e.g. Claude Code's claude-cli) stay.
 # Edit this file to run it again.
