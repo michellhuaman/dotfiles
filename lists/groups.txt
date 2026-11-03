@@ -7,3 +7,4 @@
 # mode 0660. Ubuntu's docs say sudo users are added on install, but 26.04's
 # package only creates the group (sysusers), so it's joined here.
 libvirt                   # VMs in virt-manager (qemu:///system) without sudo
+kvm                       # Claude Desktop's Cowork VM: /dev/kvm and /dev/vhost-vsock

@@ -1,0 +1,9 @@
+# Claude Desktop, from Anthropic's repo (https://code.claude.com/docs/en/desktop-linux),
+# signed by the key in lists/apt-keys.txt. The claude-desktop package adds
+# its own copy (claude-desktop.list) only when no other source has the repo.
+Types: deb
+URIs: https://downloads.claude.ai/claude-desktop/apt/stable
+Suites: stable
+Components: main
+Architectures: amd64 arm64
+Signed-By: /etc/apt/keyrings/claude-desktop.gpg

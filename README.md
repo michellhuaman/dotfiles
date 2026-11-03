@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | apt packages, including Brave, VS Code and mise from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | apt packages, including Brave, VS Code, mise and Claude Desktop from their vendors' repos; automatic security updates; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent, for pushing (both repos are public, so nothing needs it to install) | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
@@ -24,9 +24,9 @@ autoinstall.yaml                answers for the Ubuntu installer ("Automated ins
 setup.sh                        the one script to run, after the first login
 update-pins.sh                  bumps every pinned version (chezmoi here, the rest in the dotfiles), on a branch
 lists/apt.txt                   apt packages setup.sh makes sure are installed
-lists/apt-sources/              vendor repos (Brave, VS Code, mise), copied to /etc/apt/sources.list.d/
+lists/apt-sources/              vendor repos (Brave, VS Code, mise, Claude Desktop), copied to /etc/apt/sources.list.d/
 lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
-lists/groups.txt                groups setup.sh adds your user to (libvirt)
+lists/groups.txt                groups setup.sh adds your user to (libvirt, kvm)
 system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
 
@@ -34,20 +34,23 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
 
 `setup.sh`:
 
-- adds the vendor repos in `apt-sources/` (Brave's, Microsoft's and
-  mise's, for Brave, VS Code and mise), with their keys from `apt-keys.txt`. A key file must
+- adds the vendor repos in `apt-sources/` (Brave's, Microsoft's, mise's
+  and Anthropic's, for Brave, VS Code, mise and Claude Desktop), with their keys from `apt-keys.txt`. A key file must
   hold exactly the fingerprints listed there, or `setup.sh` stops. Brave
   publishes no fingerprints; the ones listed are the keys shown on
   https://brave.com/signing-keys/, which match its apt host's keyring.
   Microsoft's is its well-known package signing key. VS Code's package is
-  told (through debconf) not to add its own copy of the repo;
+  told (through debconf) not to add its own copy of the repo. Claude
+  Desktop's package leaves its copy out when the repo is already there, and
+  one it wrote earlier (`claude-desktop.list`) is deleted, since apt won't
+  take both;
 - installs the packages in `apt.txt` that are missing, and remembers which
   ones it installed (in `/var/lib/workstation-bootstrap/apt-installed.txt`).
   A package dropped from the list is removed only if `setup.sh` installed
   it, so nothing Ubuntu came with is ever removed (Firefox, the snaps and
   the rest stay);
 - adds your user to the groups in `groups.txt` (libvirt, so virt-manager
-  manages VMs without sudo), effective after a reboot (logging out isn't
+  manages VMs without sudo; kvm, for Claude Desktop's Cowork VM), effective after a reboot (logging out isn't
   enough: your systemd user manager keeps the old groups). A group dropped
   from the list isn't removed: `sudo gpasswd -d "$USER" <group>`;
 - makes sure libvirt's default NAT network (`virbr0`, 192.168.122.0/24)

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Set up a fresh Ubuntu (stock GNOME desktop) install.
 #
-#   1. System:    vendor repos (Brave, VS Code, mise; keys checked by
-#                 fingerprint); makes sure the packages in lists/apt.txt are
+#   1. System:    vendor repos (Brave, VS Code, mise, Claude Desktop; keys
+#                 checked by fingerprint); makes sure the packages in lists/apt.txt are
 #                 installed (and removes ones this script installed that
 #                 were dropped from the list); adds you to the groups in
 #                 lists/groups.txt; libvirt's default VM network; keeps
@@ -179,6 +179,14 @@ ubuntu_system() {
   # VS Code's package offers to add Microsoft's repo itself; it's already
   # here (vscode.sources), so tell it not to.
   echo "code code/add-microsoft-repo boolean false" | sudo debconf-set-selections
+  # Claude Desktop's package adds its own copy (claude-desktop.list, with
+  # another key file) unless another source has the repo, and apt refuses
+  # the two together. claude-desktop.sources is that source; a copy the
+  # package wrote before it was here goes.
+  local cd_list=/etc/apt/sources.list.d/claude-desktop.list
+  if [[ "$(head -n 1 "$cd_list" 2>/dev/null)" == "### Managed by the claude-desktop package." ]]; then
+    sudo rm -f "$cd_list"
+  fi
   sudo apt-get update -q
 
   while read -r p; do
