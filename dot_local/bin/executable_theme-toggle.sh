@@ -12,7 +12,8 @@
 # It also switches the Catppuccin flavor (Latte for light, Mocha for dark):
 # - sway, waybar, dunst, rofi, swaylock, Alacritty, btop and bat read a
 #   "current" link that points at the flavor's file; this script repoints
-#   the links (see theme_links);
+#   the links (see theme_links); so does the login screen (SDDM), through
+#   workstation-bootstrap's sddm-flavor, when that is installed;
 # - starship has no way to include a file, so the palette line in
 #   ~/.config/starship.toml is edited in place.
 #
@@ -94,6 +95,12 @@ theme_links() {
   # alacritty.toml makes them reload, and re-read the link; its contents
   # don't change, so chezmoi sees no difference.
   [[ -f "$CONFIG_DIR/alacritty/alacritty.toml" ]] && touch "$CONFIG_DIR/alacritty/alacritty.toml"
+  # The login screen (SDDM), where workstation-bootstrap installed its
+  # helper; sudoers lets it run without a password. -n: never ask for one.
+  if [[ -x /usr/local/bin/sddm-flavor ]]; then
+    sudo -n /usr/local/bin/sddm-flavor "$f" >/dev/null 2>&1 \
+      || echo "theme-toggle: couldn't switch the login screen (sudo -n sddm-flavor $f)" >&2
+  fi
 }
 
 # Makes the running sway, waybar and dunst pick up the new links.

@@ -166,6 +166,12 @@ plain files you can edit directly, and a toggle never shows up as a
 difference. On a new machine, `run_onchange_after_55-theme-links.sh.tmpl`
 creates the links (`theme-toggle.sh links`) for the current mode.
 
+The login screen (SDDM) follows too. Its themes and link are system files,
+installed by workstation-bootstrap together with `/usr/local/bin/sddm-flavor`
+and a sudoers rule that lets you run it without a password; `theme_links`
+calls `sudo -n sddm-flavor <flavor>` when that helper exists, and only warns
+if it fails. The login screen shows the new flavor the next time it starts.
+
 (bat could pick a light or dark theme by itself from the terminal's
 background, but inside a tmux that was started before a toggle it keeps
 seeing the old color, so it uses a link too.)
