@@ -13,7 +13,7 @@ swaylock, Thunar's helpers), is kept as the tag `fedora-sway-atomic`:
 `git checkout fedora-sway-atomic` to look at it.
 
 This repo is the user half of the setup. The system half (apt packages,
-third-party repos, Bitwarden's polkit action, and installing chezmoi) is in
+third-party repos and Bitwarden's polkit action) is in
 [workstation-bootstrap](https://github.com/michellhuaman/workstation-bootstrap),
 whose `setup.sh` clones and applies this repo on a new machine.
 
@@ -207,8 +207,8 @@ Git's name and email are in `dot_gitconfig`, the same on every machine.
 
 ## CLI tools
 
-Command-line tools (Neovim, lazygit, ripgrep, fd, bat, starship,
-tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
+Command-line tools (chezmoi itself, Neovim, lazygit, ripgrep, fd, bat,
+starship, tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
 machine gets the same versions. mise itself is an apt package from its own
 repo (workstation-bootstrap), updated with the system. They're pinned in
 `~/.config/mise/config.toml`, and that file is the whole set: on each change
