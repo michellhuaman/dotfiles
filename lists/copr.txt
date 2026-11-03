@@ -1,5 +1,0 @@
-# COPR repositories setup.sh adds before layering, as owner/project.
-# Their repo files go to /etc/yum.repos.d/ under the name `dnf copr enable`
-# would use. A COPR's own dependency repos come with it.
-
-# (none)

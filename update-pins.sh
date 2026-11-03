@@ -3,7 +3,6 @@
 # stable release, on a new branch in each repo, one commit per bump, so a
 # bump that breaks something in the test VM can be dropped on its own.
 #
-#   bootstrap: the Catppuccin SDDM theme (version and checksums in setup.sh)
 #   dotfiles:  mise itself (version and checksums), the Nerd Font, the CLI
 #              tools in mise's config, the Neovim plugins (lazy-lock.json),
 #              and the Fedora release of the distrobox container
@@ -137,26 +136,6 @@ echo "           $dot_wt"
 # Each runs in a subshell with set -e on its own, so one that fails (a
 # download, a changed file layout) is reported and the rest still run.
 
-sddm_theme() {
-  local f="$boot_wt/setup.sh" cur new accent flavor name sum
-  cur="$(sed -n 's/^sddm_version="\([^"]*\)".*/\1/p' "$f")"
-  accent="$(sed -n 's/^sddm_accent="\([^"]*\)".*/\1/p' "$f")"
-  new="$(latest_release catppuccin/sddm)"
-  if [[ "$cur" == "$new" ]]; then note "SDDM theme: $cur is the latest"; return 0; fi
-  # The project publishes no checksums: these record the files downloaded
-  # now, so every later install gets exactly what the VM tested.
-  for flavor in latte mocha; do
-    name="catppuccin-$flavor-$accent"
-    fetch -o "$tmp/$name.zip" "https://github.com/catppuccin/sddm/releases/download/$new/$name-sddm.zip"
-    unzip -Z1 "$tmp/$name.zip" | grep -qx "$name/metadata.desktop" \
-      || { echo "$name-sddm.zip ($new) has no $name/metadata.desktop" >&2; return 1; }
-    sum="$(sha256sum "$tmp/$name.zip" | cut -d' ' -f1)"
-    set_value "$f" "^\s*\[$flavor\]=(?P<v>[0-9a-f]{64})\s*$" "$sum"
-  done
-  set_value "$f" '^sddm_version="(?P<v>[^"]*)"' "$new"
-  commit "$boot_wt" "Bump the Catppuccin SDDM theme from $cur to $new"
-}
-
 polkit_action() {
   local f="$boot_wt/system/com.bitwarden.Bitwarden.policy"
   fetch -o "$tmp/upstream.policy" \
@@ -256,19 +235,16 @@ EOF
 }
 
 fedora_release() {
-  local f="$dot_wt/dot_config/distrobox/assemble.ini" cur latest iso host
-  # Fedora's own list of releases; "45 Beta" and the like don't count.
-  read -r latest iso < <(fetch https://fedoraproject.org/releases.json | python3 -c '
+  local f="$dot_wt/dot_config/distrobox/assemble.ini" cur latest
+  # Fedora's own list of releases; "45 Beta" and the like don't count. The
+  # container follows Fedora's latest stable release.
+  latest="$(fetch https://fedoraproject.org/releases.json | python3 -c '
 import json, sys
-isos = [r for r in json.load(sys.stdin)
-        if r.get("variant") == "Sericea" and r.get("arch") == "x86_64"
-        and r.get("version", "").isdigit() and r.get("link", "").endswith(".iso")]
-best = max(isos, key=lambda r: int(r["version"]))
-print(best["version"], best["link"])')
-  # shellcheck disable=SC1091
-  host="$(. /etc/os-release && echo "${VERSION_ID:-?}")"
-  note "Fedora: $latest is the latest stable Sway Atomic (this machine runs $host)"
-  echo "Install the VM, and the new machine, from: $iso" >>"$review"
+vers = [int(r["version"]) for r in json.load(sys.stdin)
+        if r.get("variant") == "Workstation" and r.get("arch") == "x86_64"
+        and r.get("version", "").isdigit()]
+print(max(vers))')"
+  note "Fedora: $latest is the latest stable release"
   cur="$(sed -n 's|^image=registry.fedoraproject.org/fedora-toolbox:\([0-9]*\)$|\1|p' "$f")"
   if [[ "$cur" -ge "$latest" ]]; then note "distrobox container: fedora-toolbox:$cur"; return 0; fi
   fetch -o /dev/null -I "https://registry.fedoraproject.org/v2/fedora-toolbox/manifests/$latest" \
@@ -292,13 +268,12 @@ run() {
   fi
 }
 
-run "Catppuccin SDDM theme" sddm_theme
 run "Bitwarden polkit action" polkit_action
 run "mise" mise_itself
 run "Nerd Font" nerd_font
 run "CLI tools (mise)" cli_tools
 run "Neovim plugins" nvim_plugins
-run "Fedora release" fedora_release
+run "Fedora release (distrobox)" fedora_release
 
 # ---- results --------------------------------------------------------------------
 info "Summary"

@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
-# Set up a fresh Fedora Sway Atomic install (image-based Fedora with sway).
+# Set up a fresh Ubuntu (stock GNOME desktop) install.
 #
-#   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
-#                 layered packages match lists/layered.txt; turns on
-#                 automatic updates; Catppuccin login screen; polkit action
-#                 for Bitwarden's unlock with system authentication (sudo).
-#                 Nothing is removed from the base image.
+#   1. System:    makes sure the packages in lists/apt.txt are installed
+#                 (and removes ones this script installed that were dropped
+#                 from the list); keeps automatic security updates on;
+#                 polkit action for Bitwarden's unlock with system
+#                 authentication (sudo). Nothing that came with Ubuntu is
+#                 removed.
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
 #   3. Dotfiles:  chezmoi clones the dotfiles over SSH and applies them; its
-#                 scripts install the flatpaks, CLI tools, fonts and user
-#                 services (no sudo)
+#                 scripts install the flatpaks, CLI tools, fonts, the
+#                 distrobox container, GNOME settings and user services
+#                 (no sudo)
 #
-# Run it from a terminal in your desktop session, as your normal user:
+# Run it from a terminal in your GNOME session, as your normal user:
 #   bash /path/to/workstation-bootstrap/setup.sh
 #
-# Safe to run again: the lists in lists/ are the whole state, so a rerun
-# only changes what differs from them, and if the dotfiles are already cloned
-# it runs `chezmoi update` (pull and apply) instead.
+# Safe to run again: lists/apt.txt is the whole set of packages this script
+# manages, so a rerun only changes what differs from it, and if the dotfiles
+# are already cloned it runs `chezmoi update` (pull and apply) instead.
 #
 # Options:
-#   --branch NAME   dotfiles branch to clone on the first run, e.g. a test branch
+#   --branch NAME   dotfiles branch to clone on the first run (default: ubuntu)
 #   --user NAME     GitHub username (default: GITHUB_USER below)
 #   --repo NAME     dotfiles repository name (default: dotfiles)
 #   --no-system     skip step 1, e.g. when re-running after a dotfiles fix
@@ -29,13 +31,19 @@ set -euo pipefail
 
 GITHUB_USER="michellhuaman"
 repo="dotfiles"
-branch=""
+# The dotfiles' Ubuntu changes live on their ubuntu branch until it's merged
+# into main; then set this back to "" (main).
+branch="ubuntu"
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 bin_dir="$HOME/.local/bin"
 bw_app="com.bitwarden.desktop"
 bw_sock="$HOME/.var/app/$bw_app/data/.bitwarden-ssh-agent.sock"
+# Packages this script installed (as opposed to ones Ubuntu came with), so a
+# package dropped from lists/apt.txt can be removed without ever touching
+# Ubuntu's own.
+apt_state=/var/lib/workstation-bootstrap/apt-installed.txt
 
 die()  { echo "error: $*" >&2; exit 1; }
 info() { echo; echo "==> $*"; }
@@ -74,211 +82,103 @@ fetch() {
 
 # shellcheck disable=SC1091
 . /etc/os-release
-# Sway Atomic boots from an image (ostree) and has no dnf on the host.
-[[ " ${ID:-} ${ID_LIKE:-} " == *" fedora "* && -e /run/ostree-booted && "${VARIANT_ID:-}" == sway-atomic ]] \
-  || die "this repo sets up Fedora Sway Atomic; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
+[[ "${ID:-}" == ubuntu ]] \
+  || die "this branch sets up Ubuntu; this is ${PRETTY_NAME:-${ID:-an unknown system}}"
 lists="$script_dir/lists"
-[[ -f "$lists/layered.txt" ]] || die "lists/layered.txt not found next to setup.sh"
+[[ -f "$lists/apt.txt" ]] || die "lists/apt.txt not found next to setup.sh"
 
 info "Setting up ${PRETTY_NAME:-$ID} for $(id -un)"
-fetch -I --max-time 10 https://github.com >/dev/null \
-  || die "can't reach github.com; connect to the network and run this again"
 
 # ---- 1. system ------------------------------------------------------------------
-
-# Downloads the signing keys listed in $1 (<url> <file name> [fingerprint])
-# into the directory $2. With a fingerprint, stops if the key doesn't match.
-install_keys() {
-  local list="$1" dest="$2" line url name fpr got tmp
-  while read -r line; do
-    read -r url name fpr <<<"$line"
-    echo "Adding key $name"
-    tmp="$(mktemp)"
-    fetch "$url" -o "$tmp"
-    if [[ -n "$fpr" ]]; then
-      got="$(gpg --show-keys --with-colons "$tmp" 2>/dev/null | awk -F: '/^fpr:/ {print $10; exit}')"
-      [[ "$got" == "$fpr" ]] || { rm -f "$tmp"; die "key $name has fingerprint '$got', expected $fpr"; }
-    fi
-    sudo install -m 644 "$tmp" "$dest/$name"
-    rm -f "$tmp"
-  done < <(read_list "$list")
-}
-
-# Prints one list field (e.g. requested-packages) of the newest deployment,
-# one entry per line. The newest is the staged one if an update is waiting
-# for a reboot, so changes made earlier in this run are counted.
-ostree_list() {
-  rpm-ostree status --json | python3 -c '
-import json, sys
-deps = json.load(sys.stdin).get("deployments", [])
-print("\n".join(deps[0].get(sys.argv[1], [])) if deps else "")' "$1" | sed '/^$/d'
-}
 
 # Prints the lines of $1 that aren't lines of $2 (both newline-separated).
 missing_from() {
   grep -vxF -f <(printf '%s\n' "$2") <<<"$1" | sed '/^$/d' || true
 }
 
-# Login screen (SDDM): Catppuccin's theme in Latte and Mocha, from a pinned
-# release, checked against its checksums. The image's theme folder is
-# read-only, so the themes go to /usr/local/share/sddm/themes (which is under
-# /var), and /etc/sddm.conf.d/10-catppuccin.conf points SDDM at the
-# catppuccin-current link there. The image's other SDDM settings (sway runs
-# the login screen) stay as they are.
-# sddm-flavor (system/) repoints the link; a sudoers rule lets you run it
-# without a password, so the dotfiles' theme-toggle.sh can switch the login
-# screen along with everything else. Everything stays root-owned: a theme is
-# code the login screen runs.
-sddm_version="v1.1.2"
-sddm_accent="lavender" # also in system/sddm-flavor
-declare -A sddm_sha256=(
-  [latte]=c5f0dffa27faae35b1b940f84c6f6f6fb1301e11a6017a51b6d33bc881867f4b
-  [mocha]=08b5a99524bff09b3beedd292c5897433308a914a639236f04b15be60cef0829
-)
-
-sddm_theme() {
-  local themes=/usr/local/share/sddm/themes flavor name tmp
-  sudo mkdir -p "$themes"
-  # Replaced on every run, so a new pinned version (or a damaged copy) is
-  # picked up; the catppuccin-current link is kept.
-  for flavor in latte mocha; do
-    name="catppuccin-$flavor-$sddm_accent"
-    echo "Installing login screen theme $name ($sddm_version)"
-    tmp="$(mktemp -d)"
-    fetch -o "$tmp/$name.zip" \
-      "https://github.com/catppuccin/sddm/releases/download/$sddm_version/$name-sddm.zip" \
-      || { rm -rf "$tmp"; die "couldn't download $name-sddm.zip"; }
-    sha256sum -c --quiet <<<"${sddm_sha256[$flavor]}  $tmp/$name.zip" \
-      || { rm -rf "$tmp"; die "$name-sddm.zip doesn't match its checksum"; }
-    unzip -q "$tmp/$name.zip" -d "$tmp"
-    [[ -f "$tmp/$name/metadata.desktop" ]] \
-      || { rm -rf "$tmp"; die "$name-sddm.zip has no $name/metadata.desktop"; }
-    sudo rm -rf "${themes:?}/$name"
-    sudo cp -r "$tmp/$name" "$themes/"
-    rm -rf "$tmp"
-  done
-  sudo chmod -R u=rwX,go=rX "$themes"
-  # Dark by default; theme-toggle.sh (run by chezmoi apply) sets the real one.
-  [[ -L "$themes/catppuccin-current" ]] \
-    || sudo ln -s "catppuccin-mocha-$sddm_accent" "$themes/catppuccin-current"
-
-  sudo install -m 755 -o root -g root "$script_dir/system/sddm-flavor" /usr/local/bin/sddm-flavor
-
-  tmp="$(mktemp)"
-  printf '%s ALL=(root) NOPASSWD: /usr/local/bin/sddm-flavor latte, /usr/local/bin/sddm-flavor mocha\n' \
-    "$(id -un)" >"$tmp"
-  sudo visudo -cqf "$tmp" || { rm -f "$tmp"; die "the sudoers rule for sddm-flavor doesn't parse"; }
-  sudo install -m 440 -o root -g root "$tmp" /etc/sudoers.d/sddm-flavor
-  rm -f "$tmp"
-
-  tmp="$(mktemp)"
-  printf '[Theme]\nThemeDir=%s\nCurrent=catppuccin-current\n' "$themes" >"$tmp"
-  sudo mkdir -p /etc/sddm.conf.d
-  sudo install -m 644 -o root -g root "$tmp" /etc/sddm.conf.d/10-catppuccin.conf
-  rm -f "$tmp"
+# True if package $1 is installed.
+installed() {
+  [[ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" == installed ]]
 }
 
-atomic_system() {
-  local repo want have add drop
+ubuntu_system() {
+  local want ours new p add=() drop=()
+  export DEBIAN_FRONTEND=noninteractive
 
-  # Fedora's third-party repos (RPM Fusion's NVIDIA driver and Steam, and
-  # PyCharm). Turned on here, rather than by a first-boot switch,
-  # so every machine has them. Safe to run again.
-  # Done first, so rpm-ostree can resolve packages from them below.
-  if command -v fedora-third-party >/dev/null; then
-    echo "Enabling Fedora's third-party repositories"
-    sudo fedora-third-party enable
-  else
-    warn "fedora-third-party not found; third-party repositories not enabled"
-  fi
-
-  # COPR repos: the repo file each project publishes, saved under the name
-  # `dnf copr enable` uses. It names its key by https:// URL and uses
-  # $releasever, so it keeps working after a Fedora upgrade. Fetched every
-  # run, so a fixed-up file reaches the machine too.
-  local copr owner project fver tmp
-  fver="$(rpm -E %fedora)"
-  while read -r copr; do
-    owner="${copr%%/*}" project="${copr#*/}"
-    echo "Adding COPR $copr"
-    tmp="$(mktemp)"
-    fetch -o "$tmp" \
-      "https://copr.fedorainfracloud.org/coprs/$owner/$project/repo/fedora-$fver/$owner-$project-fedora-$fver.repo" \
-      || { rm -f "$tmp"; die "couldn't download the repo file for COPR $copr"; }
-    sudo install -m 644 "$tmp" "/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:$owner:$project.repo"
-    rm -f "$tmp"
-  done < <(read_list "$lists/copr.txt")
-
-  # Vendor repos: every file in lists/repos/ goes to /etc/yum.repos.d/.
-  # Keys in keys.txt (optional, for a fingerprint check) go to /etc/pki/rpm-gpg/.
-  install_keys "$lists/keys.txt" /etc/pki/rpm-gpg
-  for repo in "$lists"/repos/*.repo; do
-    [[ -e "$repo" ]] || continue
-    echo "Adding repo $(basename "$repo")"
-    sudo install -m 644 "$repo" /etc/yum.repos.d/
-  done
-
-  # Layered packages: the list is the whole set. --allow-inactive accepts a
-  # package the base image already has, so the requested set always matches
-  # the list.
-  want="$(read_list "$lists/layered.txt")"
-  have="$(ostree_list requested-packages)"
-  mapfile -t add  < <(missing_from "$want" "$have")
-  mapfile -t drop < <(missing_from "$have" "$want")
+  # Packages: install what's missing from apt.txt, and remember which ones
+  # this script installed. Listed packages are marked as manually
+  # installed, so autoremove never takes one away.
+  want="$(read_list "$lists/apt.txt")"
+  ours="$(sudo cat "$apt_state" 2>/dev/null || true)"
+  while read -r p; do
+    [[ -n "$p" ]] || continue
+    installed "$p" || add+=("$p")
+  done <<<"$want"
+  echo "Updating the package lists"
+  sudo apt-get update -q
   if (( ${#add[@]} )); then
-    echo "Layering ${#add[@]} packages: ${add[*]}"
-    sudo rpm-ostree install --idempotent --allow-inactive "${add[@]}"
+    echo "Installing ${#add[@]} packages: ${add[*]}"
+    sudo apt-get install -y -q "${add[@]}"
   else
-    echo "All packages in layered.txt are already layered"
+    echo "All packages in apt.txt are already installed"
   fi
+  # shellcheck disable=SC2086
+  sudo apt-mark manual $want >/dev/null
+
+  # Packages this script installed earlier that are no longer listed. Ones
+  # Ubuntu came with are never in the state file, so they always stay. No
+  # autoremove: it would also take packages this script never touched
+  # (`update` in .bashrc runs it, when you choose to).
+  mapfile -t drop < <(missing_from "$ours" "$want")
   if (( ${#drop[@]} )); then
-    echo "Uninstalling layered packages no longer in layered.txt: ${drop[*]}"
-    sudo rpm-ostree uninstall "${drop[@]}"
+    echo "Removing packages no longer in apt.txt: ${drop[*]}"
+    sudo apt-get remove -y -q "${drop[@]}"
   fi
+  new="$( { missing_from "$ours" "$(printf '%s\n' "${drop[@]}")"; printf '%s\n' "${add[@]}"; } \
+          | sed '/^$/d' | sort -u)"
+  # tee, not install /dev/stdin: sudo-rs doesn't pass a pipe through as a file.
+  sudo mkdir -p "$(dirname "$apt_state")"
+  sudo tee "$apt_state" <<<"$new" >/dev/null
 
-  # Automatic updates: download and stage new images in the background; they
-  # take effect at the next reboot.
-  local conf=/etc/rpm-ostreed.conf
-  if ! grep -q '^AutomaticUpdatePolicy=stage' "$conf" 2>/dev/null; then
-    echo "Turning on automatic (staged) OS updates"
-    if grep -q '^#\{0,1\}AutomaticUpdatePolicy=' "$conf" 2>/dev/null; then
-      sudo sed -i 's/^#\{0,1\}AutomaticUpdatePolicy=.*/AutomaticUpdatePolicy=stage/' "$conf"
-    else
-      printf '[Daemon]\nAutomaticUpdatePolicy=stage\n' | sudo tee -a "$conf" >/dev/null
-    fi
-    sudo rpm-ostree reload
+  # Automatic updates: Ubuntu installs security updates in the background
+  # (unattended-upgrades). This only makes sure that stays on.
+  local conf=/etc/apt/apt.conf.d/20auto-upgrades
+  if ! grep -qs '^APT::Periodic::Unattended-Upgrade "1";' "$conf" \
+     || ! grep -qs '^APT::Periodic::Update-Package-Lists "1";' "$conf"; then
+    echo "Turning on automatic security updates"
+    installed unattended-upgrades || sudo apt-get install -y -q unattended-upgrades
+    printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' \
+      | sudo tee "$conf" >/dev/null
   fi
-  sudo systemctl enable --now rpm-ostreed-automatic.timer
-
-  sddm_theme
 
   # Bitwarden "unlock with system authentication" (its Linux biometrics): the
   # Flatpak asks polkit, which needs Bitwarden's action. Bitwarden's guide
-  # puts it in /usr/share/polkit-1/actions, read-only here; polkit reads
-  # /etc/polkit-1/actions too. The file is a copy of Bitwarden's
-  # apps/desktop/resources/com.bitwarden.desktop.policy (bitwarden/clients,
-  # unchanged since 92a620dd9c06), kept here so nothing unpinned is
-  # installed as root. restorecon gives it the label of the rest of /etc.
-  # polkitd only watches action folders that existed when it started, and
-  # /etc/polkit-1/actions usually didn't; a reload makes it read the file now
-  # without dropping the running authentication agent (a restart could).
+  # puts it in /usr/share/polkit-1/actions, which belongs to the packages;
+  # polkit reads /etc/polkit-1/actions too, so it goes there. The file is a
+  # copy of Bitwarden's apps/desktop/resources/com.bitwarden.desktop.policy
+  # (bitwarden/clients, unchanged since 92a620dd9c06), kept here so nothing
+  # unpinned is installed as root. polkitd only watches action folders that
+  # existed when it started, and /etc/polkit-1/actions usually didn't; a
+  # reload makes it read the file now without dropping the running
+  # authentication agent (a restart could).
   echo "Installing Bitwarden's polkit action (unlock with system authentication)"
   sudo install -D -m 644 -o root -g root "$script_dir/system/com.bitwarden.Bitwarden.policy" \
     /etc/polkit-1/actions/com.bitwarden.Bitwarden.policy
-  sudo restorecon -R /etc/polkit-1/actions
   sudo systemctl reload polkit
 }
 
 if $do_system; then
   info "Step 1/3: system packages (sudo)"
-  sudo -v || die "your user needs sudo rights"
+  # `sudo true` rather than `sudo -v`: Ubuntu's sudo-rs always asks for a
+  # password on -v, even where sudoers says NOPASSWD.
+  sudo true || die "your user needs sudo rights"
   # Package installs can outlast sudo's timeout; keep it fresh so you're only
   # asked once.
   ( while kill -0 "$$" 2>/dev/null; do sudo -n true; sleep 50; done ) >/dev/null 2>&1 &
   sudo_keepalive=$!
   trap 'kill "$sudo_keepalive" 2>/dev/null || true' EXIT
 
-  atomic_system
+  ubuntu_system
 
   kill "$sudo_keepalive" 2>/dev/null || true
   trap - EXIT
@@ -287,9 +187,11 @@ else
   info "Step 1/3: skipped (--no-system)"
 fi
 
-for cmd in git ssh curl flatpak; do
+for cmd in git ssh ssh-add ssh-keygen curl flatpak; do
   command -v "$cmd" >/dev/null || die "$cmd is missing; run setup.sh without --no-system"
 done
+fetch -I --max-time 10 https://github.com >/dev/null \
+  || die "can't reach github.com; connect to the network and run this again"
 
 # ---- 2. Bitwarden and chezmoi ---------------------------------------------------
 info "Step 2/3: Bitwarden and chezmoi"
@@ -402,22 +304,15 @@ fi
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
-Next: reboot, then log into sway as usual.
-  Flatpak apps only show up in the launcher (rofi) after a fresh login.
-  After the reboot, run `chezmoi apply` once: it builds the distrobox
-  container (VS Code, htop, btop), which needs the layered distrobox.
-
-    systemctl reboot
+Next: reboot (systemctl reboot) and log in again. Flatpak apps only show up
+in the app grid after a fresh login, and ddcutil's i2c module loads at boot.
 
   In Bitwarden, unlock with your login password instead of the master
   password (or a fingerprint, if the machine has a reader): after logging
   in, File > Settings > Security > "Unlock with system authentication".
 EOF
-if [[ "$(rpm-ostree status --json | python3 -c '
-import json, sys
-deps = json.load(sys.stdin).get("deployments", [])
-print(bool(deps and deps[0].get("staged")))')" == True ]]; then
-  echo "  A new deployment is staged: layered packages apply after the reboot."
+if [[ -f /var/run/reboot-required ]]; then
+  echo "  Ubuntu also says an update needs a reboot."
 fi
 cat <<EOF
 

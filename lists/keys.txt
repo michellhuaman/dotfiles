@@ -1,6 +1,0 @@
-# Optional: signing keys to pin by fingerprint, for repos in lists/repos/.
-# One per line:
-#   <key URL> <file name in /etc/pki/rpm-gpg/> [fingerprint]
-# rpm-ostree fetches gpgkey=https:// URLs itself, so a repo file can simply
-# point at its vendor's key. List the key here only to have setup.sh check its
-# fingerprint; the repo file then uses gpgkey=file:///etc/pki/rpm-gpg/<file name>.
