@@ -9,7 +9,8 @@
 #   night light  4000 K between sunset and sunrise in Madrid
 #   shortcuts    Super+Return Alacritty, Super+Shift+Return Brave,
 #                Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
-#                Super+E Files (new window),
+#                Super+E Files (new window), Super+I Settings,
+#                Super+Shift+S screenshot (interactive, like Print),
 #                Super+F maximize (toggles), Super+W close window,
 #                Super+1-4 workspace 1-4, Super+Shift+1-4 move the window
 #                there (4 fixed workspaces instead of GNOME's dynamic ones)
@@ -90,6 +91,12 @@ shortcut browser      "Brave"                '<Super><Shift>Return' 'brave-brows
 shortcut theme-toggle "Toggle light/dark"    '<Super><Shift>t'     '{{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
 shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
 shortcut files        "Files (new window)"   '<Super>e'            'nautilus --new-window'
+
+# Settings and the screenshot UI are GNOME's own actions, so the keys go
+# on those. Settings has none by default, stored as [''].
+remove_from_list "$media_keys" control-center ''
+add_to_list "$media_keys" control-center '<Super>i'
+add_to_list org.gnome.shell.keybindings show-screenshot-ui '<Super><Shift>s'
 
 # Window keys, next to GNOME's defaults (Alt+F10, Alt+F4).
 wm_keys=org.gnome.desktop.wm.keybindings
