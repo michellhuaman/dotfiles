@@ -16,7 +16,8 @@
 #                 them, with pushes going over SSH (Bitwarden's agent); its
 #                 scripts install the flatpaks, CLI tools, fonts, GNOME
 #                 settings and user services
-#                 (no sudo)
+#                 (no sudo); then clones this repo into ~/repos the same
+#                 way, to change and push later
 #
 # Run it from a terminal in your GNOME session, as your normal user:
 #   bash /path/to/workstation-bootstrap/setup.sh
@@ -38,6 +39,9 @@ set -euo pipefail
 GITHUB_USER="michellhuaman"
 repo="dotfiles"
 branch=""
+# This repo's own name and clone, which update-pins.sh works from.
+boot_repo="workstation-bootstrap"
+boot_dir="$HOME/repos/$boot_repo"
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -352,6 +356,17 @@ else
   chezmoi git -- remote set-url --push origin "$push_url"
 fi
 
+# This repo, cloned like the dotfiles: pulls over HTTPS, pushes over SSH.
+# An existing clone is left as it is (it may have work in progress).
+if [[ -d "$boot_dir/.git" ]]; then
+  echo "$boot_repo already in $boot_dir"
+else
+  echo "Cloning $boot_repo into $boot_dir"
+  mkdir -p "$(dirname "$boot_dir")"
+  git clone -q "https://github.com/$GITHUB_USER/$boot_repo.git" "$boot_dir"
+  git -C "$boot_dir" remote set-url --push origin "git@github.com:$GITHUB_USER/$boot_repo.git"
+fi
+
 # ---- done -----------------------------------------------------------------------
 info "Done."
 cat <<EOF
@@ -374,5 +389,9 @@ fi
 cat <<EOF
 
 If anything failed, fix it in the matching repo, push, and run this again:
-  bash $script_dir/setup.sh          (add --no-system if only the dotfiles failed)
+  bash $boot_dir/setup.sh          (add --no-system if only the dotfiles failed)
 EOF
+if [[ "$script_dir" != "$boot_dir" ]]; then
+  echo
+  echo "$script_dir was only a download; the clone is $boot_dir, so it can go."
+fi

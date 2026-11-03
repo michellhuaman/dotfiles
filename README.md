@@ -234,10 +234,10 @@ internal snapshots of a VM with UEFI firmware.
    bash workstation-bootstrap-main/setup.sh
    ```
 
-   It only asks for your **sudo password**, once, for the system step.
-   To change this repo later, clone it instead:
-   `git clone git@github.com:michellhuaman/workstation-bootstrap.git ~/repos/workstation-bootstrap`
-   (after step 4, which makes the SSH key work).
+   It only asks for your **sudo password**, once, for the system step. It
+   also clones this repo into `~/repos/workstation-bootstrap` (pulls over
+   HTTPS, pushes over SSH once step 4 is done), so the downloaded
+   `workstation-bootstrap-main` folder can be deleted afterwards.
 
 3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.
