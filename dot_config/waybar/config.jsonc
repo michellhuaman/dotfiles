@@ -7,10 +7,8 @@
     // At the bottom of the screen (Fedora's is at the top).
     "position": "bottom",
 
-    // Long window titles pushed the right-hand modules off the bar.
-    "sway/window": {
-        "max-length": 50
-    },
+    // No focused-window title in the middle (Fedora's only center module).
+    "modules-center": [],
 
     // "us" or "us intl" (60-keyboard.conf), instead of "us1" / "us2".
     "sway/language": {
