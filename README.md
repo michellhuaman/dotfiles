@@ -7,7 +7,7 @@ Who does what:
 
 | Tool | Job | Needs sudo |
 | --- | --- | --- |
-| this repo (`setup.sh`) | third-party repos, COPRs; layered packages; automatic updates; Catppuccin login screen; installs Bitwarden and chezmoi | yes, once |
+| this repo (`setup.sh`) | third-party repos, COPRs; layered packages; automatic updates; Catppuccin login screen; Bitwarden's polkit action; installs Bitwarden and chezmoi | yes, once |
 | Bitwarden | holds the SSH keys and is the SSH agent | no |
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, sway keybindings, Catppuccin theme, user services | no |
 | distrobox (layered here) | a `dev` container for everything else (VS Code, htop, btop), defined and built by the dotfiles; its apps show up in the launcher | no |
@@ -24,6 +24,7 @@ lists/copr.txt                  COPR repos (owner/project) added before layering
 lists/repos/                    vendor repo files, if any (none yet), copied to /etc/yum.repos.d/
 lists/keys.txt                  optional: vendor keys to pin by fingerprint, saved to /etc/pki/rpm-gpg/
 system/sddm-flavor              switches the login screen between Latte and Mocha (installed to /usr/local/bin)
+system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
 
 ## How it works
@@ -45,7 +46,14 @@ Instead, `setup.sh`:
   link, and `/etc/sudoers.d/sddm-flavor` lets you run it, with just those
   two arguments, without a password, so the dotfiles' `theme-toggle.sh`
   switches the login screen too. To pin a newer release, change
-  `sddm_version` and the checksums in `setup.sh`.
+  `sddm_version` and the checksums in `setup.sh`;
+- installs Bitwarden's polkit action, which its "Unlock with system
+  authentication" (biometrics on Linux) needs. Bitwarden's
+  [guide](https://bitwarden.com/help/biometrics/#set-up-biometrics-for-desktop-app)
+  copies it into `/usr/share/polkit-1/actions`, which is read-only here, so it
+  goes to `/etc/polkit-1/actions` (polkit reads both). The file in `system/`
+  is a copy of Bitwarden's `com.bitwarden.desktop.policy`, so nothing
+  unpinned gets installed as root; compare it with upstream now and then.
 
 Nothing is ever removed from the base image (Firefox and the rest stay).
 
@@ -94,6 +102,12 @@ git -C "/run/media/$USER/<drive>/workstation-bootstrap" pull
 4. **Run `chezmoi apply` once.** It builds the dotfiles' distrobox container
    (VS Code, htop, btop), which needs the distrobox layered in step 2 and so
    can't be built before the reboot. It takes a few minutes.
+5. **In Bitwarden**, after logging in: File > Settings > Security > turn on
+   **Unlock with system authentication**. Bitwarden then unlocks with your
+   login password (or a fingerprint, if the machine has a reader) instead of
+   the master password. After Bitwarden starts, the first unlock still needs
+   the master password. This one can't be automated: Bitwarden keeps it in
+   each account's own settings.
 
 ## If something goes wrong
 

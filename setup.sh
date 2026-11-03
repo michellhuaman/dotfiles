@@ -3,7 +3,8 @@
 #
 #   1. System:    Fedora's third-party repos, COPRs and vendor repos; makes the
 #                 layered packages match lists/layered.txt; turns on
-#                 automatic updates; Catppuccin login screen (sudo).
+#                 automatic updates; Catppuccin login screen; polkit action
+#                 for Bitwarden's unlock with system authentication (sudo).
 #                 Nothing is removed from the base image.
 #   2. Bitwarden: Flathub, Bitwarden and chezmoi, then waits while you turn on
 #                 Bitwarden's SSH agent and checks that GitHub accepts the key
@@ -250,6 +251,18 @@ atomic_system() {
   sudo systemctl enable --now rpm-ostreed-automatic.timer
 
   sddm_theme
+
+  # Bitwarden "unlock with system authentication" (its Linux biometrics): the
+  # Flatpak asks polkit, which needs Bitwarden's action. Bitwarden's guide
+  # puts it in /usr/share/polkit-1/actions, read-only here; polkit reads
+  # /etc/polkit-1/actions too. The file is a copy of Bitwarden's
+  # apps/desktop/resources/com.bitwarden.desktop.policy (bitwarden/clients,
+  # unchanged since 92a620dd9c06), kept here so nothing unpinned is
+  # installed as root. restorecon gives it the label of the rest of /etc.
+  echo "Installing Bitwarden's polkit action (unlock with system authentication)"
+  sudo install -D -m 644 -o root -g root "$script_dir/system/com.bitwarden.Bitwarden.policy" \
+    /etc/polkit-1/actions/com.bitwarden.Bitwarden.policy
+  sudo restorecon -R /etc/polkit-1/actions
 }
 
 if $do_system; then
@@ -391,6 +404,10 @@ Next: reboot, then log into sway as usual.
   container (VS Code, htop, btop), which needs the layered distrobox.
 
     systemctl reboot
+
+  In Bitwarden, unlock with your login password instead of the master
+  password (or a fingerprint, if the machine has a reader): after logging
+  in, File > Settings > Security > "Unlock with system authentication".
 EOF
 if [[ "$(rpm-ostree status --json | python3 -c '
 import json, sys
