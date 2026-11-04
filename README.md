@@ -40,13 +40,12 @@ so `chezmoi apply` never asks for a password.
 dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
-dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
+dot_config/             ~/.config (Alacritty, bat, btop, mise, starship, tmux, systemd, ...)
   autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
                         sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`),
                         random-wallpaper.sh (random light and dark GNOME wallpapers from ~/Pictures/wallpapers; daily via random-wallpaper.timer),
                         wallpaper-reject.sh (Super+Shift+W: trash the wallpaper on screen, or move it to light/ or dark/)
-dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
 
 chezmoi turns source names into real ones: `dot_` becomes `.`, `private_`
@@ -129,8 +128,8 @@ then step 2.
 
 Each of these then goes through step 2 like any other change.
 
-**All the pinned versions at once** (the Nerd Font, the CLI tools, the
-Neovim plugins, chezmoi included): workstation-bootstrap's `update-pins.sh` bumps them
+**All the pinned versions at once** (the Nerd Font and the CLI tools,
+chezmoi included): workstation-bootstrap's `update-pins.sh` bumps them
 to the latest stable releases on a branch, to test in a VM before merging.
 Its README, "Updating the pinned versions", has the steps.
 
@@ -222,8 +221,8 @@ Git's name and email are in `dot_gitconfig`, the same on every machine.
 
 ## CLI tools
 
-Command-line tools (chezmoi itself, Neovim, lazygit, ripgrep, fd, bat,
-starship, tree-sitter) come from [mise](https://mise.jdx.dev), not the distro, so every
+Command-line tools (chezmoi itself, lazygit, ripgrep, fd, bat, starship)
+come from [mise](https://mise.jdx.dev), not the distro, so every
 machine gets the same versions. mise itself is an apt package from its own
 repo (workstation-bootstrap), updated with the system. They're pinned in
 `~/.config/mise/config.toml`, and that file is the whole set: on each change
@@ -241,7 +240,8 @@ Each launcher finds it its own way:
 | From | How |
 | --- | --- |
 | `Super+Return` | a custom shortcut in `run_onchange_after_60-gnome-settings.sh.tmpl` |
-| terminal apps such as Neovim, from the app grid or "Open With" | `xdg-terminal-exec` (apt) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
+| terminal apps such as vim, from the app grid or "Open With" | `xdg-terminal-exec` (apt) reads `dot_config/xdg-terminals.list`. GLib's own fallback list has no Alacritty, so without it these fail |
 
-Neovim comes from mise, which installs no app entry, so
-`~/.local/share/applications/nvim.desktop` adds one (app grid, "Open With").
+vim is an apt package from workstation-bootstrap (Ubuntu's own `vim-tiny`
+has no `vim` command), with Ubuntu's app entry; it's `EDITOR` (`.bash_profile`)
+and Git's editor (`dot_gitconfig`). It has no config here.

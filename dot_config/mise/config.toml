@@ -4,15 +4,11 @@
 #
 # To update: `mise outdated --bump` lists newer releases; change the version
 # here (with edot), then commit.
-#
-# The aqua: tools are checked against the checksums their projects publish.
 
 [tools]
-"aqua:neovim/neovim" = "0.12.6"   # pinned to aqua; the default backend doesn't verify checksums
 lazygit = "0.66.2"
 ripgrep = "15.2.0"
 fd = "10.5.0"
 bat = "0.26.1"
 starship = "1.27.0"
-tree-sitter = "0.27.1"            # nvim-treesitter (main branch) builds parsers with it
 chezmoi = "2.74.0"                # this repo's manager; workstation-bootstrap's setup.sh reads this line
