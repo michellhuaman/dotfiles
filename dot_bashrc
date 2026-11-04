@@ -67,6 +67,9 @@ alias zz='systemctl suspend'
 # Alias to show the date
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
+# Edit a dotfile by its real path, then apply it: edot ~/.config/starship.toml
+alias edot='chezmoi edit --apply'
+
 #######################################################
 # FUNCTIONS
 #######################################################
@@ -133,9 +136,6 @@ usbeject() {
 
   udisksctl power-off -b "$dev" && echo "$dev is safe to remove."
 }
-
-# Edit a dotfile by its real path, then apply it: edot ~/.config/starship.toml
-alias edot='chezmoi edit --apply'
 
 # Use Starship prompt
 if command -v starship >/dev/null 2>&1; then

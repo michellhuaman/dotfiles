@@ -40,7 +40,7 @@ so `chezmoi apply` never asks for a password.
 dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
-dot_config/             ~/.config (Alacritty, bat, btop, mise, starship, tmux, systemd, ...)
+dot_config/             ~/.config (Alacritty, bat, mise, starship, tmux, systemd, ...)
   autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
                         sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`),
@@ -142,10 +142,9 @@ files but not the link, so a toggle never shows up as a difference. On a new
 machine, `run_onchange_after_55-theme-links.sh.tmpl` creates the link
 (`theme-toggle.sh links`) for the current mode.
 
-Everything that runs inside the terminal uses its 16 ANSI colors instead of
-a theme of its own, so it follows Alacritty: starship's colors are ANSI names,
-bat has `--theme=ansi` and btop `color_theme = "TTY"`. btop's config is
-read-only, so settings changed in its menu last only until it quits.
+starship and bat use the terminal's 16 ANSI colors instead of a theme of
+their own, so they follow Alacritty: starship's colors are ANSI names, and
+bat has `--theme=ansi`.
 
 The wallpaper follows the theme without `theme-toggle.sh`: GNOME keeps one
 wallpaper per mode (`picture-uri` for light, `picture-uri-dark` for dark) and

@@ -8,7 +8,7 @@
 #
 # It also switches Alacritty between Catppuccin Latte (light) and Mocha
 # (dark), by pointing its "current" theme link at the flavor's file.
-# starship, bat and btop use the terminal's ANSI colors, so they follow.
+# starship and bat use the terminal's ANSI colors, so they follow.
 #
 #   theme-toggle.sh         toggle light/dark
 #   theme-toggle.sh links   only point the link at the current mode's flavor
