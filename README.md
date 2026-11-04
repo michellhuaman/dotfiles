@@ -174,17 +174,26 @@ and the dotfiles in use don't change until the last step.
 `ws-test` is a libvirt VM (QEMU/KVM, the system connection) with a fresh
 Ubuntu installed from `autoinstall.yaml` and the snapshot `fresh-install`
 of it, taken shut off, after the first login and before `setup.sh`.
-Reverting to it throws away everything since. To make it again (for a new
-Ubuntu release, say): put the ISO in libvirt's image folder, which the VM
-can read (your home and USB drives it can't):
+Reverting to it throws away everything since. Its disks live in `~/vms`,
+the libvirt storage pool `vms`; libvirt's QEMU user (`libvirt-qemu`) may
+enter your home folder and use that one, through ACLs (your home is
+otherwise closed to other users).
+
+To make it again (for a new Ubuntu release, say), on a machine that doesn't
+have them yet, set up `~/vms` and put the ISO in libvirt's image folder,
+which the VM can read (USB drives it can't):
 
 ```bash
+mkdir -p ~/vms
+setfacl -m u:libvirt-qemu:x ~ && setfacl -m u:libvirt-qemu:rwx ~/vms
+virsh -c qemu:///system pool-define-as vms dir --target ~/vms
+virsh -c qemu:///system pool-start vms && virsh -c qemu:///system pool-autostart vms
 iso=ubuntu-26.04.1-desktop-amd64.iso
 virsh -c qemu:///system vol-create-as default "$iso" "$(stat -c %s "/path/to/$iso")" --format raw
 virsh -c qemu:///system vol-upload --pool default "$iso" "/path/to/$iso"
 virt-install --connect qemu:///system --name ws-test --osinfo ubuntu25.10 \
   --memory 6144 --vcpus 4 --cpu host-passthrough --boot uefi \
-  --disk size=40,format=qcow2,bus=virtio \
+  --disk pool=vms,size=40,format=qcow2,bus=virtio \
   --cdrom "/var/lib/libvirt/images/$iso" \
   --network network=default,model=virtio --graphics spice --video virtio \
   --noautoconsole
