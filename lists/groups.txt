@@ -8,3 +8,4 @@
 # package only creates the group (sysusers), so it's joined here.
 libvirt                   # VMs in virt-manager (qemu:///system) without sudo
 kvm                       # Claude Desktop's Cowork VM: /dev/kvm and /dev/vhost-vsock
+vboxusers                 # VirtualBox: passing host USB devices through to VMs

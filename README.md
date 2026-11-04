@@ -12,6 +12,7 @@ Who does what:
 | chezmoi ([dotfiles](https://github.com/michellhuaman/dotfiles)) | dotfiles, flatpaks, CLI tools (mise), fonts, GNOME settings and shortcuts, Catppuccin theme, user services | no |
 | distrobox and podman (installed here) | containers you make by hand, for anything that doesn't belong on the host | no |
 | QEMU/KVM, libvirt and virt-manager (installed here) | virtual machines: Virtual Machine Manager's "QEMU/KVM" connection, or `virsh` and `virt-install` | no, once you're in the libvirt group |
+| VirtualBox (installed here, from Ubuntu's multiverse) | virtual machines in VirtualBox Manager or `VBoxManage`; not at the same time as a KVM VM (virt-manager's, or Claude Desktop's Cowork), since only one can hold AMD-V/VT-x | no (USB passthrough needs the vboxusers group) |
 
 Nothing secret lives here or in the dotfiles, so both repos are public:
 a new machine downloads this one and clones the dotfiles over HTTPS, with
@@ -26,7 +27,7 @@ update-pins.sh                  bumps every pinned version in the dotfiles, on a
 lists/apt.txt                   apt packages setup.sh makes sure are installed
 lists/apt-sources/              vendor repos (Brave, VS Code, mise, Claude Desktop), copied to /etc/apt/sources.list.d/
 lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
-lists/groups.txt                groups setup.sh adds your user to (libvirt, kvm)
+lists/groups.txt                groups setup.sh adds your user to (libvirt, kvm, vboxusers)
 system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /etc/polkit-1/actions)
 ```
 
@@ -50,7 +51,8 @@ system/com.bitwarden.Bitwarden.policy  Bitwarden's polkit action (installed to /
   it, so nothing Ubuntu came with is ever removed (Firefox, the snaps and
   the rest stay);
 - adds your user to the groups in `groups.txt` (libvirt, so virt-manager
-  manages VMs without sudo; kvm, for Claude Desktop's Cowork VM), effective after a reboot (logging out isn't
+  manages VMs without sudo; kvm, for Claude Desktop's Cowork VM; vboxusers, for USB devices in
+  VirtualBox VMs), effective after a reboot (logging out isn't
   enough: your systemd user manager keeps the old groups). A group dropped
   from the list isn't removed: `sudo gpasswd -d "$USER" <group>`;
 - makes sure libvirt's default NAT network (`virbr0`, 192.168.122.0/24)

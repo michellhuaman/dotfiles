@@ -33,6 +33,18 @@ virt-manager              # Virtual Machine Manager, the GUI (native: the Flatpa
 virtinst                  # virt-install and virt-clone (a virt-manager dependency; listed so it stays)
 ovmf                      # UEFI firmware for VMs
 
+# VirtualBox, from Ubuntu's multiverse. Its kernel modules are built by
+# virtualbox-dkms, which also sets `options kvm enable_virt_at_load=0`
+# (/usr/lib/modprobe.d/virtualbox-dkms.conf): since kernel 6.12 KVM takes
+# AMD-V/VT-x at boot and VirtualBox VMs won't start. With it, KVM only takes
+# it while a KVM VM runs, so a VirtualBox VM and a KVM one (virt-manager,
+# Claude Desktop's Cowork) can't run at the same time. Effective after a
+# reboot. With Secure Boot on, the modules are signed with the machine's MOK
+# key, which must be enrolled: `sudo mokutil --import
+# /var/lib/shim-signed/mok/MOK.der`, then confirm it at the next boot.
+virtualbox                # VBoxManage and the VM runtime
+virtualbox-qt             # VirtualBox Manager, the GUI
+
 # From the vendor repos in apt-sources/ (keys in apt-keys.txt)
 brave-browser             # Brave, the default browser (set by the dotfiles)
 code                      # Visual Studio Code
