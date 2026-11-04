@@ -1,0 +1,4 @@
+# bat's config. `bat --help` lists the options.
+
+# The terminal's own 16 colors, so bat follows Alacritty's light/dark theme.
+--theme=ansi

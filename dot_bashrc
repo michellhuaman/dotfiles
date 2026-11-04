@@ -88,10 +88,9 @@ update() {
     sudo snap refresh || status=1
   fi
 
-  # CLI tools are pinned in ~/.config/mise/config.toml, so only report what's newer
+  # CLI tools from ~/.config/mise/config.toml, to their latest releases
   if command -v mise >/dev/null 2>&1; then
-    echo "update: newer CLI tool releases (bump them in ~/.config/mise/config.toml with edot):"
-    (cd "$HOME" && mise outdated --bump) || echo "update: couldn't check (offline or rate-limited?)"
+    (cd "$HOME" && mise upgrade --yes) || status=1
   fi
 
   # Ubuntu creates this file when an update needs a reboot (kernel, libc...)
@@ -136,26 +135,7 @@ usbeject() {
 }
 
 # Edit a dotfile by its real path, then apply it: edot ~/.config/starship.toml
-# starship.toml, the one themed config (a modify_ file in chezmoi), opens its
-# template in .chezmoitemplates instead, since that's where the config lives.
-edot() {
-  if [ -z "$1" ]; then
-    echo "Usage: edot <file>   e.g. edot ~/.config/alacritty/alacritty.toml"
-    return 1
-  fi
-
-  local src tpl
-  src="$(chezmoi source-path "$1")" || return 1
-  if [[ "$(basename "$src")" == modify_* ]]; then
-    tpl="$(grep -o 'includeTemplate "[^"]*"' "$src" | cut -d'"' -f2)"
-  fi
-
-  if [ -n "$tpl" ]; then
-    "${EDITOR:-vim}" "$(chezmoi source-path)/.chezmoitemplates/$tpl" && chezmoi apply "$1"
-  else
-    chezmoi edit --apply "$1"
-  fi
-}
+alias edot='chezmoi edit --apply'
 
 # Use Starship prompt
 if command -v starship >/dev/null 2>&1; then

@@ -1,19 +1,6 @@
 #!/bin/bash
-# The JetBrainsMono Nerd Font, and bat's theme cache.
-# Reruns when the font version changes. (CLI tools come from mise, see
-# run_onchange_after_25-install-cli-tools.sh.tmpl.)
-set -euo pipefail
-
-# --- bat theme cache -------------------------------------------------------
-# Makes the Catppuccin themes in ~/.config/bat/themes known to bat, so the
-# --theme in ~/.config/bat/config works from the first run. bat comes from
-# mise, whose shims aren't on PATH until the next login.
-export PATH="$HOME/.local/share/mise/shims:$PATH"
-if command -v bat >/dev/null; then
-  bat cache --build >/dev/null
-fi
-
-# --- fonts -------------------------------------------------------------
+# The JetBrainsMono Nerd Font. Reruns when the font version changes.
+#
 # Downloaded and checked against the checksum pinned in
 # .chezmoidata/packages.yaml, and unpacked next to the installed copy, which
 # is only replaced once all of that worked: a failed download or a wrong

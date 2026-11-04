@@ -1,0 +1,7 @@
+# Files earlier versions of this repo put in ~, deleted on the next apply.
+.config/alacritty/themes/catppuccin-frappe.toml
+.config/alacritty/themes/catppuccin-macchiato.toml
+.config/bat/config-latte
+.config/bat/config-mocha
+.config/bat/themes
+.config/btop/themes

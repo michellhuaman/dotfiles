@@ -1,6 +1,0 @@
-# bat's config for Catppuccin Mocha. ~/.config/bat/config is a link to this file
-# or its twin (config-latte / config-mocha), which theme-toggle.sh points at
-# the current flavor; bat reads it on every run. Keep the two files the same
-# apart from the theme. `bat --help` lists the options.
-
---theme="Catppuccin Mocha"

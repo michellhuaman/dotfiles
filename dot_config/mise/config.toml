@@ -1,11 +1,10 @@
-# CLI tools, installed per user by mise at exactly these versions.
-# chezmoi runs `mise install` and `mise prune` whenever this file changes, so
-# it's the whole set: a tool removed here is uninstalled on the next apply.
+# CLI tools, installed per user by mise. chezmoi runs `mise install` and
+# `mise prune` whenever this file changes, so it's the whole set: a tool
+# removed here is uninstalled on the next apply.
 #
-# To update: `mise outdated --bump` lists newer releases; change the version
-# here (with edot), then commit.
+# Not pinned: "latest" is installed once, and `update` (.bashrc) upgrades them.
 
 [tools]
-bat = "0.26.1"
-starship = "1.27.0"
-chezmoi = "2.74.0"                # this repo's manager; workstation-bootstrap's setup.sh reads this line
+bat = "latest"
+starship = "latest"
+chezmoi = "latest"                # this repo's manager

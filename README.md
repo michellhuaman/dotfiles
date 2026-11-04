@@ -26,17 +26,17 @@ so `chezmoi apply` never asks for a password.
 
 ```
 .chezmoiignore          repo files that are not copied to ~ (this README)
+.chezmoiremove          files earlier versions put in ~, deleted on apply
 .chezmoidata/
   packages.yaml         flatpaks, Nerd Font version and checksum, systemd user units
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
   run_onchange_after_25-install-cli-tools.sh.tmpl   mise install + prune; reruns when the mise config changes
-  run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font (checked against its checksum), bat cache
+  run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font (checked against its checksum)
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
-  run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
+  run_onchange_after_55-theme-links.sh.tmpl         points Alacritty's theme link at the current flavor
   run_onchange_after_60-gnome-settings.sh.tmpl      Ubuntu only: GNOME keyboard, touchpad, night light, shortcuts
-.chezmoitemplates/      starship.toml, the one config whose theme line is edited in place (see "Themes")
 dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
@@ -49,9 +49,8 @@ dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
 ```
 
 chezmoi turns source names into real ones: `dot_` becomes `.`, `private_`
-means only you can read it, `executable_` makes it executable, `.tmpl` means
-it's a template, and `modify_` means a template that edits the existing file
-(see "Themes").
+means only you can read it, `executable_` makes it executable, `readonly_`
+makes it read-only, and `.tmpl` means it's a template.
 
 ## Editing dotfiles
 
@@ -67,13 +66,8 @@ overwrites them on apply. So changes are made here, never directly in `~`.
 edot ~/.config/alacritty/alacritty.toml
 ```
 
-`edot` (a function in `.bashrc`) opens the right source file in `$EDITOR` and
-applies the change when you quit:
-
-- for most files it runs `chezmoi edit --apply`;
-- for `~/.config/starship.toml` it opens its template in `.chezmoitemplates/`
-  instead, which is where that config lives (see "Themes"). Plain
-  `chezmoi edit` would open the wrong file for it.
+`edot` (an alias in `.bashrc` for `chezmoi edit --apply`) opens the source
+file in `$EDITOR` and applies the change when you quit.
 
 **2. Commit and push:**
 
@@ -101,8 +95,8 @@ chezmoi diff          # see what differs from the repo
 chezmoi re-add        # copy the changed files into the repo
 ```
 
-then continue from step 2. `re-add` skips templates and `starship.toml`; for
-those, copy the change into the template with `edot` instead.
+then continue from step 2. `re-add` skips templates; for those, copy the
+change into the template with `edot` instead.
 To throw a change away, run `chezmoi apply`, which puts the repo's version
 back.
 
@@ -120,7 +114,7 @@ then step 2.
 | --- | --- | --- |
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
 | a keyboard shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-settings.sh.tmpl` | `chezmoi apply` |
-| a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
+| a CLI tool | `edot ~/.config/mise/config.toml` (as `"latest"`) | applied on save: installed, and anything no longer listed is pruned |
 | a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml`, and `fonts.nerd_fonts_sha256` next to it (that release's `SHA-256.txt` line for `JetBrainsMono.tar.xz`) | `chezmoi apply` downloads it and checks it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
@@ -128,21 +122,30 @@ then step 2.
 
 Each of these then goes through step 2 like any other change.
 
-**All the pinned versions at once** (the Nerd Font and the CLI tools,
-chezmoi included): workstation-bootstrap's `update-pins.sh` bumps them
-to the latest stable releases on a branch, to test in a VM before merging.
-Its README, "Updating the pinned versions", has the steps.
+**A new Nerd Font release, tested first**: workstation-bootstrap's `update-pins.sh`
+bumps it to the latest stable release on a branch, to test in a VM before
+merging. Its README, "Updating the pinned versions", has the steps.
 
 ## Themes
 
 `theme-toggle.sh` (`Super+Shift+T`) switches between light and dark: it sets
-the desktop's color scheme (which GTK4/libadwaita apps and Brave follow) and
-GTK theme, and switches every themed app between the Catppuccin flavors
-(Latte for light, Mocha for dark). A new machine starts on Mocha, matching
-the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
+the desktop's color scheme (which GTK4/libadwaita apps and Brave follow), the
+GTK and icon themes (Ubuntu's Yaru), and Alacritty's Catppuccin flavor (Latte
+for light, Mocha for dark). A new machine starts on Mocha, matching the dark
+theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
-GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
-Ubuntu's Yaru.
+Alacritty reads `~/.config/alacritty/themes/catppuccin-current.toml`, a link
+that `theme-toggle.sh` points at `catppuccin-latte.toml` or
+`catppuccin-mocha.toml` (copies of catppuccin/alacritty's files), then
+touches `alacritty.toml` so open windows reload. chezmoi tracks the theme
+files but not the link, so a toggle never shows up as a difference. On a new
+machine, `run_onchange_after_55-theme-links.sh.tmpl` creates the link
+(`theme-toggle.sh links`) for the current mode.
+
+Everything that runs inside the terminal uses its 16 ANSI colors instead of
+a theme of its own, so it follows Alacritty: starship's colors are ANSI names,
+bat has `--theme=ansi` and btop `color_theme = "TTY"`. btop's config is
+read-only, so settings changed in its menu last only until it quits.
 
 The wallpaper follows the theme without `theme-toggle.sh`: GNOME keeps one
 wallpaper per mode (`picture-uri` for light, `picture-uri-dark` for dark) and
@@ -153,48 +156,6 @@ missing or empty picks from the whole folder. `Super+Shift+W`
 (`wallpaper-reject.sh`) asks what to do with the wallpaper on screen: move it
 to the Trash (Restore it from the Trash in Files to undo), or to `light/` or
 `dark/`. When it leaves the current mode's folder, the mode gets a new one.
-
-### Theme links
-
-Most apps use Catppuccin's own theme files (copied from the catppuccin/alacritty,
-btop and bat repos), one per
-flavor, under each app's `themes/` folder. Each config reads a "current" link
-instead of naming a flavor:
-
-| Config | Reads |
-| --- | --- |
-| `~/.config/alacritty/alacritty.toml` | `~/.config/alacritty/themes/catppuccin-current.toml` |
-| `~/.config/btop/btop.conf` | `~/.config/btop/themes/catppuccin_current.theme`. That's its only line, and the file is read-only, so settings changed in btop's menu last only until it quits |
-| `~/.config/bat/config` | is the link itself (`config-mocha` / `config-latte`, the same apart from the theme: change both) |
-
-`theme-toggle.sh` points the links at the other flavor and touches
-`alacritty.toml`, which makes open Alacritty windows reload; btop reads its
-theme when it starts, and bat its config on every run. chezmoi tracks the theme files but not the links, so the configs are
-plain files you can edit directly, and a toggle never shows up as a
-difference. On a new machine, `run_onchange_after_55-theme-links.sh.tmpl`
-creates the links (`theme-toggle.sh links`) for the current mode.
-
-(bat could pick a light or dark theme by itself from the terminal's
-background, but inside a tmux that was started before a toggle it keeps
-seeing the old color, so it uses a link too.)
-
-### starship
-
-starship can't include another file, so its flavor is the line
-`palette = "catppuccin_mocha"` inside `~/.config/starship.toml`, which
-`theme-toggle.sh` edits in place. So that a toggle doesn't show up as a
-difference, the config is split in two:
-
-- **`.chezmoitemplates/starship.toml`**: the full config, with the flavor left
-  as a blank (`{{ .flavor }}`). **This is the file to edit**: `edot
-  ~/.config/starship.toml` opens it and applies when you quit.
-- **`dot_config/modify_starship.toml`**: a few lines that build the file.
-  chezmoi passes it the current file from `~/.config`; it finds which flavor
-  is active there, defaulting to `mocha` if the file doesn't exist yet, and
-  fills it into the template.
-
-(`chezmoi edit ~/.config/starship.toml` would open the `modify_` file
-instead, which is not where the config is.)
 
 ## SSH and Git
 
@@ -222,15 +183,13 @@ Git's name and email are in `dot_gitconfig`, the same on every machine.
 ## CLI tools
 
 Command-line tools (chezmoi itself, bat, starship) come from
-[mise](https://mise.jdx.dev), not the distro, so every machine gets the same
-versions. mise itself is an apt package from its own
-repo (workstation-bootstrap), updated with the system. They're pinned in
-`~/.config/mise/config.toml`, and that file is the whole set: on each change
-chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`
-through its shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead
-of any distro copy. `update` lists newer releases; to take one, bump the
-version with `edot` and commit (or bump everything with workstation-bootstrap's
-`update-pins.sh`).
+[mise](https://mise.jdx.dev), not the distro, so they're newer than Ubuntu's.
+mise itself is an apt package from its own repo (workstation-bootstrap),
+updated with the system. They're listed in `~/.config/mise/config.toml` as
+`"latest"`, and that file is the whole set: on each change chezmoi installs
+what's listed and prunes what isn't. mise puts them on `PATH` through its
+shims (`~/.local/share/mise/shims`, set in `.bash_profile`), ahead of any
+distro copy. `update` (in `.bashrc`) upgrades them with `mise upgrade`.
 
 ## Terminal
 

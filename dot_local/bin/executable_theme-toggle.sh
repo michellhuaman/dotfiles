@@ -6,19 +6,13 @@
 #
 # The dotfiles' GNOME settings bind it to Super+Shift+T.
 #
-# It also switches the Catppuccin flavor (Latte for light, Mocha for dark):
-# - Alacritty, btop and bat read a "current" link that points at the
-#   flavor's file; this script repoints the links (see theme_links);
-# - starship has no way to include a file, so the palette line in
-#   ~/.config/starship.toml is edited in place.
+# It also switches Alacritty between Catppuccin Latte (light) and Mocha
+# (dark), by pointing its "current" theme link at the flavor's file.
+# starship, bat and btop use the terminal's ANSI colors, so they follow.
 #
 #   theme-toggle.sh         toggle light/dark
-#   theme-toggle.sh links   only point the links at the current mode's flavor
+#   theme-toggle.sh links   only point the link at the current mode's flavor
 #                           (chezmoi runs this on apply, for a new machine)
-#
-# Note on bat: switching its config link does NOT require rebuilding bat's
-# cache. Run `bat cache --build` only when you add, remove, or update theme
-# files in "$(bat --config-dir)/themes".
 
 set -uo pipefail
 
@@ -30,36 +24,13 @@ GTK_THEME_DARK="Yaru-dark"
 ICON_THEME_LIGHT="Yaru"
 ICON_THEME_DARK="Yaru-dark"
 
-# Apply a sed substitution to a config file only if that file exists,
-# so a missing app config never aborts the rest of the toggle.
-apply_sed() {
-  local pattern="$1"
-  local file="$2"
-  if [[ -f "$file" ]]; then
-    sed -i "$pattern" "$file"
-  fi
-}
-
-# Points each "current" link at the file for flavor $1. chezmoi tracks the
-# theme files but not the links, so toggling never shows up as a change. A
-# link is only made where its target exists, and a real file in its place is
-# left alone.
+# Points Alacritty's "current" theme link at the file for flavor $1. chezmoi
+# tracks the theme files but not the link, so toggling never shows up as a
+# change.
 theme_links() {
-  local f="$1"
-  link() { # $1 = link, $2 = target, relative to the link's folder
-    local dir
-    dir="$(dirname "$1")"
-    [[ -e "$dir/$2" ]] || return 0
-    if [[ -e "$1" && ! -L "$1" ]]; then
-      echo "theme-toggle: $1 is a real file, not changing it" >&2
-      return 0
-    fi
-    ln -sfn "$2" "$1"
-  }
-  # btop reads its theme when it starts, and bat its config on every run.
-  link "$CONFIG_DIR/alacritty/themes/catppuccin-current.toml" "catppuccin-$f.toml"
-  link "$CONFIG_DIR/btop/themes/catppuccin_current.theme" "catppuccin_$f.theme"
-  link "$CONFIG_DIR/bat/config" "config-$f"
+  local dir="$CONFIG_DIR/alacritty/themes"
+  [[ -e "$dir/catppuccin-$1.toml" ]] || return 0
+  ln -sfn "catppuccin-$1.toml" "$dir/catppuccin-current.toml"
   # Open Alacritty windows reload when alacritty.toml changes, but don't
   # always notice the imported link changing. Touching alacritty.toml makes
   # them reload, and re-read the link; its contents don't change, so
@@ -93,9 +64,6 @@ fi
 gsettings set org.gnome.desktop.interface color-scheme "$scheme"
 gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
 gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
-
-apply_sed "s#palette = \"catppuccin_[a-z]*\"#palette = \"catppuccin_${flavor}\"#" \
-  "$CONFIG_DIR/starship.toml"
 
 theme_links "$flavor"
 
