@@ -10,8 +10,8 @@
 #                 polkit action for Bitwarden's unlock with system
 #                 authentication (sudo). Nothing that came with Ubuntu is
 #                 removed.
-#   2. chezmoi:   the version pinned in the dotfiles' mise config, run through
-#                 mise; and GitHub's SSH host keys
+#   2. chezmoi:   the latest release, run through mise; and GitHub's SSH
+#                 host keys
 #   3. Dotfiles:  chezmoi clones the dotfiles (public, over HTTPS) and applies
 #                 them, with pushes going over SSH (Bitwarden's agent); its
 #                 scripts install the flatpaks, CLI tools, fonts, GNOME
@@ -313,15 +313,10 @@ fetch -I --max-time 10 https://github.com >/dev/null \
 # Bitwarden is one of the dotfiles' Flatpaks: nothing here needs it, since
 # the dotfiles are cloned over HTTPS.
 info "Step 2/3: chezmoi"
-# chezmoi is one of the dotfiles' CLI tools, so it runs at the version their
-# ~/.config/mise/config.toml pins (on the branch being cloned). mise
-# downloads it once, checking the release's checksums and their cosign
-# signature; after the dotfiles' own `mise install` it's a normal command.
-mise_config="https://raw.githubusercontent.com/$GITHUB_USER/$repo/${branch:-main}/dot_config/mise/config.toml"
-chezmoi_version="$(fetch "$mise_config" | sed -n 's/^chezmoi *= *"\([^"]*\)".*/\1/p')"
-[[ -n "$chezmoi_version" ]] || die "no chezmoi version in $mise_config"
-chezmoi() { (cd "$HOME" && mise exec "chezmoi@$chezmoi_version" -- chezmoi "$@"); }
-echo "chezmoi $chezmoi_version, through mise"
+# chezmoi is one of the dotfiles' CLI tools (mise). Until their own `mise
+# install` has run, mise downloads it here, checking the release's checksums
+# and their cosign signature.
+chezmoi() { (cd "$HOME" && mise exec chezmoi@latest -- chezmoi "$@"); }
 chezmoi --version
 
 # Trust GitHub's published host keys (fetched over HTTPS) instead of

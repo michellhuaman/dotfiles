@@ -23,7 +23,7 @@ no key. Pushes go over SSH, through Bitwarden's agent.
 ```
 autoinstall.yaml                answers for the Ubuntu installer ("Automated installation")
 setup.sh                        the one script to run, after the first login
-update-pins.sh                  bumps every pinned version in the dotfiles, on a branch
+update-pins.sh                  bumps the dotfiles' pinned Nerd Font, on a branch
 lists/apt.txt                   apt packages setup.sh makes sure are installed
 lists/apt-sources/              vendor repos (Brave, VS Code, mise, Claude Desktop), copied to /etc/apt/sources.list.d/
 lists/apt-keys.txt              their signing keys, checked by fingerprint, saved to /etc/apt/keyrings/
@@ -80,18 +80,18 @@ repo, its `.sources` file to `lists/apt-sources/` and its key to
 
 ## Updating the pinned versions
 
-Everything the dotfiles download is pinned to an exact version, so every
-machine gets what was tested. `update-pins.sh` moves all the pins to the
-latest stable release at once:
+The Nerd Font the dotfiles download is pinned to an exact version and
+checksum. `update-pins.sh` moves it to the latest stable release:
 
 | Repo | Pin | Latest from |
 | --- | --- | --- |
 | dotfiles | Nerd Font, `fonts.nerd_fonts` and its checksum `fonts.nerd_fonts_sha256` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release (the checksum from its `SHA-256.txt`) |
-| dotfiles | CLI tools, chezmoi included (`setup.sh` reads its line), `dot_config/mise/config.toml` | `mise outdated --bump` |
 | this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
 
-"Latest" never means a pre-release or beta. mise itself isn't pinned: it's
-an apt package from its own repo, updated with the rest of the system. The Catppuccin theme files in the dotfiles are copies, not pins;
+"Latest" never means a pre-release or beta. The CLI tools aren't pinned
+(mise installs their latest release, and `update` in `.bashrc` upgrades
+them), and neither is mise itself: it's an apt package from its own repo,
+updated with the rest of the system. The Catppuccin theme files in the dotfiles are copies, not pins;
 re-copy them from catppuccin/<app> by hand if you ever want to.
 
 Do this before moving to a new machine, and every couple of months
@@ -140,8 +140,8 @@ and the dotfiles in use don't change until the last step.
 
    (For a repo that got no branch: download `main` instead, or leave out
    `--branch`.) Reboot the VM, and check: `Super+Shift+T` switches
-   light/dark (GNOME, Alacritty, bat, starship), `mise ls` shows the new
-   versions, `git commit` opens vim, Brave and VS Code start, the Nerd Font
+   light/dark (GNOME, Alacritty, bat, starship), the font is the new
+   version (`fc-list | grep JetBrainsMono`), `git commit` opens vim, Brave and VS Code start, the Nerd Font
    icons show in starship, Bitwarden starts at login, and its unlock with
    system authentication works.
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Bump every pinned version in the dotfiles to the latest stable release,
-# on a new branch, one commit per bump, so a bump that breaks something in
-# the test VM can be dropped on its own. This repo only gets a branch when
-# Bitwarden's polkit action changed upstream (see below).
+# Bump the pinned Nerd Font in the dotfiles to the latest stable release,
+# on a new branch, so it can be tested in the VM before merging. This repo
+# only gets a branch when Bitwarden's polkit action changed upstream (see
+# below). (The CLI tools in mise's config aren't pinned: `update` upgrades
+# them.)
 #
-#   dotfiles:  the Nerd Font (with its checksum) and the CLI tools in
-#              mise's config (chezmoi included)
+#   dotfiles:  the Nerd Font (with its checksum)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -44,10 +44,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for cmd in git curl python3 sha256sum unzip chezmoi; do
+for cmd in git curl python3 chezmoi; do
   command -v "$cmd" >/dev/null || die "$cmd is missing"
 done
-mise_bin="$(command -v mise)" || die "mise is missing; run setup.sh first"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 boot_repo="$(git -C "$script_dir" rev-parse --show-toplevel)"
@@ -169,29 +168,6 @@ nerd_font() {
   commit "$dot_wt" "Bump the Nerd Font from $cur to $new"
 }
 
-cli_tools() {
-  local f="$dot_wt/dot_config/mise/config.toml" json name req new n=0
-  # mise reads only the worktree's config (run from an empty folder, so no
-  # project config joins in) and lists each tool's newest stable release.
-  mkdir -p "$tmp/empty"
-  json="$(cd "$tmp/empty" && MISE_GLOBAL_CONFIG_FILE="$f" "$mise_bin" outdated --bump --json)"
-  while IFS=$'\t' read -r name req new; do
-    [[ -n "$name" ]] || continue
-    set_value "$f" "^\s*\"?$(python3 -c 'import re, sys; print(re.escape(sys.argv[1]))' "$name")\"?\s*=\s*\"(?P<v>[^\"]*)\"" "$new"
-    commit "$dot_wt" "mise: bump $name from $req to $new"
-    n=$((n + 1))
-  done < <(python3 - "$f" "$json" <<'EOF'
-import json, os, sys
-path, data = os.path.realpath(sys.argv[1]), json.loads(sys.argv[2] or "{}")
-for name, t in sorted(data.items()):
-    src = os.path.realpath((t.get("source") or {}).get("path", ""))
-    if src == path and t.get("bump") and t["bump"] != t.get("requested"):
-        print(f'{name}\t{t["requested"]}\t{t["bump"]}')
-EOF
-)
-  (( n )) || note "CLI tools: all at the latest release"
-}
-
 failed=()
 run() {
   local rc
@@ -209,7 +185,6 @@ run() {
 
 run "Bitwarden polkit action" polkit_action
 run "Nerd Font" nerd_font
-run "CLI tools (mise)" cli_tools
 
 # ---- results --------------------------------------------------------------------
 info "Summary"
