@@ -5,7 +5,7 @@
 # GNOME settings:
 #   keyboard     US and US International layouts, Caps Lock and Escape
 #                swapped (Super+Space switches layouts, GNOME's default)
-#   touchpad     tap to click
+#   touchpad     tap to click, traditional (not natural) scrolling
 #   night light  4000 K between sunset and sunrise in Madrid
 #   shortcuts    Super+Return Alacritty, Super+Shift+Return Brave,
 #                Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
@@ -13,14 +13,16 @@
 #                Super+E Files (new window), Super+I Settings,
 #                Super+Shift+S screenshot (interactive, like Print),
 #                Super+F maximize (toggles), Super+W close window,
-#                Super+1-4 workspace 1-4, Super+Shift+1-4 move the window
-#                there (4 fixed workspaces instead of GNOME's dynamic ones)
+#                Super+1-9 and Super+0 workspace 1-10, Super+Shift+1-9/0
+#                move the window there (10 fixed workspaces instead of
+#                GNOME's dynamic ones)
 # The wallpaper is left to you (Settings > Appearance).
 #
 # Reruns when this file changes. Settings changed later in GNOME's Settings
 # stay until then. Keyboard options and shortcuts are
 # added to what's there, never replace it; the only keys taken away are
-# Super+1-4 and Super+Shift+1-4 (the dash's apps) for the workspaces.
+# Super+1-9 (the dash's apps) and the dock's Super+0-9, Super+Shift+0-9 and
+# Super+Ctrl+0-9, for the workspaces.
 set -euo pipefail
 
 if ! command -v gsettings >/dev/null; then
@@ -65,6 +67,7 @@ add_to_list org.gnome.desktop.input-sources xkb-options 'caps:swapescape'
 
 # --- touchpad ----------------------------------------------------------
 gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
+gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
 
 # --- night light -------------------------------------------------------
 # Automatic: from sunset to sunrise. GNOME gets those from the location,
@@ -105,20 +108,23 @@ wm_keys=org.gnome.desktop.wm.keybindings
 add_to_list "$wm_keys" toggle-maximized '<Super>f'
 add_to_list "$wm_keys" close            '<Super>w'
 
-# Workspaces 1-4. GNOME only has
-# the workspaces in use plus an empty one, so 3 and 4 often wouldn't exist:
-# keep 4 instead.
+# Workspaces 1-10, on Super+1-9 and Super+0. GNOME only has the workspaces
+# in use plus an empty one, so the higher ones often wouldn't exist: keep 10
+# instead.
 gsettings set org.gnome.mutter dynamic-workspaces false
-gsettings set org.gnome.desktop.wm.preferences num-workspaces 4
-# Super+1-4 open the dash's apps, in GNOME Shell and again in Ubuntu's dock
-# (which also has Super+Shift+1-4); the dock's are all turned off, leaving
-# Super+Ctrl+1-4 unused too.
+gsettings set org.gnome.desktop.wm.preferences num-workspaces 10
+# Super+1-9 open the dash's apps in GNOME Shell, and Ubuntu's dock has
+# Super+0-9 and Super+Shift+0-9 for them too; the dock's are all turned off,
+# leaving Super+Ctrl+0 unused too (GNOME Shell keeps Super+Ctrl+1-9).
 if gsettings list-schemas | grep -qx org.gnome.shell.extensions.dash-to-dock; then
   gsettings set org.gnome.shell.extensions.dash-to-dock hot-keys false
 fi
-for n in 1 2 3 4; do
-  remove_from_list org.gnome.shell.keybindings "switch-to-application-$n" "<Super>$n"
-  add_to_list "$wm_keys" "switch-to-workspace-$n" "<Super>$n"
-  add_to_list "$wm_keys" "move-to-workspace-$n"   "<Super><Shift>$n"
+for n in 1 2 3 4 5 6 7 8 9 10; do
+  key=$(( n % 10 ))   # workspace 10 is on 0
+  if (( n < 10 )); then
+    remove_from_list org.gnome.shell.keybindings "switch-to-application-$n" "<Super>$key"
+  fi
+  add_to_list "$wm_keys" "switch-to-workspace-$n" "<Super>$key"
+  add_to_list "$wm_keys" "move-to-workspace-$n"   "<Super><Shift>$key"
 done
 {{- end }}

@@ -4,10 +4,7 @@
 # Toggles GNOME/GTK color-scheme, GTK theme, and icon theme between
 # light and dark.
 #
-# Bind it via Settings > Keyboard > View and Customize Shortcuts > Custom
-# Shortcuts, pointing the command at the full path, e.g.:
-#   /home/youruser/.local/bin/theme-toggle.sh
-# (The dotfiles bind it to Super+Shift+T.)
+# The dotfiles' GNOME settings bind it to Super+Shift+T.
 #
 # It also switches the Catppuccin flavor (Latte for light, Mocha for dark):
 # - Alacritty, btop and bat read a "current" link that points at the
@@ -20,9 +17,8 @@
 #                           (chezmoi runs this on apply, for a new machine)
 #
 # Note on bat: switching its config link does NOT require rebuilding bat's
-# cache. Run `bat cache --build` (or `batcat cache --build` on Ubuntu/Debian)
-# only when you add, remove, or update theme files in
-# "$(bat --config-dir)/themes".
+# cache. Run `bat cache --build` only when you add, remove, or update theme
+# files in "$(bat --config-dir)/themes".
 
 set -uo pipefail
 

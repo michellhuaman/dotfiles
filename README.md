@@ -4,9 +4,11 @@ My desktop setup, managed with [chezmoi](https://www.chezmoi.io/): stock
 **Ubuntu** (GNOME), themed with Catppuccin.
 
 `run_onchange_after_60-gnome-settings.sh.tmpl` sets GNOME's keyboard
-layouts, tap to click, night light and shortcuts (Super+Return
-Alacritty, Super+Shift+Return Brave, Super+Shift+T theme-toggle,
-Super+Shift+B monitor brightness).
+layouts, tap to click and traditional scrolling, night light, 10 fixed
+workspaces and shortcuts (Super+Return Alacritty, Super+Shift+Return
+Brave, Super+Shift+T theme-toggle, Super+Shift+B monitor brightness,
+Super+1-9/0 workspace 1-10, Super+Shift+1-9/0 move the window there; the
+script's header lists them all).
 
 The previous setup, Fedora Sway Atomic (sway, waybar, rofi, dunst,
 swaylock, Thunar's helpers), is kept as the tag `fedora-sway-atomic`:
@@ -39,7 +41,7 @@ dot_bash_profile, dot_bashrc
 dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
-  autostart/            apps started at login: Bitwarden (the SSH agent) and Brave (apt package)
+  autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
 dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
@@ -125,7 +127,7 @@ then step 2.
 Each of these then goes through step 2 like any other change.
 
 **All the pinned versions at once** (the Nerd Font, the CLI tools, the
-Neovim plugins, and chezmoi in workstation-bootstrap): workstation-bootstrap's `update-pins.sh` bumps them
+Neovim plugins, chezmoi included): workstation-bootstrap's `update-pins.sh` bumps them
 to the latest stable releases on a branch, to test in a VM before merging.
 Its README, "Updating the pinned versions", has the steps.
 

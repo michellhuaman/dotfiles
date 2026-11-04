@@ -1,7 +1,7 @@
 # What chezmoi installs in your home folder, without sudo.
 #
 # System packages (apt, mise included) live in the workstation-bootstrap
-# repo instead, which also installs chezmoi itself.
+# repo instead.
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
 

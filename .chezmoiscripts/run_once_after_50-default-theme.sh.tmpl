@@ -1,10 +1,10 @@
 #!/bin/bash
 # Starts a new machine on the same theme the repo's configs use
-# (Catppuccin mocha, accent blue), instead of GNOME's default light theme.
+# (Catppuccin mocha), instead of GNOME's default light theme.
 # The GTK and icon theme names match what theme-toggle.sh sets in dark mode.
 #
 # run_once_: runs on the first apply only (and again only if this file
-# changes), so it never undoes a theme you picked later with the scripts.
+# changes), so it never undoes a theme you picked later with theme-toggle.sh.
 set -euo pipefail
 
 gtk_theme="Yaru-dark"

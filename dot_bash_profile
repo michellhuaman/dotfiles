@@ -48,7 +48,7 @@ if [ -z "${SSH_CONNECTION:-}" ]; then
 fi
 
 # Get the aliases and functions. Sourced last, so .bashrc sees the PATH above
-# (starship lives in ~/.local/bin).
+# (starship comes from mise's shims).
 if [ -f ~/.bashrc ]; then
   . ~/.bashrc
 fi
