@@ -9,7 +9,7 @@
 #   night light  4000 K between sunset and sunrise in Madrid
 #   shortcuts    Super+Return Alacritty, Super+Shift+Return Brave,
 #                Super+Shift+T theme-toggle.sh, Super+Shift+B ddc-brightness.sh,
-#                Super+Shift+E powermenu.sh, Super+Shift+W wallpaper-reject.sh,
+#                Super+Shift+E powermenu.sh, Super+Shift+W wallpaper-reject.sh (trash/sort),
 #                Super+E Files (new window), Super+I Settings,
 #                Super+Shift+S screenshot (interactive, like Print),
 #                Super+F maximize (toggles), Super+W close window,
@@ -95,7 +95,7 @@ shortcut browser      "Brave"                '<Super><Shift>Return' 'brave-brows
 shortcut theme-toggle "Toggle light/dark"    '<Super><Shift>t'     '{{ .chezmoi.homeDir }}/.local/bin/theme-toggle.sh'
 shortcut brightness   "Monitor brightness"   '<Super><Shift>b'     '{{ .chezmoi.homeDir }}/.local/bin/ddc-brightness.sh'
 shortcut powermenu    "Power menu"           '<Super><Shift>e'     '{{ .chezmoi.homeDir }}/.local/bin/powermenu.sh'
-shortcut wallpaper-reject "Trash wallpaper, show another" '<Super><Shift>w' '{{ .chezmoi.homeDir }}/.local/bin/wallpaper-reject.sh'
+shortcut wallpaper-reject "Trash or sort the wallpaper" '<Super><Shift>w' '{{ .chezmoi.homeDir }}/.local/bin/wallpaper-reject.sh'
 shortcut files        "Files (new window)"   '<Super>e'            'nautilus --new-window'
 
 # Settings and the screenshot UI are GNOME's own actions, so the keys go
