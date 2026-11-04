@@ -10,7 +10,7 @@
 curl
 gpg                       # checks the vendor keys in apt-keys.txt
 git
-flatpak                   # Flathub apps: Bitwarden here, the rest in the dotfiles
+flatpak                   # Flathub apps (the dotfiles install them)
 
 alacritty                 # the terminal (Super+Return, set up by the dotfiles)
 ddcutil                   # ddc-brightness.sh; needs the host's /dev/i2c-*

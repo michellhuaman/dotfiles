@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Bump every pinned version in this repo and the dotfiles to the latest
-# stable release, on a new branch in each repo, one commit per bump, so a
-# bump that breaks something in the test VM can be dropped on its own.
+# Bump every pinned version in the dotfiles to the latest stable release,
+# on a new branch, one commit per bump, so a bump that breaks something in
+# the test VM can be dropped on its own. This repo only gets a branch when
+# Bitwarden's polkit action changed upstream (see below).
 #
 #   dotfiles:  the Nerd Font, the CLI tools in mise's config (chezmoi
 #              included) and the Neovim plugins (lazy-lock.json)
