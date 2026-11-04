@@ -6,6 +6,9 @@
 #
 # If light/ or dark/ has no images, that mode picks from the whole folder.
 # Never picks the wallpaper a mode already has (when there's another choice).
+#
+#   random-wallpaper.sh         new light and dark wallpapers
+#   random-wallpaper.sh light   only a new light one (dark: only a new dark one)
 set -euo pipefail
 
 DIR="${WALLPAPER_DIR:-$HOME/Pictures/wallpapers}"
@@ -42,6 +45,10 @@ set_random() {
   echo "$key set to $choice"
 }
 
-set_random picture-uri      "$DIR/light"
-set_random picture-uri-dark "$DIR/dark"
+case "${1:-both}" in
+  light|both|dark) ;;
+  *) echo "usage: ${0##*/} [light|dark]" >&2; exit 2 ;;
+esac
+[[ "${1:-both}" == dark ]]  || set_random picture-uri      "$DIR/light"
+[[ "${1:-both}" == light ]] || set_random picture-uri-dark "$DIR/dark"
 gsettings set "$SCHEMA" picture-options 'zoom'

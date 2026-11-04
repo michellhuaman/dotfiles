@@ -44,7 +44,8 @@ dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship,
   autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
                         sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`),
-                        random-wallpaper.sh (random light and dark GNOME wallpapers from ~/Pictures/wallpapers; daily via random-wallpaper.timer)
+                        random-wallpaper.sh (random light and dark GNOME wallpapers from ~/Pictures/wallpapers; daily via random-wallpaper.timer),
+                        wallpaper-reject.sh (Super+Shift+W: trash the wallpaper on screen, show another)
 dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
 
@@ -149,7 +150,9 @@ wallpaper per mode (`picture-uri` for light, `picture-uri-dark` for dark) and
 shows the matching one. `random-wallpaper.sh` (daily, via
 `random-wallpaper.timer`) picks the light one from `~/Pictures/wallpapers/light`
 and the dark one from `~/Pictures/wallpapers/dark`; a mode whose folder is
-missing or empty picks from the whole folder.
+missing or empty picks from the whole folder. `Super+Shift+W`
+(`wallpaper-reject.sh`) moves the wallpaper on screen to the Trash and shows
+another one for the same mode; Restore it from the Trash in Files to undo.
 
 ### Theme links
 
