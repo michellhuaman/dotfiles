@@ -42,7 +42,8 @@ dot_gitconfig           Git name, email, editor
 private_dot_ssh/        ~/.ssh/config: Bitwarden's agent for every host
 dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship, tmux, systemd, ...)
   autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
-dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh
+dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
+                        sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`)
 dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
 
