@@ -44,7 +44,7 @@ dot_config/             ~/.config (Alacritty, bat, btop, mise, Neovim, starship,
   autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
 dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
                         sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`),
-                        random-wallpaper.sh (random GNOME wallpaper from ~/Pictures/wallpapers; daily via random-wallpaper.timer)
+                        random-wallpaper.sh (random light and dark GNOME wallpapers from ~/Pictures/wallpapers; daily via random-wallpaper.timer)
 dot_local/private_share/applications/nvim.desktop   Neovim in the app grid and "Open With" (mise installs no app entry)
 ```
 
@@ -143,6 +143,13 @@ the dark theme `run_once_after_50-default-theme.sh.tmpl` sets.
 
 GTK and icon themes are set by `theme-toggle.sh` and the default-theme script:
 Ubuntu's Yaru.
+
+The wallpaper follows the theme without `theme-toggle.sh`: GNOME keeps one
+wallpaper per mode (`picture-uri` for light, `picture-uri-dark` for dark) and
+shows the matching one. `random-wallpaper.sh` (daily, via
+`random-wallpaper.timer`) picks the light one from `~/Pictures/wallpapers/light`
+and the dark one from `~/Pictures/wallpapers/dark`; a mode whose folder is
+missing or empty picks from the whole folder.
 
 ### Theme links
 
