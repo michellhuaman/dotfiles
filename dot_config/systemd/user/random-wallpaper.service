@@ -1,0 +1,7 @@
+[Unit]
+Description=Set a random GNOME wallpaper
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/random-wallpaper.sh

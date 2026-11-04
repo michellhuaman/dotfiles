@@ -1,0 +1,11 @@
+[Unit]
+Description=Change GNOME wallpaper daily
+
+[Timer]
+OnCalendar=daily
+# Catch up on a missed change if the computer was off at midnight
+Persistent=true
+RandomizedDelaySec=1min
+
+[Install]
+WantedBy=timers.target
