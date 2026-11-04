@@ -88,7 +88,6 @@ latest stable release at once:
 | --- | --- | --- |
 | dotfiles | Nerd Font, `fonts.nerd_fonts` and its checksum `fonts.nerd_fonts_sha256` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release (the checksum from its `SHA-256.txt`) |
 | dotfiles | CLI tools, chezmoi included (`setup.sh` reads its line), `dot_config/mise/config.toml` | `mise outdated --bump` |
-| dotfiles | Neovim plugins, `dot_config/nvim/lazy-lock.json` | `:Lazy sync`, run in a scratch folder |
 | this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
 
 "Latest" never means a pre-release or beta. mise itself isn't pinned: it's
@@ -141,10 +140,10 @@ and the dotfiles in use don't change until the last step.
 
    (For a repo that got no branch: download `main` instead, or leave out
    `--branch`.) Reboot the VM, and check: `Super+Shift+T` switches
-   light/dark (GNOME, Alacritty, bat, starship), `nvim` starts with its
-   plugins and no errors, `mise ls` shows the new versions, Brave and VS
-   Code start, the Nerd Font icons show in starship, Bitwarden starts at
-   login, and its unlock with system authentication works.
+   light/dark (GNOME, Alacritty, bat, starship), `mise ls` shows the new
+   versions, `git commit` opens vim, Brave and VS Code start, the Nerd Font
+   icons show in starship, Bitwarden starts at login, and its unlock with
+   system authentication works.
 
 4. **If a bump breaks something**, undo just that commit in its worktree,
    push that branch again and re-test from the fresh install (step 3):

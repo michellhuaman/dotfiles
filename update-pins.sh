@@ -4,8 +4,8 @@
 # the test VM can be dropped on its own. This repo only gets a branch when
 # Bitwarden's polkit action changed upstream (see below).
 #
-#   dotfiles:  the Nerd Font (with its checksum), the CLI tools in mise's
-#              config (chezmoi included) and the Neovim plugins (lazy-lock.json)
+#   dotfiles:  the Nerd Font (with its checksum) and the CLI tools in
+#              mise's config (chezmoi included)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for cmd in git curl python3 sha256sum unzip chezmoi tar; do
+for cmd in git curl python3 sha256sum unzip chezmoi; do
   command -v "$cmd" >/dev/null || die "$cmd is missing"
 done
 mise_bin="$(command -v mise)" || die "mise is missing; run setup.sh first"
@@ -192,35 +192,6 @@ EOF
   (( n )) || note "CLI tools: all at the latest release"
 }
 
-nvim_plugins() {
-  local lock="$dot_wt/dot_config/nvim/lazy-lock.json" home="$tmp/nvim" nvim_bin changed
-  nvim_bin="$("$mise_bin" which nvim)"
-  # The worktree's Neovim config, run in throwaway folders: the live config,
-  # plugins and lockfile are left alone. mise's own folders stay the real
-  # ones, so its shims (tree-sitter, for the parsers) keep working.
-  mkdir -p "$home/home"
-  chezmoi --source "$dot_wt" archive --format tar "$HOME/.config/nvim" | tar -xm -C "$home/home"
-  echo "Updating Neovim plugins in a scratch folder (takes a minute)"
-  if ! XDG_CONFIG_HOME="$home/home/.config" XDG_DATA_HOME="$home/data" \
-       XDG_STATE_HOME="$home/state" XDG_CACHE_HOME="$home/cache" \
-       MISE_CONFIG_DIR="$HOME/.config/mise" MISE_DATA_DIR="$HOME/.local/share/mise" \
-       MISE_STATE_DIR="$HOME/.local/state/mise" MISE_CACHE_DIR="$HOME/.cache/mise" \
-       timeout 900 "$nvim_bin" --headless "+Lazy! sync" +qa >"$tmp/nvim.log" 2>&1; then
-    tail -20 "$tmp/nvim.log" >&2
-    return 1
-  fi
-  changed="$(python3 - "$lock" "$home/home/.config/nvim/lazy-lock.json" <<'EOF'
-import json, sys
-old, new = (json.load(open(p)) for p in sys.argv[1:3])
-names = sorted(set(old) | set(new))
-print(sum(1 for n in names if old.get(n, {}).get("commit") != new.get(n, {}).get("commit")))
-EOF
-)"
-  if (( changed == 0 )); then note "Neovim plugins: all at the latest commit"; return 0; fi
-  cp "$home/home/.config/nvim/lazy-lock.json" "$lock"
-  commit "$dot_wt" "Update Neovim plugins ($changed changed, lazy-lock.json)"
-}
-
 failed=()
 run() {
   local rc
@@ -239,7 +210,6 @@ run() {
 run "Bitwarden polkit action" polkit_action
 run "Nerd Font" nerd_font
 run "CLI tools (mise)" cli_tools
-run "Neovim plugins" nvim_plugins
 
 # ---- results --------------------------------------------------------------------
 info "Summary"
