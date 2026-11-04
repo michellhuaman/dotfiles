@@ -247,12 +247,34 @@ internal snapshots of a VM with UEFI firmware.
 
    It only asks for your **sudo password**, once, for the system step. It
    also clones this repo into `~/repos/workstation-bootstrap` (pulls over
-   HTTPS, pushes over SSH once step 4 is done), so the downloaded
+   HTTPS, pushes over SSH once step 5 is done), so the downloaded
    `workstation-bootstrap-main` folder can be deleted afterwards.
 
-3. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
+3. **If Secure Boot is on, enroll the key VirtualBox's modules are signed
+   with**, so VirtualBox VMs can start. `virtualbox-dkms` signs its kernel
+   modules with the machine's MOK key, but the firmware only loads them once
+   that key is enrolled, and `setup.sh` installs packages non-interactively,
+   so nothing asks you to do it. Check first:
+
+   ```bash
+   mokutil --sb-state
+   mokutil --test-key /var/lib/shim-signed/mok/MOK.der
+   ```
+
+   If it says "SecureBoot enabled" and the key "is not enrolled", import it:
+
+   ```bash
+   sudo mokutil --import /var/lib/shim-signed/mok/MOK.der
+   ```
+
+   It asks for a one-time password you make up. At the next boot (step 4) a
+   blue MOK Manager screen appears: pick **Enroll MOK**, then **Continue**,
+   **Yes**, type that password and **Reboot**. If the screen goes by, run
+   the import again and reboot. Secure Boot off, or the key already
+   enrolled: skip this step.
+4. **Reboot** (`systemctl reboot`) and log in. Flatpak apps are in the app
    grid, and `Super+Return` opens Alacritty.
-4. **In Bitwarden**, log in (it starts at login), then:
+5. **In Bitwarden**, log in (it starts at login), then:
    - File > Settings > App settings (all accounts) > turn on **Enable SSH
      agent**, so `git push` works. Check with `ssh -T git@github.com`
      (approve the request in Bitwarden).

@@ -40,8 +40,8 @@ ovmf                      # UEFI firmware for VMs
 # it while a KVM VM runs, so a VirtualBox VM and a KVM one (virt-manager,
 # Claude Desktop's Cowork) can't run at the same time. Effective after a
 # reboot. With Secure Boot on, the modules are signed with the machine's MOK
-# key, which must be enrolled: `sudo mokutil --import
-# /var/lib/shim-signed/mok/MOK.der`, then confirm it at the next boot.
+# key, which must be enrolled once per machine: the README's "Setting up a
+# new machine", step 3.
 virtualbox                # VBoxManage and the VM runtime
 virtualbox-qt             # VirtualBox Manager, the GUI
 
