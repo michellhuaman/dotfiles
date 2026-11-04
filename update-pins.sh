@@ -4,8 +4,8 @@
 # the test VM can be dropped on its own. This repo only gets a branch when
 # Bitwarden's polkit action changed upstream (see below).
 #
-#   dotfiles:  the Nerd Font, the CLI tools in mise's config (chezmoi
-#              included) and the Neovim plugins (lazy-lock.json)
+#   dotfiles:  the Nerd Font (with its checksum), the CLI tools in mise's
+#              config (chezmoi included) and the Neovim plugins (lazy-lock.json)
 #   checked only: Bitwarden's polkit action (system/) against upstream;
 #              a difference is shown for review, never copied in
 #
@@ -155,11 +155,17 @@ polkit_action() {
 }
 
 nerd_font() {
-  local f="$dot_wt/.chezmoidata/packages.yaml" cur new
+  local f="$dot_wt/.chezmoidata/packages.yaml" cur new sha
   cur="$(sed -n 's/^ *nerd_fonts: *\(v[^ #]*\).*/\1/p' "$f")"
   new="$(latest_release ryanoasis/nerd-fonts)"
   if [[ "$cur" == "$new" ]]; then note "Nerd Font: $cur is the latest"; return 0; fi
+  # The release's own checksum for the file the font script downloads,
+  # pinned with the version, so the download is checked against it.
+  sha="$(fetch "https://github.com/ryanoasis/nerd-fonts/releases/download/$new/SHA-256.txt" \
+         | awk '$2 == "JetBrainsMono.tar.xz" { print $1 }')"
+  [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || { echo "no checksum for JetBrainsMono.tar.xz in $new's SHA-256.txt" >&2; return 1; }
   set_value "$f" '^\s*nerd_fonts: (?P<v>v[^\s#]+)' "$new"
+  set_value "$f" '^\s*nerd_fonts_sha256: (?P<v>[0-9a-f]+)' "$sha"
   commit "$dot_wt" "Bump the Nerd Font from $cur to $new"
 }
 

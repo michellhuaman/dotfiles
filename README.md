@@ -86,7 +86,7 @@ latest stable release at once:
 
 | Repo | Pin | Latest from |
 | --- | --- | --- |
-| dotfiles | Nerd Font, `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release |
+| dotfiles | Nerd Font, `fonts.nerd_fonts` and its checksum `fonts.nerd_fonts_sha256` in `.chezmoidata/packages.yaml` | ryanoasis/nerd-fonts' latest release (the checksum from its `SHA-256.txt`) |
 | dotfiles | CLI tools, chezmoi included (`setup.sh` reads its line), `dot_config/mise/config.toml` | `mise outdated --bump` |
 | dotfiles | Neovim plugins, `dot_config/nvim/lazy-lock.json` | `:Lazy sync`, run in a scratch folder |
 | this one | Bitwarden's polkit action, `system/` | only compared with upstream; a difference is shown, never copied in |
