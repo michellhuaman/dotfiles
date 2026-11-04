@@ -221,9 +221,9 @@ Git's name and email are in `dot_gitconfig`, the same on every machine.
 
 ## CLI tools
 
-Command-line tools (chezmoi itself, lazygit, ripgrep, fd, bat, starship)
-come from [mise](https://mise.jdx.dev), not the distro, so every
-machine gets the same versions. mise itself is an apt package from its own
+Command-line tools (chezmoi itself, bat, starship) come from
+[mise](https://mise.jdx.dev), not the distro, so every machine gets the same
+versions. mise itself is an apt package from its own
 repo (workstation-bootstrap), updated with the system. They're pinned in
 `~/.config/mise/config.toml`, and that file is the whole set: on each change
 chezmoi installs what's listed and prunes what isn't. mise puts them on `PATH`

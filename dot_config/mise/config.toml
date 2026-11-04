@@ -6,9 +6,6 @@
 # here (with edot), then commit.
 
 [tools]
-lazygit = "0.66.2"
-ripgrep = "15.2.0"
-fd = "10.5.0"
 bat = "0.26.1"
 starship = "1.27.0"
 chezmoi = "2.74.0"                # this repo's manager; workstation-bootstrap's setup.sh reads this line
