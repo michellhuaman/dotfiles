@@ -19,8 +19,11 @@ packages:
     - org.gnome.Extensions      # GNOME Shell extensions: turn on/off and configure the installed ones
 
 fonts:
-  # Bump a version to make the font script download it again.
+  # Bump a version to make the font script download it again, together with
+  # its checksum: the release's SHA-256.txt line for JetBrainsMono.tar.xz
+  # (update-pins.sh fills both in). The download is checked against it.
   nerd_fonts: v3.5.1              # JetBrainsMono Nerd Font
+  nerd_fonts_sha256: 04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf
 
 services:
   # User units from dot_config/systemd/user, enabled and started after files

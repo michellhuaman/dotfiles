@@ -27,11 +27,11 @@ so `chezmoi apply` never asks for a password.
 ```
 .chezmoiignore          repo files that are not copied to ~ (this README)
 .chezmoidata/
-  packages.yaml         flatpaks, Nerd Font version, systemd user units
+  packages.yaml         flatpaks, Nerd Font version and checksum, systemd user units
 .chezmoiscripts/        run by `chezmoi apply`, in number order
   run_onchange_after_20-install-flatpaks.sh.tmpl    reruns when the flatpak list changes
   run_onchange_after_25-install-cli-tools.sh.tmpl   mise install + prune; reruns when the mise config changes
-  run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font, bat cache
+  run_onchange_after_30-install-fonts.sh.tmpl       Nerd Font (checked against its checksum), bat cache
   run_onchange_after_40-enable-services.sh.tmpl     enables the user units in packages.yaml
   run_once_after_50-default-theme.sh.tmpl           dark theme on the first apply only
   run_onchange_after_55-theme-links.sh.tmpl         points the theme links at the current flavor
@@ -122,7 +122,7 @@ then step 2.
 | a Flatpak app | `packages.flatpak` in `.chezmoidata/packages.yaml` (the whole set: per-user apps not listed are uninstalled, their data kept) | `chezmoi apply` installs or uninstalls it |
 | a keyboard shortcut | `.chezmoiscripts/run_onchange_after_60-gnome-settings.sh.tmpl` | `chezmoi apply` |
 | a CLI tool, or a newer version of one | `edot ~/.config/mise/config.toml` (exact versions; `mise outdated --bump` lists newer ones) | applied on save: installed, and anything no longer listed is pruned |
-| a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml` | `chezmoi apply` downloads it |
+| a new Nerd Font release | `fonts.nerd_fonts` in `.chezmoidata/packages.yaml`, and `fonts.nerd_fonts_sha256` next to it (that release's `SHA-256.txt` line for `JetBrainsMono.tar.xz`) | `chezmoi apply` downloads it and checks it |
 | a systemd user unit | the unit in `dot_config/systemd/user/`, its name in `services.user` | `chezmoi apply` enables it |
 | a script, template or anything else in the repo | `chezmoi cd`, then edit the file (e.g. `vim .chezmoidata/packages.yaml`) | `chezmoi apply`, `exit` |
 | a system (apt) package | not here: workstation-bootstrap's lists | re-run its `setup.sh` |

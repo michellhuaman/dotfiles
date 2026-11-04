@@ -14,12 +14,35 @@ if command -v bat >/dev/null; then
 fi
 
 # --- fonts -------------------------------------------------------------
+# Downloaded and checked against the checksum pinned in
+# .chezmoidata/packages.yaml, and unpacked next to the installed copy, which
+# is only replaced once all of that worked: a failed download or a wrong
+# checksum leaves the current font in place (and exits with an error, so
+# chezmoi tries again on the next apply).
 fontdir="$HOME/.local/share/fonts"
+dest="$fontdir/JetBrainsMonoNerdFont"
 
 echo "==> JetBrainsMono Nerd Font {{ .fonts.nerd_fonts }}"
-rm -rf "$fontdir/JetBrainsMonoNerdFont"
-mkdir -p "$fontdir/JetBrainsMonoNerdFont"
-curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ .fonts.nerd_fonts }}/JetBrainsMono.tar.xz" \
-  | tar -xJ -C "$fontdir/JetBrainsMonoNerdFont"
+mkdir -p "$fontdir"
+tmp="$(mktemp -d "$fontdir/.JetBrainsMonoNerdFont.XXXXXX")"
+trap 'rm -rf "$tmp"' EXIT
+curl -fsSL --retry 4 --retry-delay 5 -o "$tmp/font.tar.xz" \
+  "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ .fonts.nerd_fonts }}/JetBrainsMono.tar.xz"
+echo "{{ .fonts.nerd_fonts_sha256 }}  $tmp/font.tar.xz" | sha256sum -c --quiet - \
+  || { echo "!! JetBrainsMono.tar.xz doesn't match the checksum in packages.yaml; font left as it was" >&2; exit 1; }
+mkdir "$tmp/font"
+tar -xJ -C "$tmp/font" -f "$tmp/font.tar.xz"
+rm -rf "$dest"
+mv "$tmp/font" "$dest"
+# The download folder goes before fc-cache scans $fontdir, which it's in.
+rm -rf "$tmp"
 
-fc-cache -f "$fontdir"
+# fontconfig refuses to write a folder's cache if the folder changes while
+# it's being scanned (another app noticing the new font, say). The font is
+# installed either way and apps rebuild the cache themselves, so a second
+# failure is only a warning: it must not stop the rest of `chezmoi apply`.
+if ! fc-cache -f "$fontdir"; then
+  sleep 2
+  fc-cache -f "$fontdir" \
+    || echo "!! fc-cache couldn't update the font cache; the font is installed, run 'fc-cache -f' if apps don't see it" >&2
+fi
