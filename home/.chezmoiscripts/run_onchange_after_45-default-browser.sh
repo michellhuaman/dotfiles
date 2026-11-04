@@ -1,5 +1,5 @@
 #!/bin/sh
-# Brave (the apt package, from workstation-bootstrap) as the default browser for links and web pages; without
+# Brave (the apt package, from setup.sh) as the default browser for links and web pages; without
 # this, Ubuntu's own mimeapps.list picks Firefox.
 # xdg-settings/xdg-mime only change these lines of ~/.config/mimeapps.list,
 # so entries other programs add there (e.g. Claude Code's claude-cli) stay.

@@ -1,13 +1,13 @@
 # What chezmoi installs in your home folder, without sudo.
 #
-# System packages (apt, mise included) live in the workstation-bootstrap
-# repo instead.
+# System packages (apt, mise included) are in lists/ at the repo root
+# instead (setup.sh).
 # Editing any list here makes the matching run_onchange_ script rerun
 # on the next `chezmoi apply`.
 
 packages:
   # Installed per user from Flathub (no root, no polkit prompt). Brave and VS
-  # Code are apt packages instead (workstation-bootstrap). This is the
+  # Code are apt packages instead (lists/apt.txt). This is the
   # whole set: per-user apps not listed here are uninstalled (their data in
   # ~/.var/app stays).
   flatpak:

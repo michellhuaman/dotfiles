@@ -1,5 +1,5 @@
 [Desktop Entry]
-# Starts Brave (the apt package, from workstation-bootstrap) at login, like
+# Starts Brave (the apt package, from setup.sh) at login, like
 # Bitwarden next to it.
 Type=Application
 Name=Brave

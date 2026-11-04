@@ -27,7 +27,7 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# Default editor: vim (an apt package from workstation-bootstrap), else vi
+# Default editor: vim (an apt package from setup.sh), else vi
 if command -v vim >/dev/null 2>&1; then
   export EDITOR="vim"
   export VISUAL="vim"

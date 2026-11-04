@@ -11,7 +11,7 @@
 set -euo pipefail
 
 mise="$(command -v mise)" \
-  || { echo "!! mise is missing (an apt package from workstation-bootstrap); run its setup.sh" >&2; exit 1; }
+  || { echo "!! mise is missing (an apt package); run setup.sh at the repo root" >&2; exit 1; }
 
 cd "$HOME"   # the global config, not some project's mise.toml
 echo "==> CLI tools (mise)"

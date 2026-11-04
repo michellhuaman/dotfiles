@@ -12,15 +12,15 @@
 #                 removed.
 #   2. chezmoi:   the latest release, run through mise; and GitHub's SSH
 #                 host keys
-#   3. Dotfiles:  chezmoi clones the dotfiles (public, over HTTPS) and applies
-#                 them, with pushes going over SSH (Bitwarden's agent); its
-#                 scripts install the flatpaks, CLI tools, fonts, GNOME
-#                 settings and user services
-#                 (no sudo); then clones this repo into ~/repos the same
-#                 way, to change and push later
+#   3. Dotfiles:  chezmoi clones this repo (public, over HTTPS) into
+#                 ~/.local/share/chezmoi and applies home/, with pushes
+#                 going over SSH (Bitwarden's agent); its scripts install
+#                 the flatpaks, CLI tools, fonts, GNOME settings and user
+#                 services (no sudo). That clone is where you change and
+#                 push this repo later.
 #
 # Run it from a terminal in your GNOME session, as your normal user:
-#   bash /path/to/workstation-bootstrap/setup.sh
+#   bash /path/to/workstation/setup.sh
 #
 # Nothing waits on Bitwarden: it's only needed later, to push.
 #
@@ -29,25 +29,26 @@
 # are already cloned it runs `chezmoi update` (pull and apply) instead.
 #
 # Options:
-#   --branch NAME   dotfiles branch to clone on the first run (default: main)
+#   --branch NAME   branch to clone on the first run (default: main); use the
+#                   one you downloaded setup.sh from
 #   --user NAME     GitHub username (default: GITHUB_USER below)
-#   --repo NAME     dotfiles repository name (default: dotfiles)
+#   --repo NAME     repository name (default: workstation)
 #   --no-system     skip step 1, e.g. when re-running after a dotfiles fix
 
 set -euo pipefail
 
 GITHUB_USER="michellhuaman"
-repo="dotfiles"
+repo="workstation"
 branch=""
-# This repo's own name and clone, which update-pins.sh works from.
-boot_repo="workstation-bootstrap"
-boot_dir="$HOME/repos/$boot_repo"
+# chezmoi's clone of this repo (its working tree; the dotfiles are in home/).
+clone_dir="${XDG_DATA_HOME:-$HOME/.local/share}/chezmoi"
 do_system=true
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Packages this script installed (as opposed to ones Ubuntu came with), so a
 # package dropped from lists/apt.txt can be removed without ever touching
-# Ubuntu's own.
+# Ubuntu's own. (The folder keeps the repo's old name, so machines set up
+# before the rename keep their record.)
 apt_state=/var/lib/workstation-bootstrap/apt-installed.txt
 
 die()  { echo "error: $*" >&2; exit 1; }
@@ -338,9 +339,8 @@ fi
 
 # ---- 3. dotfiles ----------------------------------------------------------------
 info "Step 3/3: dotfiles"
-source_dir="$(chezmoi source-path 2>/dev/null || echo "${XDG_DATA_HOME:-$HOME/.local/share}/chezmoi")"
-if [[ -d "$source_dir/.git" ]]; then
-  echo "Dotfiles already in $source_dir; pulling and applying"
+if [[ -d "$clone_dir/.git" ]]; then
+  echo "Already cloned in $clone_dir; pulling and applying"
   chezmoi git -- remote set-url origin "$repo_url"
   chezmoi git -- remote set-url --push origin "$push_url"
   chezmoi update --verbose
@@ -349,17 +349,6 @@ else
   [[ -n "$branch" ]] && init_args+=(--branch "$branch")
   chezmoi "${init_args[@]}" "$repo_url"
   chezmoi git -- remote set-url --push origin "$push_url"
-fi
-
-# This repo, cloned like the dotfiles: pulls over HTTPS, pushes over SSH.
-# An existing clone is left as it is (it may have work in progress).
-if [[ -d "$boot_dir/.git" ]]; then
-  echo "$boot_repo already in $boot_dir"
-else
-  echo "Cloning $boot_repo into $boot_dir"
-  mkdir -p "$(dirname "$boot_dir")"
-  git clone -q "https://github.com/$GITHUB_USER/$boot_repo.git" "$boot_dir"
-  git -C "$boot_dir" remote set-url --push origin "git@github.com:$GITHUB_USER/$boot_repo.git"
 fi
 
 # ---- done -----------------------------------------------------------------------
@@ -383,10 +372,10 @@ if [[ -f /var/run/reboot-required ]]; then
 fi
 cat <<EOF
 
-If anything failed, fix it in the matching repo, push, and run this again:
-  bash $boot_dir/setup.sh          (add --no-system if only the dotfiles failed)
+If anything failed, fix it in the repo, push, and run this again:
+  bash $clone_dir/setup.sh          (add --no-system if only the dotfiles failed)
 EOF
-if [[ "$script_dir" != "$boot_dir" ]]; then
+if [[ "$script_dir" != "$clone_dir" ]]; then
   echo
-  echo "$script_dir was only a download; the clone is $boot_dir, so it can go."
+  echo "$script_dir was only a download; the clone is $clone_dir, so it can go."
 fi

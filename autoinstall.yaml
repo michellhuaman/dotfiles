@@ -1,6 +1,6 @@
 # Answers for the Ubuntu Desktop installer: pick "Automated installation"
 # when it asks and give it this file's raw URL:
-#   https://raw.githubusercontent.com/michellhuaman/workstation-bootstrap/main/autoinstall.yaml
+#   https://raw.githubusercontent.com/michellhuaman/workstation/main/autoinstall.yaml
 #
 # It answers what's the same on every machine; the installer still asks for
 # the disk (and the encryption passphrase) and for the user, so nothing is
