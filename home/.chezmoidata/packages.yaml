@@ -17,6 +17,7 @@ packages:
     - org.localsend.localsend_app
     - net.ankiweb.Anki
     - org.gnome.Extensions      # GNOME Shell extensions: turn on/off and configure the installed ones
+    - io.gitlab.ilshat_apps.manuscript     # Markdown Reader
 
 fonts:
   # Bump a version to make the font script download it again, together with
