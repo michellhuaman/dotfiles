@@ -9,7 +9,8 @@
 #
 # SSH goes to 127.0.0.1:<port>. For a VM on plain NAT the script creates the port forward
 # 127.0.0.1:<port> -> guest:22 if it's missing; a VM on a NAT network (SOR) uses the network's
-# own forwards. In the tmux session, prefix + S toggles typing into every pane at once.
+# own forwards. SSH forwards the agent (Bitwarden), so git can reach GitHub from the VMs.
+# In the tmux session, prefix + S toggles typing into every pane at once.
 # SSH user: mshf, or VM_USER=name.
 set -euo pipefail
 
@@ -42,7 +43,7 @@ list() {
 GROUP="${1:-}"
 ACTION="${2:-}"
 [[ -z "$GROUP" || "$GROUP" == "list" ]] && { list; exit 0; }
-[[ "$GROUP" == -h || "$GROUP" == --help ]] && { sed -n '2,13s/^# \{0,1\}//p' "$0"; exit 0; }
+[[ "$GROUP" == -h || "$GROUP" == --help ]] && { sed -n '2,14s/^# \{0,1\}//p' "$0"; exit 0; }
 
 # The group's VMs: SERVERS = "name|port" (SSH panes), GUIS = names (window only).
 SERVERS=() GUIS=()
@@ -134,7 +135,7 @@ until ssh-keyscan -T 2 -p $2 127.0.0.1 >/dev/null 2>&1; do
   echo "Waiting for SSH on $1 (port $2)..."; sleep 3
 done
 while true; do
-  ssh -p $2 -i "$KEY" -o ServerAliveInterval=30 $USER_NAME@127.0.0.1
+  ssh -A -p $2 -i "$KEY" -o ServerAliveInterval=30 $USER_NAME@127.0.0.1
   read -rp "Disconnected from $1. Enter to reconnect, Ctrl-C to close: "
 done
 EOF
