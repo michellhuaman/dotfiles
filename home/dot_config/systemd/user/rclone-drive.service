@@ -1,0 +1,33 @@
+# Mounts all of My Drive (the remote gdrive: in ~/.config/rclone/rclone.conf)
+# at ~/.gdrive; ~/drive links to it.
+#
+# The mount is in a hidden folder so GNOME/Nautilus doesn't list it as a drive
+# and probe it (item counts, thumbnails). Folder listings stay cached and
+# Drive is polled for changes every minute. Opened files are cached for 30
+# days, up to 10 GB. Google Docs/Sheets/Slides show up as Office exports:
+# open them, but edit them in the browser (saving uploads a separate file).
+#
+# Skipped (not failed) until rclone is signed in: on a new machine run
+# `rclone config reconnect gdrive:`, then
+# `systemctl --user start rclone-drive.service`.
+[Unit]
+Description=Mount Google Drive with rclone
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=notify
+ExecCondition=/usr/bin/grep -q "^token = " "%h/.config/rclone/rclone.conf"
+ExecStartPre=/usr/bin/mkdir -p "%h/.gdrive"
+ExecStart=/usr/bin/rclone mount gdrive: "%h/.gdrive" \
+  --vfs-cache-mode full \
+  --vfs-cache-max-age 720h \
+  --vfs-cache-max-size 10G \
+  --dir-cache-time 1000h \
+  --poll-interval 1m
+ExecStop=/usr/bin/fusermount3 -u "%h/.gdrive"
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

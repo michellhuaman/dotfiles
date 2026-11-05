@@ -66,8 +66,8 @@ home/                           the dotfiles: chezmoi's source
   dot_config/             ~/.config (Alacritty, bat, mise, starship, tmux, systemd, ...)
     autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
     rclone/               rclone.conf, created once from Bitwarden (see "Google Drive")
-    systemd/user/         user units, rclone-smr.service among them (mounts Google Drive)
-  drive/                  ~/drive/20-29 SMR, a link to the Google Drive mount
+    systemd/user/         user units, rclone-drive.service among them (mounts Google Drive)
+  symlink_drive.tmpl      ~/drive, a link to the Google Drive mount
   dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
                           vm (start a course's VirtualBox VMs + a tmux session with an SSH pane per VM;
                               `vm` lists the groups, `vm <group> keys|stop|--gui`; VMs listed at the top of the script),
@@ -140,7 +140,7 @@ home/                           the dotfiles: chezmoi's source
    the master password. This one can't be automated: Bitwarden keeps it in
    each account's own settings.
 
-6. **Google Drive** (`20-29 SMR`, mounted by `rclone-smr.service`): the
+6. **Google Drive** (mounted by `rclone-drive.service`): the
    first apply wrote `~/.config/rclone/rclone.conf` only if Bitwarden's CLI
    was unlocked. If it wasn't, unlock it and apply again:
 
@@ -155,7 +155,7 @@ home/                           the dotfiles: chezmoi's source
 
    ```bash
    rclone config reconnect gdrive:
-   systemctl --user start rclone-smr.service
+   systemctl --user start rclone-drive.service
    ```
 
 ## Before leaving the old machine
@@ -384,19 +384,27 @@ distro copy. `update` (in `.bashrc`) upgrades them with `mise upgrade`.
 
 ### Google Drive (rclone)
 
-`rclone-smr.service` mounts the Google Drive folder `20-29 SMR` (school
-files, Johnny.Decimal) at `~/.gdrive/20-29 SMR`, linked from
-`~/drive/20-29 SMR`; the `smr` repo's `material` links point into it. The
-mount is in a hidden folder because GNOME lists mounts under `~` as drives
-and Nautilus then probes every file over the network.
+`rclone-drive.service` mounts all of My Drive at `~/.gdrive`, and `~/drive`
+links to it; the `smr` repo's `material` links point into
+`~/drive/20-29 SMR`. The mount is in a hidden folder because GNOME lists
+mounts under `~` as drives and Nautilus then probes every file over the
+network.
+
+- Folder listings stay cached and Drive is polled for changes every minute,
+  so new files show up within a minute.
+- Opened files are cached for 30 days, up to 10 GB (`~/.cache/rclone`).
+- Google Docs, Sheets and Slides show up as Office exports: fine to open,
+  but edit them in the browser, since saving uploads a separate file.
+- "Shared with me" isn't there; add a shortcut in My Drive to see a shared
+  file or folder.
 
 `~/.config/rclone/rclone.conf` holds secrets, so this repo only has a
 template, `create_private_rclone.conf.tmpl`:
 
 - The client ID and secret are custom fields `client_id` and `client_secret`
-  of the Bitwarden item `rclone-smr`, read with the Bitwarden CLI (`bw`, from
-  mise). They belong to the Google Cloud project `rclone-smr`, a Desktop app
-  OAuth client, published so the sign-in doesn't expire after 7 days.
+  of the Bitwarden item `rclone-drive`, read with the Bitwarden CLI (`bw`,
+  from mise). They belong to the Google Cloud project `rclone-smr`, a Desktop
+  app OAuth client, published so the sign-in doesn't expire after 7 days.
   rclone's built-in client ID is shared by every rclone user and constantly
   rate-limited (15-30 s for the first listing after each start).
 - It's a `create_` file: written only when `rclone.conf` doesn't exist. After

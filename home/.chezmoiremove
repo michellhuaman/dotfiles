@@ -1,4 +1,5 @@
 # Files earlier versions of this repo put in ~, deleted on the next apply.
+.config/systemd/user/rclone-smr.service
 .config/alacritty/themes/catppuccin-frappe.toml
 .config/alacritty/themes/catppuccin-macchiato.toml
 .config/bat/config-latte

@@ -32,4 +32,4 @@ services:
   user:
     - flatpak-user-manager.timer  # daily flatpak update, on AC power only
     - random-wallpaper.timer      # daily random wallpaper from ~/Pictures/wallpapers
-    - rclone-smr.service          # mounts Google Drive's "20-29 SMR"; skipped until rclone is signed in
+    - rclone-drive.service        # mounts Google Drive at ~/.gdrive; skipped until rclone is signed in
