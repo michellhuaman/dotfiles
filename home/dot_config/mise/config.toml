@@ -8,3 +8,4 @@
 bat = "latest"
 starship = "latest"
 chezmoi = "latest"                # this repo's manager
+bitwarden = "latest"              # bw, the Bitwarden CLI: fills secrets into templates (rclone.conf)

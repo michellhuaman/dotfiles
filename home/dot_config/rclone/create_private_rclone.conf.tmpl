@@ -1,0 +1,22 @@
+{{- /*
+  rclone's config: the Google Drive remote that rclone-smr.service mounts.
+
+  create_: written only when ~/.config/rclone/rclone.conf doesn't exist yet.
+  After that rclone owns the file (it rewrites the token on every refresh),
+  so chezmoi never touches it again. The stat check also keeps chezmoi from
+  asking Bitwarden for the secret on every apply.
+
+  The client ID and secret come from the Bitwarden item "rclone-smr" (custom
+  fields client_id and client_secret), so bw must be unlocked for the first
+  apply: export BW_SESSION="$(bw unlock --raw)". There's no token here: sign
+  in once with `rclone config reconnect gdrive:`.
+*/ -}}
+{{- if not (stat (joinPath .chezmoi.homeDir ".config/rclone/rclone.conf")) -}}
+{{- $item := bitwardenFields "item" "rclone-smr" -}}
+[gdrive]
+type = drive
+client_id = {{ $item.client_id.value }}
+client_secret = {{ $item.client_secret.value }}
+scope = drive
+root_folder_id = 1WgGX2vjj0Oq7B8xgIHpWic41ykBO1iTr
+{{ end -}}
