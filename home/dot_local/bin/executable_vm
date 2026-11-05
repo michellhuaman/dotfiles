@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# vm — start a group of VirtualBox VMs (headless) and open a tmux session with an SSH pane per VM.
+#
+#   vm                    list the groups, their VMs and which ones are running
+#   vm <group>            start the group's VMs (if needed) + attach to tmux session "<group>"
+#   vm <group> --gui      same, and also start the group's GUI-only VMs with their window
+#   vm <group> stop       ACPI shutdown of the group's running VMs and kill its tmux session
+#   vm <group> keys       copy ~/.ssh/<group>_ed25519 to each VM (asks each password once)
+#
+# SSH goes to 127.0.0.1:<port>. For a VM on plain NAT the script creates the port forward
+# 127.0.0.1:<port> -> guest:22 if it's missing; a VM on a NAT network (SOR) uses the network's
+# own forwards. In the tmux session, prefix + S toggles typing into every pane at once.
+# SSH user: mshf, or VM_USER=name.
+set -euo pipefail
+
+# group | VM name | SSH port ("-" = GUI-only, started with --gui)
+# Adding a subject = adding its lines here.
+VMS=(
+  "sor|Debian|2223"
+  "sor|CentOS|2224"
+  "sor|Ubuntu Server|2222"            # a group's last VM gets the full-width bottom pane
+  "sor|Ubuntu Desktop|-"
+  "ser|Ubuntu Server - SER|2225"
+  "si|Ubuntu Server - Seguridad Informatica|2226"
+)
+USER_NAME="${VM_USER:-mshf}"
+
+die() { echo "vm: $*" >&2; exit 1; }
+is_running() { VBoxManage list runningvms | grep -q "^\"$1\" "; }
+
+list() {
+  local group name port state last=""
+  for entry in "${VMS[@]}"; do
+    IFS='|' read -r group name port <<<"$entry"
+    [[ "$group" != "$last" ]] && { printf '%s\n' "$group"; last="$group"; }
+    if is_running "$name"; then state="running"; else state="off"; fi
+    [[ "$port" == "-" ]] && port="gui"
+    printf '  %-40s %-5s %s\n' "$name" "$port" "$state"
+  done
+}
+
+GROUP="${1:-}"
+ACTION="${2:-}"
+[[ -z "$GROUP" || "$GROUP" == "list" ]] && { list; exit 0; }
+[[ "$GROUP" == -h || "$GROUP" == --help ]] && { sed -n '2,13s/^# \{0,1\}//p' "$0"; exit 0; }
+
+# The group's VMs: SERVERS = "name|port" (SSH panes), GUIS = names (window only).
+SERVERS=() GUIS=()
+for entry in "${VMS[@]}"; do
+  IFS='|' read -r group name port <<<"$entry"
+  [[ "$group" == "$GROUP" ]] || continue
+  if [[ "$port" == "-" ]]; then GUIS+=("$name"); else SERVERS+=("$name|$port"); fi
+done
+(( ${#SERVERS[@]} + ${#GUIS[@]} )) || die "unknown group '$GROUP' (run 'vm' to list them)"
+
+SESSION="$GROUP"
+KEY="$HOME/.ssh/${GROUP}_ed25519"
+
+if [[ "$ACTION" == "stop" ]]; then
+  for entry in "${SERVERS[@]}" "${GUIS[@]}"; do
+    name="${entry%%|*}"
+    if is_running "$name"; then
+      echo "· shutting down $name"
+      VBoxManage controlvm "$name" acpipowerbutton
+    fi
+  done
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+  exit 0
+fi
+
+case "$ACTION" in ""|keys|--gui|--desktop) ;; *) die "unknown action '$ACTION' (stop, keys, --gui)";; esac
+
+ensure_forward() {  # $1 = name, $2 = port — only for VMs on plain NAT
+  local info
+  info=$(VBoxManage showvminfo "$1" --machinereadable)
+  grep -q '^nic1="nat"' <<<"$info" || return 0
+  grep -q '^Forwarding([0-9]*)="ssh,' <<<"$info" && return 0
+  echo "· $1: adding NAT port forward 127.0.0.1:$2 -> 22"
+  if is_running "$1"; then
+    VBoxManage controlvm "$1" natpf1 "ssh,tcp,127.0.0.1,$2,,22"
+  else
+    VBoxManage modifyvm "$1" --natpf1 "ssh,tcp,127.0.0.1,$2,,22"
+  fi
+}
+
+start_vm() {  # $1 = name, $2 = gui|headless
+  if is_running "$1"; then
+    echo "· $1 already running"
+  else
+    echo "· starting $1 ($2)"
+    VBoxManage startvm "$1" --type "$2" >/dev/null
+  fi
+}
+
+wait_ssh() {  # $1 = name, $2 = port
+  until ssh-keyscan -T 2 -p "$2" 127.0.0.1 >/dev/null 2>&1; do
+    echo "Waiting for SSH on $1 (port $2)..."; sleep 3
+  done
+}
+
+if [[ "$ACTION" == "--gui" || "$ACTION" == "--desktop" ]]; then
+  for name in "${GUIS[@]}"; do start_vm "$name" gui; done
+fi
+for entry in "${SERVERS[@]}"; do
+  IFS='|' read -r name port <<<"$entry"
+  ensure_forward "$name" "$port"
+  start_vm "$name" headless
+done
+(( ${#SERVERS[@]} )) || exit 0   # a GUI-only group has no SSH session
+
+if [[ "$ACTION" == "keys" ]]; then
+  [[ -f "$KEY.pub" ]] || ssh-keygen -t ed25519 -N "" -C "$GROUP-vms" -f "$KEY" -q
+  for entry in "${SERVERS[@]}"; do
+    IFS='|' read -r name port <<<"$entry"
+    wait_ssh "$name" "$port"
+    echo "== $name: enter $USER_NAME's password if asked"
+    ssh-copy-id -i "$KEY.pub" -p "$port" "$USER_NAME@127.0.0.1"
+  done
+  echo "Done. Run 'vm $GROUP' to open the tmux session."
+  exit 0
+fi
+
+# Already open? Just attach to it.
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  exec tmux attach -t "$SESSION"
+fi
+
+# Each pane waits until sshd answers on its port, then connects.
+# After you log out, the pane offers to reconnect.
+pane_cmd() {  # $1 = name, $2 = port
+  cat <<EOF
+printf '\033]2;%s\033\\\\' '$1'
+until ssh-keyscan -T 2 -p $2 127.0.0.1 >/dev/null 2>&1; do
+  echo "Waiting for SSH on $1 (port $2)..."; sleep 3
+done
+while true; do
+  ssh -p $2 -i "$KEY" -o ServerAliveInterval=30 $USER_NAME@127.0.0.1
+  read -rp "Disconnected from $1. Enter to reconnect, Ctrl-C to close: "
+done
+EOF
+}
+
+first=1
+for entry in "${SERVERS[@]}"; do
+  IFS='|' read -r name port <<<"$entry"
+  cmd="$(pane_cmd "$name" "$port")"
+  if (( first )); then
+    tmux new-session -d -s "$SESSION" -n "$GROUP" bash -c "$cmd"
+    first=0
+  else
+    tmux split-window -t "$SESSION:$GROUP" bash -c "$cmd"
+  fi
+  tmux select-layout -t "$SESSION:$GROUP" tiled >/dev/null
+done
+
+tmux set-option -t "$SESSION" pane-border-status top >/dev/null
+tmux set-option -t "$SESSION" pane-border-format " #{pane_title} " >/dev/null
+tmux bind-key -T prefix S setw synchronize-panes \; display "sync #{?synchronize-panes,ON,OFF}"
+
+exec tmux attach -t "$SESSION"

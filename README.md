@@ -66,7 +66,8 @@ home/                           the dotfiles: chezmoi's source
   dot_config/             ~/.config (Alacritty, bat, mise, starship, tmux, systemd, ...)
     autostart/            apps started at login: Bitwarden (the SSH agent), Brave and Claude Desktop (apt packages)
   dot_local/bin/          theme-toggle.sh, ddc-brightness.sh, powermenu.sh,
-                          sor-vms.sh (start the SOR VirtualBox VMs + tmux SSH panes; `keys`, `stop`),
+                          vm (start a course's VirtualBox VMs + a tmux session with an SSH pane per VM;
+                              `vm` lists the groups, `vm <group> keys|stop|--gui`; VMs listed at the top of the script),
                           random-wallpaper.sh (random light and dark GNOME wallpapers from ~/Pictures/wallpapers; daily via random-wallpaper.timer),
                           wallpaper-reject.sh (Super+Shift+W: trash the wallpaper on screen, or move it to light/ or dark/)
 ```
